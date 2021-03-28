@@ -171,6 +171,7 @@ class PysolMenubarTkCommon:
             shisen_show_hint=tkinter.BooleanVar(),
             sound=tkinter.BooleanVar(),
             auto_scale=tkinter.BooleanVar(),
+            spread_stacks=tkinter.BooleanVar(),
             cardback=tkinter.IntVar(),
             tabletile=tkinter.IntVar(),
             animations=tkinter.IntVar(),
@@ -222,6 +223,7 @@ class PysolMenubarTkCommon:
         tkopt.shisen_show_hint.set(opt.shisen_show_hint)
         tkopt.sound.set(opt.sound)
         tkopt.auto_scale.set(opt.auto_scale)
+        tkopt.spread_stacks.set(opt.spread_stacks)
         tkopt.cardback.set(self.app.cardset.backindex)
         tkopt.tabletile.set(self.app.tabletile_index)
         tkopt.animations.set(opt.animations)
@@ -534,6 +536,9 @@ class PysolMenubarTkCommon:
             submenu.add_checkbutton(
                 label=n_("&Auto scaling"), variable=self.tkopt.auto_scale,
                 command=self.mOptAutoScale, accelerator=m+'0')
+            submenu.add_checkbutton(
+                label=n_("&Spread stacks"), variable=self.tkopt.spread_stacks,
+                command=self.mOptSpreadStacks)
         # manager = self.app.cardset_manager
         # n = manager.len()
         menu.add_command(
@@ -1463,8 +1468,8 @@ Unsupported game for import.
             self.app.opt.scale_y += 0.1
         else:
             return
-        # self.app.opt.auto_scale = False
-        # self.tkopt.auto_scale.set(False)
+        self.app.opt.auto_scale = False
+        self.tkopt.auto_scale.set(False)
         self._updateCardSize()
 
     def mDecreaseCardset(self, *event):
@@ -1478,8 +1483,8 @@ Unsupported game for import.
             self.app.opt.scale_y -= 0.1
         else:
             return
-        # self.app.opt.auto_scale = False
-        # self.tkopt.auto_scale.set(False)
+        self.app.opt.auto_scale = False
+        self.tkopt.auto_scale.set(False)
         self._updateCardSize()
 
     def mOptAutoScale(self, *event):
@@ -1488,6 +1493,13 @@ Unsupported game for import.
         auto_scale = not self.app.opt.auto_scale
         self.app.opt.auto_scale = auto_scale
         self.tkopt.auto_scale.set(auto_scale)
+        self._updateCardSize()
+    def mOptSpreadStacks(self, *event):
+        if self._cancelDrag(break_pause=True):
+            return
+        spread_stacks = not self.app.opt.spread_stacks
+        self.app.opt.spread_stacks = spread_stacks
+        self.tkopt.spread_stacks.set(spread_stacks)
         self._updateCardSize()
 
     def _mOptCardback(self, index):
