@@ -488,15 +488,15 @@ class Options:
                           top.winfo_screendepth())
         # bg
         if sd > 8:
-            self.tabletile_name = "Nostalgy.gif"  # basename
+            self.tabletile_name = "Fade_Green.gif"  # basename
         else:
             self.tabletile_name = None
         # cardsets
-        c = "Standard"
+        c = "Rakogis Mod"
         if sw < 800 or sh < 600:
             c = "2000"
         if TOOLKIT == 'kivy':
-            c = "Standard"
+            c = "Rakogis Mod"
 
         # if sw > 1024 and sh > 768:
         #    c = 'Dondorf'

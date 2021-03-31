@@ -984,7 +984,8 @@ class Game(object):
 
     def resizeImages(self, manually=False):
         # resizing images and cards
-        if self.app.opt.auto_scale or (self.app.opt.spread_stacks and not manually):
+        if (self.app.opt.auto_scale or
+                (self.app.opt.spread_stacks and not manually)):
             if self.canvas.winfo_ismapped():
                 # apparent size of canvas
                 vw = self.canvas.winfo_width()
@@ -996,7 +997,7 @@ class Game(object):
                 vw, vh = self.app.opt.game_geometry
                 if not vw:
                     # first run of the game
-                    return 1, 1
+                    return 1, 1, 1, 1
             # requested size of canvas (createGame -> setSize)
             iw, ih = self.init_size
             # calculate factor of resizing
@@ -1043,7 +1044,7 @@ class Game(object):
                 else:
                     stack.resize(xf, yf0)
             else:
-                stack.resize(xf, yf0)
+                stack.resize(xf, yf)
             stack.updatePositions()
         self.regions.calc_info(xf, yf)
         # texts

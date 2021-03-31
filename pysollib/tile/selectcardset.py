@@ -152,8 +152,11 @@ class SelectCardsetData(SelectDialogTreeData):
                     None, _("Large cardsets"),
                     lambda cs: cs.si.size == CSI.SIZE_LARGE),
                  SelectCardsetNode(
-                    None, _("XLarge cardsets"),
+                    None, _("Extra Large cardsets"),
                     lambda cs: cs.si.size == CSI.SIZE_XLARGE),
+                 SelectCardsetNode(
+                    None, _("Hi-Res cardsets"),
+                    lambda cs: cs.si.size == CSI.SIZE_HIRES),
                  ), expanded=1),
             select_by_type,
             select_by_style,
@@ -270,7 +273,7 @@ class SelectCardsetDialogWithPreview(MfxDialog):
             var = tkinter.IntVar()
             self.x_offset = PysolScale(
                 left_frame, label=_('X offset:'),
-                from_=5, to=100, resolution=1,
+                from_=5, to=150, resolution=1,
                 orient='horizontal', variable=var,
                 value=cs.CARD_XOFFSET
                 )
@@ -281,7 +284,7 @@ class SelectCardsetDialogWithPreview(MfxDialog):
             var = tkinter.IntVar()
             self.y_offset = PysolScale(
                 left_frame, label=_('Y offset:'),
-                from_=5, to=100, resolution=1,
+                from_=5, to=150, resolution=1,
                 orient='horizontal', variable=var,
                 value=cs.CARD_YOFFSET
                 )

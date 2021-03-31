@@ -1494,6 +1494,7 @@ Unsupported game for import.
         self.app.opt.auto_scale = auto_scale
         self.tkopt.auto_scale.set(auto_scale)
         self._updateCardSize()
+
     def mOptSpreadStacks(self, *event):
         if self._cancelDrag(break_pause=True):
             return
