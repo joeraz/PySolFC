@@ -306,7 +306,7 @@ class SalicLaw(DerKatzenschwanz):
         self.setSize(l.XM+10*l.XS, l.YM+(5+len(self.Foundation_Classes))*l.YS)
 
         #
-        playcards = 4*l.YS // l.YOFFSET
+        playcards = round(4 * l.YS // l.YOFFSET)
         xoffset, yoffset = [], []
         for i in range(playcards):
             xoffset.append(0)
@@ -641,7 +641,7 @@ class Kentish(Kings):
         self.setSize(l.XM + (rows+2)*l.XS, l.YM + 5*l.YS)
 
         #
-        playcards = 4*l.YS // l.YOFFSET
+        playcards = round(4 * l.YS // l.YOFFSET)
         xoffset, yoffset = [], []
         for i in range(playcards):
             xoffset.append(0)
