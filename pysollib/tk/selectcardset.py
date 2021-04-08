@@ -281,11 +281,10 @@ class SelectCardsetDialogWithPreview(MfxDialog):
                 left_frame, text=_('Preserve aspect ratio'),
                 variable=self.preserve_aspect,
                 takefocus=False,
-                # command=self._updateScale
+                command=self._updatePreserveAspect
                 )
             self.aspect_check.grid(row=4, column=0, sticky='w',
                                    padx=padx, pady=pady)
-            self._updateAutoScale()
         #
         left_frame.rowconfigure(0, weight=1)
         left_frame.columnconfigure(0, weight=1)
@@ -299,6 +298,9 @@ class SelectCardsetDialogWithPreview(MfxDialog):
         self.preview_images = []
         self.scale_images = []
         self.updatePreview(key)
+
+        if USE_PIL:
+            self._updateAutoScale()
         #
         focus = self.createButtons(bottom_frame, kw)
         focus = self.tree.frame
@@ -359,8 +361,12 @@ class SelectCardsetDialogWithPreview(MfxDialog):
             self.aspect_check.config(state='disabled')
             self.scale_x.config(state='normal')
             self.scale_y.config(state='normal')
+        self.updatePreview()
 
     def _updateScale(self, v):
+        self.updatePreview()
+
+    def _updatePreserveAspect(self, v=None):
         self.updatePreview()
 
     def updatePreview(self, key=None):
@@ -389,8 +395,19 @@ class SelectCardsetDialogWithPreview(MfxDialog):
         if USE_PIL:
             xf = self.scale_x.get()
             yf = self.scale_y.get()
+
+            if (self.auto_scale.get()):
+                init_x = (dx * columns)
+                init_y = (dy * 4)
+                tkinter.Tk.update(canvas)
+                xf = float(canvas.winfo_width() - 10) / init_x
+                yf = float(canvas.winfo_height() - 10) / init_y
+                if (self.preserve_aspect.get()):
+                    xf = yf = min(xf, yf)
+
             dx = int(dx*xf)
             dy = int(dy*yf)
+
             self.scale_images = []
         for image in self.preview_images:
             if USE_PIL:
@@ -403,6 +420,9 @@ class SelectCardsetDialogWithPreview(MfxDialog):
                 x, y = 10, y + dy
             else:
                 x = x + dx
+        if (self.auto_scale.get()):
+            sx = 0
+            sy = 0
         canvas.config(scrollregion=(0, 0, sx+dx, sy+dy),
                       width=sx+dx, height=sy+dy)
         # canvas.config(xscrollincrement=dx, yscrollincrement=dy)
