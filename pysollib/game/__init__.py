@@ -1861,7 +1861,10 @@ class Game(object):
         # for InvisibleStack, etc
         # x, y = -500, -500 - len(game.allstacks)
         cardw, cardh = self.app.images.CARDW, self.app.images.CARDH
-        x, y = cardw + self.canvas.xmargin, cardh + self.canvas.ymargin
+        xoffset = self.app.images.CARD_XOFFSET
+        yoffset = self.app.images.CARD_YOFFSET
+        x = cardw + xoffset + self.canvas.xmargin
+        y = cardh + yoffset + self.canvas.ymargin
         return -x-10, -y-10
 
     #
