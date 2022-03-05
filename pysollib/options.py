@@ -28,7 +28,7 @@ import traceback
 import configobj
 
 import pysollib.settings
-from pysollib.mfxutil import print_err, USE_PIL
+from pysollib.mfxutil import USE_PIL, print_err
 from pysollib.mygettext import _
 from pysollib.mygettext import myGettext
 from pysollib.pysoltk import TOOLBAR_BUTTONS, TOOLKIT
