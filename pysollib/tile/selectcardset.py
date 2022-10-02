@@ -385,6 +385,7 @@ class SelectCardsetDialogWithPreview(MfxDialog):
         #
         focus = self.createButtons(bottom_frame, kw)
         focus = self.tree.frame
+
         self.mainloop(focus, kw.timeout, geometry=geometry)
 
     def destroy(self):
@@ -555,7 +556,7 @@ class SelectCardsetDialogWithPreview(MfxDialog):
         self.updatePreview(cardset)
         self.list["cursor"] = oldcur
 
-    def updatePreview(self, key=None):
+    def updatePreview(self, key=None, isResizing=False):
         if key == self.preview_key:
             return
         if key is None:
@@ -588,8 +589,18 @@ class SelectCardsetDialogWithPreview(MfxDialog):
             return
         i, x, y, sx, sy, dx, dy = 0, 10, 10, 0, 0, cs.CARDW + 10, cs.CARDH + 10
         if USE_PIL:
-            xf = self.scale_x.get()
-            yf = self.scale_y.get()
+            if self.auto_scale.get():
+                vw = canvas.winfo_width()
+                vh = canvas.winfo_height()
+                iw = (dx * 4) + 10
+                ih = (dy * 4) + 10
+                xf = max(float(vw) / iw, .01)
+                yf = max(float(vh) / ih, .01)
+                if self.preserve_aspect.get():
+                    xf = yf = min(xf, yf)
+            else:
+                xf = self.scale_x.get()
+                yf = self.scale_y.get()
             dx = int(dx*xf)
             dy = int(dy*yf)
             self.scale_images = []
