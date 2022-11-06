@@ -169,9 +169,7 @@ class PysolToolbarTk:
         self.compound = compound
         self.orient = 'horizontal'
         #
-        self.frame = ttk.Frame(top, class_='Toolbar',
-                               relief=TkSettings.toolbar_relief,
-                               borderwidth=TkSettings.toolbar_borderwidth)
+        self.frame = ttk.Frame(top, borderwidth=TkSettings.toolbar_borderwidth)
         #
         for label, f, t in (
             (n_("New"),      self.mNewGame,   _("New game")),
@@ -337,7 +335,6 @@ class PysolToolbarTk:
                              position=position,
                              toolbar=self,
                              toolbar_name=name,
-                             relief="ridge",
                              justify="center",
                              aspect=aspect)
         label.show(orient=self.orient)
