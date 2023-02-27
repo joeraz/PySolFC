@@ -2,7 +2,7 @@
 image: Visual Studio 2019
 environment:
     matrix:
-        - PYTHON: "C:\\Python39"
+        - PYTHON: "C:\\Python311"
 # Shamelessly taken from https://github.com/plicease/Dist-Zilla-PluginBundle-Author-Plicease/blob/master/.appveyor.yml
 # Thanks!
 install:
