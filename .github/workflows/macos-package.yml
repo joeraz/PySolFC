@@ -28,9 +28,9 @@ jobs:
         brew install create-dmg
     - name: Get cardsets
       run: |
-        wget --content-disposition https://sourceforge.net/projects/pysolfc/files/PySolFC-Cardsets/minimal/PySolFC-Cardsets--Minimal-2.2.0.tar.xz/download
-        tar xJf PySolFC-Cardsets--Minimal-2.2.0.tar.xz?viasf=1
-        mv PySolFC-Cardsets--Minimal-2.2.0/cardset-* data
+        wget --content-disposition https://sourceforge.net/projects/pysolfc/files/PySolFC-Cardsets/PySolFC-Cardsets-2.2/PySolFC-Cardsets-2.2.tar.bz2/download
+        tar xJf PySolFC-Cardsets-2.2.tar.bz2?viasf=1
+        mv PySolFC-Cardsets-2.2/cardset-* data
     - name: Prepare game rules (process the HTML) and translations
       run: |
         make rules mo
