@@ -5,6 +5,9 @@ environment:
         - PYTHON: "C:\\Python311"
 # Shamelessly taken from https://github.com/plicease/Dist-Zilla-PluginBundle-Author-Plicease/blob/master/.appveyor.yml
 # Thanks!
+platform:
+    - x64
+    - Any CPU
 install:
     # - choco install strawberryperl
     - copy %PYTHON%\python.exe %PYTHON%\python3.exe
