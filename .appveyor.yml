@@ -13,7 +13,7 @@ install:
         pycotap pygame pyinstaller pysol-cards random2 setuptools six
         ttkthemes
     - perl -v
-    - copy C:\msys64\mingw64\bin\mingw32-make.exe C:\msys64\mingw64\bin\make.exe
+    - copy C:\msys64\mingw64\bin\mingw64-make.exe C:\msys64\mingw64\bin\make.exe
     - SET PERL5LIB=C:/_P5/lib/perl5
     - SET PERL_LOCAL_LIB_ROOT=C:/_P5
     - SET PERL_MB_OPT=--install_base C:/_P5
