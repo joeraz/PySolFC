@@ -2,7 +2,7 @@
 image: Visual Studio 2019
 environment:
     matrix:
-        - PYTHON: "C:\\Python310"
+        - PYTHON: "C:\\Python311"
 # Shamelessly taken from https://github.com/plicease/Dist-Zilla-PluginBundle-Author-Plicease/blob/master/.appveyor.yml
 # Thanks!
 install:
@@ -10,7 +10,7 @@ install:
     - copy %PYTHON%\python.exe %PYTHON%\python3.exe
     - SET PATH=%PYTHON%;%PYTHON%\Scripts;C:\strawberry\c\bin;C:\strawberry\perl\site\bin;C:\strawberry\perl\bin;%PATH%
     - python3 -mpip install Pillow==9.5 attrs configobj flake8 flake8-import-order
-        pycotap pygame pyinstaller==5.11 pysol-cards random2 setuptools six
+        pycotap pygame pyinstaller pysol-cards random2 setuptools six
         ttkthemes
     - perl -v
     - copy C:\msys64\mingw64\bin\mingw32-make.exe C:\msys64\mingw64\bin\make.exe
@@ -34,7 +34,7 @@ test_script:
     - gmake rules
     - gmake pot
     - gmake mo
-    - pyinstaller pysol.py --windowed --icon=data\pysol.ico
+    - pyinstaller pysol.py --windowed --icon=data\pysol.ico --debug=all
     - python3 setup.py install_data -d dist\pysol
     - appveyor DownloadFile https://sourceforge.net/projects/pysolfc/files/PySolFC-Cardsets/minimal/PySolFC-Cardsets--Minimal-2.2.0.tar.xz/download -FileName cardsets.tar.xz
     - 7z x cardsets.tar.xz -so | 7z x -si -ttar
