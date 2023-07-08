@@ -29,8 +29,8 @@ jobs:
     - name: Get cardsets
       run: |
         wget -O cardsets-pack.tar.xz "https://sourceforge.net/projects/pysolfc/files/PySolFC-Cardsets/minimal/PySolFC-Cardsets--Minimal-2.2.0.tar.xz/download"
-        tar -xJfv cardsets-pack.tar.xz
-        mv cardsets-pack/cardset-* data
+        tar -xJf cardsets-pack.tar.xz
+        mv PySolFC-Cardsets--Minimal-2.2.0/cardset-* data
     - name: Prepare game rules (process the HTML) and translations
       run: |
         make rules mo
