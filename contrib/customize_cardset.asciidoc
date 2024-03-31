@@ -8,7 +8,7 @@ config.txt template
 -------------------
 
 ....
-PySolFC solitaire cardset;$A;$FMT;$B;$C;$D,$E;$F
+PySolFC solitaire cardset;$A;$FMT;$B;$C;$D,$E;$F;$G;$H
 <internal_name>;<cardset_name>
 X Y D
 XOFF YOFF SXOFF SYOFF
@@ -21,7 +21,7 @@ Line 1
 
 *$A:* The cardset version number that belongs to the number of fields divided through ";" on the first line (e.g. `.gif;1;78;8,1016` -> `$A=4`)
 
-( *WARNING:* For Mahjongg, $A must always be 6 and the $F field must be included in the line; however, you can put `0` in `$F` if you wish, in that case. )
+( *WARNING:* For Mahjongg, $A must always be 6 or 7 and the $F field must be included in the line; however, you can put `0` in `$F` if you wish, in that case. )
 
 ( *NOTE:* $D and $E are comma separated and count for one field )
 
@@ -42,6 +42,8 @@ Cardsets Types:
 * Dashavatara Ganjifa = 8
 * Trumps Only = 9
 * Matching = 10
+* Puzzle = 11
+* Ishido = 12
 
 *$C:* The number of cards in the cardset, generally 42, 48, 52, 68, 78, 96 or 120
 
@@ -50,6 +52,7 @@ Cardsets Types:
 Cardsets Styles:
 ~~~~~~~~~~~~~~~~
 
+* Abstract = 35
 * Adult = 1
 * Animals = 2
 * Anime = 3
@@ -59,14 +62,18 @@ Cardsets Styles:
 * Classic Look = 7
 * Collectors = 8
 * Computers = 9
+* Divination = 36
 * Engines = 10
 * Fantasy = 11
+* Four Color = 37
 * Ganjifa= 30
 * Hanafuda = 12
 * Hex A Deck = 29
 * Holiday = 13
+* Ishido = 34
 * Mahjongg = 28
 * Matching = 32
+* Monochrome = 38
 * Movies = 14
 * Matrix = 31
 * Music = 15
@@ -76,6 +83,7 @@ Cardsets Styles:
 * Places = 20
 * Plain = 21
 * Products = 22
+* Puzzle = 33
 * Round Cardsets = 18
 * Science Fiction = 23
 * Sports = 24
@@ -104,6 +112,7 @@ Cardsets Origins:
 * Italy = 1005
 * Japan = 1016
 * Netherlands = 1002
+* Portugal = 1022
 * Russia = 1007
 * Spain = 1008
 * Sweden = 1017
@@ -112,6 +121,9 @@ Cardsets Origins:
 
 *$F:* The Year the cardset was created (in the range 1000 to 2299)
 
+*$G:*  The subtype of the cardset.  Usually 0 - for French type cardsets, a value of 1 is used if there are jokers.  For Puzzle type cardsets, it is the number of pieces per row/column.
+
+*$H:* Whether the cardset is a 3D Mahjongg cardset - 1 if it is, 0 if it isn't.  For cardsets with a version less than 7, version 6 cardsets treat this value as 1, and older version cardsets treat it as 0.
 
 Line 2
 ------
@@ -120,13 +132,13 @@ Line 2
 
 ( *TIP:* You could add a number prefix (e.g. 123-cardset-name) )
 
-`<cardset_name>`: Your cardset name as it should appear in the cardset manager
+`<cardset_name>`: Your cardset name as it should appear in the cardset manager.  Note that a cardset name of more than 30 characters will be truncated.
 
 Line 3
 ------
 
-* *X:* The cards width (the card image width)
-* *Y:* The cards height (the card image height)
+* *X:* The cards' width (the card image width)
+* *Y:* The cards' height (the card image height)
 * *D:* The color depth (mostly 8)
 
 Line 4

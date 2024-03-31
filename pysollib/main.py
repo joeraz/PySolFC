@@ -179,11 +179,14 @@ def pysol_init(app, args):
     for d in (
         app.dn.config,
         app.dn.savegames,
+        app.dn.boards,
         os.path.join(app.dn.config, "music"),
         # os.path.join(app.dn.config, "screenshots"),
         os.path.join(app.dn.config, "tiles"),
         os.path.join(app.dn.config, "tiles", "stretch"),
         os.path.join(app.dn.config, "tiles", "save-aspect"),
+        os.path.join(app.dn.config, "tiles", "stretch-4k"),
+        os.path.join(app.dn.config, "tiles", "save-aspect-4k"),
         os.path.join(app.dn.config, "cardsets"),
         os.path.join(app.dn.config, "plugins"),
             ):
@@ -236,7 +239,6 @@ def pysol_init(app, args):
     GAME_DB.setCallback(progressCallback)
     import pysollib.games
     if not opts['french-only']:
-        import pysollib.games.ultra
         import pysollib.games.mahjongg
         import pysollib.games.special
         pysollib.games.special.no_use()
@@ -316,7 +318,7 @@ Please check your %(app)s installation.
     # init cardsets
     app.initCardsets()
     cardset = None
-    c = app.opt.cardset.get(0)
+    c = app.opt.cardset.get(0).get(0)
     if c:
         cardset = app.cardset_manager.getByName(c[0])
         if cardset and c[1]:
@@ -324,6 +326,18 @@ Please check your %(app)s installation.
     if app.cardset_manager.len() == 0:
         fatal_no_cardsets(app)
         return 3
+    missing = app.cardset_manager.identify_missing_cardsets()
+    if len(missing) > 0:
+        error_text = \
+            _('''PySol cannot find cardsets of the following types:''')
+        error_text += "\n\n"
+        for missingtype in missing:
+            error_text += missingtype + "\n"
+        error_text += _('''
+This may make games that use those types of cardsets unplayable. Please
+ensure that your Cardsets package is up to date.''')
+        MfxMessageDialog(top, title=_("Cardset error"), text=error_text,
+                         bitmap="error")
     if not cardset:
         MfxMessageDialog(top, title=_("Cardset error"),
                          text=_('''
@@ -386,12 +400,13 @@ Cardsets package is up to date.
 
     # load cardset
     progress = app.intro.progress
-    if not app.loadCardset(cardset, progress=progress, update=1):
+    if not app.loadCardset(cardset, progress=progress, id=app.opt.last_gameid):
         if not cardset:
             for cardset in app.cardset_manager.getAll():
                 progress.reset()
 
-                if app.loadCardset(cardset, progress=progress, update=1):
+                if app.loadCardset(cardset, progress=progress,
+                                   id=app.opt.last_gameid):
                     break
             else:
                 fatal_no_cardsets(app)
@@ -410,24 +425,9 @@ if TOOLKIT == 'kivy':
     from pysollib.kivy.LApp import LApp
     import logging
 
-    class KivyApp(LApp):
-        def __init__(self, args):
-            super(KivyApp, self).__init__()
-            self.args = args
-
-        def build(self):
-            logging.info("KivyApp: build")
-
-            self.app = app = Application()
-            app.top = self.mainWindow
-            self.startCode = pysol_init(app, self.args)
-
-            logging.info('Main: App Initialised - starting main loop')
-            return self.mainWindow
-
     def main(args=None):
         logging.basicConfig(level=logging.INFO)
-        KivyApp(args).run()
+        LApp(args).run()
 
 else:
 

@@ -56,8 +56,22 @@ class GI:
     GC_DASHAVATARA_GANJIFA = CSI.TYPE_DASHAVATARA_GANJIFA
     GC_TRUMP_ONLY = CSI.TYPE_TRUMP_ONLY
     GC_MATCHING = CSI.TYPE_MATCHING
+    GC_PUZZLE = CSI.TYPE_PUZZLE
+    GC_ISHIDO = CSI.TYPE_ISHIDO
 
-    NUM_CATEGORIES = CSI.TYPE_MATCHING
+    NUM_CATEGORIES = CSI.TYPE_ISHIDO
+
+    # game subcategory
+    GS_NONE = CSI.SUBTYPE_NONE
+    GS_JOKER_DECK = CSI.SUBTYPE_JOKER_DECK
+    GS_3X3 = CSI.SUBTYPE_3X3
+    GS_4X4 = CSI.SUBTYPE_4X4
+    GS_5X5 = CSI.SUBTYPE_5X5
+    GS_6X6 = CSI.SUBTYPE_6X6
+    GS_7X7 = CSI.SUBTYPE_7X7
+    GS_8X8 = CSI.SUBTYPE_8X8
+    GS_9X9 = CSI.SUBTYPE_9X9
+    GS_10X10 = CSI.SUBTYPE_10X10
 
     # game type
     GT_1DECK_TYPE = 0
@@ -77,6 +91,7 @@ class GI:
     GT_HANAFUDA = 13
     GT_HANOI = 35
     GT_HEXADECK = 14
+    GT_ISHIDO = 39
     GT_KLONDIKE = 15
     GT_LIGHTS_OUT = 38
     GT_MAHJONGG = 16
@@ -89,10 +104,12 @@ class GI:
     GT_NUMERICA = 23
     GT_PAIRING_TYPE = 24
     GT_PEGGED = 36
+    GT_PICTURE_GALLERY = 41
     GT_POKER_TYPE = 25
     GT_PUZZLE_TYPE = 26
     GT_RAGLAN = 27
     GT_ROW_TYPE = 28
+    GT_SAMEGAME = 42
     GT_SHISEN_SHO = 34
     GT_SIMPLE_TYPE = 29
     GT_SPIDER = 30
@@ -136,6 +153,7 @@ class GI:
         GT_NAPOLEON:            n_("Napoleon"),
         GT_NUMERICA:            n_("Numerica"),
         GT_PAIRING_TYPE:        n_("Pairing"),
+        GT_PICTURE_GALLERY:     n_("Picture Gallery"),
         GT_RAGLAN:              n_("Raglan"),
         GT_SIMPLE_TYPE:         n_("Simple games"),
         GT_SPIDER:              n_("Spider"),
@@ -153,11 +171,14 @@ class GI:
 
         GT_CRIBBAGE_TYPE:       n_("Cribbage"),
         GT_HEXADECK:            n_("Hex A Deck"),
+        GT_ISHIDO:              n_("Ishido"),
         GT_LIGHTS_OUT:          n_("Lights Out"),
         GT_MATRIX:              n_("Matrix"),
         GT_MEMORY:              n_("Memory"),
         GT_PEGGED:              n_("Pegged"),
         GT_POKER_TYPE:          n_("Poker"),
+        GT_PUZZLE_TYPE:         n_("Puzzle"),
+        GT_SAMEGAME:            n_("Samegame"),
         GT_SHISEN_SHO:          n_("Shisen-Sho"),
         GT_TAROCK:              n_("Tarock"),
         GT_HANOI:               n_("Tower of Hanoi"),
@@ -203,6 +224,8 @@ class GI:
         _gen_select(title=n_("Napoleon type"), game_type=GT_NAPOLEON),
         _gen_select(title=n_("Numerica type"), game_type=GT_NUMERICA),
         _gen_select(title=n_("Pairing type"), game_type=GT_PAIRING_TYPE),
+        _gen_select(title=n_("Picture Gallery type"),
+                    game_type=GT_PICTURE_GALLERY),
         _gen_select(title=n_("Raglan type"), game_type=GT_RAGLAN),
         _gen_select(title=n_("Simple games"), game_type=GT_SIMPLE_TYPE),
         _gen_select(title=n_("Spider type"), game_type=GT_SPIDER),
@@ -269,6 +292,7 @@ class GI:
             lambda gi, gt=GT_CRIBBAGE_TYPE: gi.si.game_type == gt),
         (n_("Hex A Deck type"),
             lambda gi, gt=GT_HEXADECK: gi.si.game_type == gt),
+        (n_("Ishido type"), lambda gi, gt=GT_ISHIDO: gi.si.game_type == gt),
         (n_("Lights Out type"),
             lambda gi, gt=GT_LIGHTS_OUT: gi.si.game_type == gt),
         (n_("Matrix type"), lambda gi, gt=GT_MATRIX: gi.si.game_type == gt),
@@ -277,6 +301,8 @@ class GI:
         (n_("Poker type"), lambda gi, gt=GT_POKER_TYPE: gi.si.game_type == gt),
         (n_("Puzzle type"),
             lambda gi, gt=GT_PUZZLE_TYPE: gi.si.game_type == gt),
+        (n_("Samegame type"),
+            lambda gi, gt=GT_SAMEGAME: gi.si.game_type == gt),
         (n_("Shisen-Sho type"),
             lambda gi, gt=GT_SHISEN_SHO: gi.si.game_type == gt),
         (n_("Tarock type"), lambda gi, gt=GT_TAROCK: gi.si.game_type == gt),
@@ -305,6 +331,13 @@ class GI:
          297: 631,              # Alternation/Alternations
          526: 447,              # Australian/Outback Patience
          640: 566,              # Hypotenuse/Brazilian Patience
+
+         # Lost Mahjongg Layouts
+         5025: 5600, 5032: 5601, 5043: 5602, 5046: 5603, 5051: 5604,
+         5061: 5605, 5062: 5606, 5066: 5607, 5085: 5608, 5093: 5609,
+         5101: 5610, 5213: 5611, 5214: 5612, 5238: 5613, 5244: 5614,
+         5501: 5615, 5502: 5616, 5503: 5617, 5504: 5618, 5505: 5619,
+         5802: 5620, 5804: 5621, 5902: 5622, 5903: 5623
     }
 
     # For games by compatibility, note that missing games may actually
@@ -341,7 +374,7 @@ class GI:
         # Gnome AisleRiot 2.2.0 (we have 65 out of 70 games)
         # Gnome AisleRiot 3.22.7
         #   still missing:
-        #       Hamilton, Labyrinth, Thieves, Treize, Valentine, Wall
+        #       Hamilton, Labyrinth, Treize, Wall
         ("Gnome AisleRiot", (
             1, 2, 8, 9, 11, 12, 13, 19, 24, 27, 29, 31, 33, 34, 35, 36,
             38, 40, 41, 42, 43, 45, 48, 58, 65, 67, 89, 91, 92, 93, 94,
@@ -349,7 +382,7 @@ class GI:
             146, 147, 148, 200, 201, 206, 224, 225, 229, 230, 233, 257,
             258, 277, 280, 281, 282, 283, 284, 334, 384, 479, 495, 551,
             552, 553, 572, 593, 674, 700, 715, 716, 737, 772, 810, 819,
-            824, 829, 859, 874, 22231,
+            824, 829, 859, 874, 906, 934, 22231,
         )),
 
         # Hoyle Card Games
@@ -405,36 +438,35 @@ class GI:
         #
         # still missing:
         #       Ace of Hearts, Agnes Three, Antares, Avenue, Baker's Fan,
-        #       Baker's Spider, Bedeviled, Binding, Black Holes,
-        #       Black Spider, California, Cascade, Club, Color Cell,
-        #       Cornelius, Desert Fox, Deuces and Queens, Double Antares,
-        #       Double Antarctica, Double Arctica, Double Baker's Spider,
-        #       Double Cascade, Double Line 8, Double Majesty,
+        #       Baker's Spider, Bedeviled, Binding, Black Spider,
+        #       California, Color Cell, Cornelius, Desert Fox,
+        #       Double Antares, Double Antarctica, Double Arctica,
+        #       Double Baker's Spider, Double Cascade, Double Majesty,
         #       Double Spidercells, Doublet Cell 5, Doubt, Dream Fan,
-        #       Dumfries Cell, Falcon Wing, Fan Nine, Fanny 6, Four By Ten,
+        #       Dumfries Cell, Falcon Wing, Fan Nine, Four By Ten,
         #       FreeCell AK, Gaps Alter, Gaps Diff, George V,
         #       Grandmother's Clock, In a Frame, Inverted FreeCell, Kings,
         #       Klondike FreeCell, La Cabane, La Double Entente,
         #       Little Gazette, Magic FreeCell, Mini Gaps, Montreal,
         #       Napoleon at Iena, Napoleon at Waterloo, Napoleon's Guards,
-        #       Nationale, Oasis, Opera, Ordered Suits, Osmotic FreeCell,
-        #       Pair FreeCell, Pairs 2, Petal, Reserved Thirteens,
-        #       Sea Spider, Sept Piles 0, Short Solitaire,
-        #       Simple Alternations, Smart Osmosis, Step By Step, Strategy 7,
-        #       Stripped FreeCell, Tarantula, Triple Dispute, Trusty Twenty,
-        #       Two Ways 3, Up Or Down, Versailles, Vertical FreeCell,
-        #       Wasp Baby, Yukon FreeCell
+        #       Oasis, Opera, Ordered Suits, Osmotic FreeCell, Pair FreeCell,
+        #       Pairs 2, Reserved Thirteens, Sea Spider, Sept Piles 0,
+        #       Short Solitaire, Simple Alternations, Smart Osmosis,
+        #       Step By Step, Stripped FreeCell, Tarantula, Triple Dispute,
+        #       Trusty Twenty, Two Ways 3, Up Or Down, Versailles,
+        #       Vertical FreeCell, Wasp Baby, Yukon FreeCell
         ("XM Solitaire", (
             2, 8, 9, 13, 15, 18, 19, 20, 29, 30, 31, 34, 36, 38, 41, 42,
             45, 46, 50, 53, 54, 56, 57, 64, 77, 78, 86, 96, 97, 98, 105,
-            110, 112, 124, 145, 220, 222, 223, 224, 228, 231, 233, 234,
-            235, 236, 257, 258, 264, 265, 267, 270, 271, 290, 291, 292,
-            303, 309, 314, 318, 320, 322, 324, 325, 336, 338, 341, 363,
-            364, 372, 376, 383, 384, 385, 386, 390, 391, 393, 398, 405,
-            415, 416, 425, 451, 453, 461, 464, 466, 467, 476, 480, 484,
-            511, 512, 513, 516, 561, 610, 625, 629, 631, 638, 641, 647,
-            650, 655, 678, 684, 734, 751, 784, 825, 829, 834, 837, 844,
-            862, 867, 880, 889, 901,
+            110, 112, 124, 145, 173, 220, 222, 223, 224, 228, 231, 233,
+            234, 235, 236, 257, 258, 264, 265, 267, 270, 271, 290, 291,
+            292, 293, 303, 309, 314, 318, 320, 322, 324, 325, 336, 338,
+            341, 363, 364, 372, 376, 383, 384, 385, 386, 390, 391, 393,
+            398, 405, 415, 416, 425, 451, 453, 461, 464, 466, 467, 476,
+            480, 484, 511, 512, 513, 516, 561, 610, 613, 625, 629, 631,
+            638, 641, 647, 650, 655, 678, 684, 702, 734, 751, 784, 825,
+            829, 834, 837, 844, 862, 867, 880, 889, 901, 911, 933, 941,
+            947, 953
         )),
 
         # xpat2 1.06 (we have 14 out of 16 games)
@@ -447,8 +479,9 @@ class GI:
     GAMES_BY_INVENTORS = (
         ("Paul Alfille", (8,)),
         ("C.L. Baker", (45,)),
+        ("Mark S. Ball", (909,)),
         ("David Bernazzani", (314, 830,)),
-        ("Gordon Bower", (763, 783, 852,)),
+        ("Gordon Bower", (763, 783, 852, 959,)),
         ("Art Cabral", (9,)),
         ("Richard A. Canfield", (105, 835,)),
         ("Lillian Davies and Christa Baran", (605,)),
@@ -466,6 +499,7 @@ class GI:
                                                      845)),
         ("Toby Ord", (788,)),
         ("David Parlett", (64, 98, 294, 338, 654, 796, 812, 844)),
+        ("Joe R.", (938, 960,)),
         ("Randy Rasa", (187, 188, 190, 191, 192,)),
         ("Gregg Seelhoff", (347,)),
         ("Adam Selene", (366,)),
@@ -474,11 +508,15 @@ class GI:
         ("John Stoneham", (201,)),
         ("Bryan Stout", (655,)),
         ("Bill Taylor", (349,)),
+        ("Bram Tebbutt", (924,)),
+        ("Katharine Turner", (931,)),
         ("Peter Voke", (876,)),
         ("Thomas Warfield", (189, 264, 300, 320, 336, 337, 359,
                              415, 427, 458, 495, 496, 497, 508,
-                             800, 814, 820, 825, 889,)),
+                             800, 814, 820, 825, 889, 911, 926,
+                             941)),
         ("Mary Whitmore Jones", (421, 624,)),
+        ("Jan Wolter", (917, 939, 946,)),
         )
 
     GAMES_BY_PYSOL_VERSION = (
@@ -560,7 +598,12 @@ class GI:
         ('fc-2.15', tuple(range(827, 855)) + tuple(range(22400, 22407))),
         ('fc-2.20', tuple(range(855, 897))),
         ('fc-2.21', tuple(range(897, 900)) + tuple(range(11014, 11017)) +
-         tuple(range(13160, 13163)) + (16682,))
+         tuple(range(13160, 13163)) + (16682,)),
+        ('fc-3.0', tuple(range(906, 961)) + tuple(range(5415, 5419)) +
+         tuple(range(5600, 5624)) + tuple(range(11017, 11020)) +
+         tuple(range(13168, 13170)) + tuple(range(18000, 18005)) +
+         tuple(range(19000, 19012)) + tuple(range(22303, 22311)) +
+         tuple(range(22353, 22361))),
     )
 
     # deprecated - the correct way is to or a GI.GT_XXX flag
@@ -582,12 +625,15 @@ class GI:
         14,    # Grounds for a Divorce
         19,    # Yukon
         31,    # Baker's Dozen
+        34,    # Beleaguered Castle
         36,    # Golf
         38,    # Pyramid
+        53,    # Montana
         105,   # Canfield
         158,   # Imperial Trumps
         279,   # Kings
-        903,   # Ace Up
+        901,   # La Belle Lucie
+        903,   # Aces Up
         5034,  # Mahjongg Flying Dragon
         5401,  # Mahjongg Taipei
         12345,  # Oonsoo
@@ -608,7 +654,7 @@ class GameInfo(Struct):
                  game_type, decks, redeals,
                  skill_level=None,
                  # keyword arguments:
-                 si={}, category=0,
+                 si={}, category=0, subcategory=GI.GS_NONE,
                  short_name=None, altnames=(),
                  suits=list(range(4)), ranks=list(range(13)), trumps=(),
                  rules_filename=None,
@@ -692,7 +738,8 @@ class GameInfo(Struct):
                         name=name, short_name=short_name,
                         altnames=tuple(altnames), en_name=en_name,
                         decks=decks, redeals=redeals, ncards=ncards,
-                        category=category, skill_level=skill_level,
+                        category=category, subcategory=subcategory,
+                        skill_level=skill_level,
                         suits=tuple(suits), ranks=tuple(ranks),
                         trumps=tuple(trumps),
                         si=gi_si, rules_filename=rules_filename)

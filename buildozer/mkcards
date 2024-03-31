@@ -1,28 +1,52 @@
 #!/bin/bash
-set -eux
+#set -eux
 
-cardsets_dir=PySolFC-Cardsets--Minimal-2.2.0
-cardsets_file=${cardsets_dir}.tar.xz
+rm -rf cardsets
 
-echo '### prepare cardsets'
+if [ 1 ]; then
+	cardsets_dir=PySolFC-Cardsets
 
-if [ ! -f ${cardsets_file} ]; then
-  echo '### downloading cardsets'
-  wget https://netix.dl.sourceforge.net/project/pysolfc/PySolFC-Cardsets/minimal/${cardsets_file}
+	if [ ! -d ${cardsets_dir} ]; then
+  	echo '### downloading cardset repo'
+
+		mkdir ${cardsets_dir}
+		pushd ${cardsets_dir}
+
+		mkdir repo
+		pushd repo
+		git init
+		git remote add -t master origin https://github.com/shlomif/PySolFC-Cardsets.git
+		git fetch --depth 1 origin 9b63a583dc3e770fa9bf8f2378c37a064aa4969c
+		git checkout -q FETCH_HEAD
+		popd
+
+  	echo '### choose a minimal set'
+
+		for d in $(cat ../minimal.txt)
+		do
+			mv repo/${d} .
+		done
+		rm repo -rf
+
+ 		echo '### processing cardsets'
+
+		../../scripts/cardconv gif png
+		for i in cardset-*-png; do
+			rm -rf `basename $i -png`
+		done
+		popd
+	fi
+    # cp -a ${cardsets_dir} ${cardsets_dir}-orig
+
+	ln -s ${cardsets_dir} cardsets
 fi
 
-if [ ! -d ${cardsets_dir} ]; then
-  echo '### extracting cardsets'
-  tar -xf ${cardsets_file}
-fi
+pushd cardsets
+    echo '### resize big cardsets'
 
-echo '### processing cardsets'
-(
-  cd ${cardsets_dir}
-  ../../scripts/cardconv gif png
-  for i in cardset-*-png; do
-    rm -rf `basename $i -png`
-  done
-)
+	for i in cardset-*; do
+		../resizecards $i
+	done
+popd
 
 echo '### end cardsets'

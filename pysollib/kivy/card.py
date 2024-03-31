@@ -22,25 +22,20 @@
 # ---------------------------------------------------------------------------#
 
 from pysollib.acard import AbstractCard
-from pysollib.kivy.LApp import LImage
 from pysollib.kivy.LApp import LImageItem
-from pysollib.kivy.tkcanvas import MfxCanvasGroup, MfxCanvasImage
+# from pysollib.kivy.LApp import LAnimationManager
+from pysollib.kivy.LImage import LImage
+from pysollib.kivy.tkcanvas import MfxCanvasImage
 
 
 class _HideableCard(AbstractCard):
     def hide(self, stack):
         if stack is self.hide_stack:
             return
-        self.item.config(state="hidden")
-        self.hide_stack = stack
-        # print "hide:", self.id, self.item.coords()
 
     def unhide(self):
         if self.hide_stack is None:
             return 0
-        # print "unhide:", self.id, self.item.coords()
-        self.item.config(state="normal")
-        self.hide_stack = None
         return 1
 
     # moveBy aus Basisklasse überschreiben.
@@ -70,198 +65,90 @@ class _HideableCard(AbstractCard):
 class _OneImageCard(_HideableCard):
     def __init__(self, id, deck, suit, rank, game, x=0, y=0):
         _HideableCard.__init__(self, id, deck, suit, rank, game, x=x, y=y)
+        self.twoImage = True
 
         fimage = game.getCardFaceImage(deck, suit, rank)
         bimage = game.getCardBackImage(deck, suit, rank)
 
         self._face_image = LImage(texture=fimage.texture)
         self._back_image = LImage(texture=bimage.texture)
-        # self._face_image = Image(source=fimage.source)
-        # self._back_image = Image(source=bimage.source)
-        self._shade_image = game.getCardShadeImage()
 
         aimage = LImageItem(
             pos=(x, -y), size=self._face_image.size, game=game, card=self)
-        aimage.add_widget(self._back_image)
-        self._active_image = aimage
+        if self.twoImage:
+            from kivy.uix.relativelayout import RelativeLayout
 
+            imgcontainer = RelativeLayout()
+            imgcontainer.add_widget(self._back_image)
+            imgcontainer.add_widget(self._face_image)
+            aimage.add_widget(imgcontainer)
+            self._face_image.opacity = 0
+        else:
+            aimage.add_widget(self._back_image)
+
+        self._active_image = aimage
         self.item = MfxCanvasImage(
             game.canvas, self.x, self.y, image=aimage, anchor="nw")
-        self.shade_item = None
 
         # print ('card: face = %s xy=%s/%s' % (self._face_image.source, x, y))
         # print ('card: back = %s xy=%s/%s' % (self._back_image.source, x, y))
         # y = self.yy
 
     def _setImage(self, image):
-        self._active_image.clear_widgets()
-        self._active_image.add_widget(image)
+        if self.twoImage:
+            from kivy.animation import Animation
+            z = 0
+            t = 'in_quad'
+            if image == self._face_image:
+                z = 1
+            anim = Animation(opacity=z, t=t, d=0.35)
+            anim.start(self._face_image)
+        else:
+            self._active_image.clear_widgets()
+            self._active_image.add_widget(image)
 
     def showFace(self, unhide=1):
         # print ('card: showFace = %s' % self._face_image.source)
-        if not self.face_up:
+        def flip():
             self._setImage(image=self._face_image)
             self.tkraise(unhide)
             self.face_up = 1
 
+        if not self.face_up:
+            flip()
+
     def showBack(self, unhide=1):
         # print ('card: showBack = %s' % self._back_image.source)
-        if self.face_up:
+        def flip():
             self._setImage(image=self._back_image)
             self.tkraise(unhide)
             self.face_up = 0
 
+        if self.face_up:
+            flip()
+
     def updateCardBackground(self, image):
         print('card: updateCardBackground = %s' % image.source)
-        self._back_image = LImage(texture=image.texture)
+        self._back_image.texture = image.texture
         if not self.face_up:
             self._setImage(image=self._back_image)
 
+    '''
     def setSelected(self, s, group=None):
         print('card: setselected(%s, %s)' % (s, group))
         # wird nicht bedient.
+        # NOTE:
+        # This is one of the zombie methods (nowhere impelemeted: close,
+        # unclose, and somewhat dummy implemented ones: hide, unhide)
+        # of the base class AbstractCard.
+        # (-> some clean ups for clarity would be nice)
         pass
+    '''
 
     def animatedMove(self, dx, dy, duration=0.2):
         self.item.animatedMove(dx, dy, duration)
 
-# ************************************************************************
-# * New idea since 3.00
-# *
-# * Hide a card by configuring the canvas image to None.
-# ************************************************************************
 
-
-class _OneImageCardWithHideByConfig(_OneImageCard):
-    def hide(self, stack):
-        if stack is self.hide_stack:
-            return
-        self._setImage(image=None)
-        self.hide_stack = stack
-
-    def unhide(self):
-        if self.hide_stack is None:
-            return 0
-        if self.face_up:
-            self._setImage(image=self._face_image)
-        else:
-            self._setImage(image=self._back_image)
-        self.hide_stack = None
-        return 1
-
-    #
-    # much like in _OneImageCard
-    #
-
-    def showFace(self, unhide=1):
-        if not self.face_up:
-            if unhide:
-                self._setImage(image=self._face_image)
-            self.item.tkraise()
-            self.face_up = 1
-
-    def showBack(self, unhide=1):
-        if self.face_up:
-            if unhide:
-                self._setImage(image=self._back_image)
-            self.item.tkraise()
-            self.face_up = 0
-
-    def updateCardBackground(self, image):
-        self._back_image = image
-        if not self.face_up and not self.hide_stack:
-            self._setImage(image=image)
-
-
-# ************************************************************************
-# * Old implemetation prior to 2.10
-# *
-# * The card consists of two CanvasImages. To show the card face up,
-# * the face item is placed in front of the back. To show it face
-# * down, this is reversed.
-# ************************************************************************
-
-
-class _TwoImageCard(_HideableCard):
-    # Private instance variables:
-    #   __face, __back -- the canvas items making up the card
-    def __init__(self, id, deck, suit, rank, game, x=0, y=0):
-        _HideableCard.__init__(self, id, deck, suit, rank, game, x=x, y=y)
-        self.item = MfxCanvasGroup(game.canvas)
-        self.__face = MfxCanvasImage(
-            game.canvas, self.x, self.y,
-            image=game.getCardFaceImage(deck, suit, rank), anchor="nw")
-        self.__back = MfxCanvasImage(
-            game.canvas, self.x, self.y,
-            image=game.getCardBackImage(deck, suit, rank), anchor="nw")
-        self.__face.addtag(self.item)
-        self.__back.addtag(self.item)
-
-    def showFace(self, unhide=1):
-        if not self.face_up:
-            self.__face.tkraise()
-            self.tkraise(unhide)
-            self.face_up = 1
-
-    def showBack(self, unhide=1):
-        if self.face_up:
-            self.__back.tkraise()
-            self.tkraise(unhide)
-            self.face_up = 0
-
-    def updateCardBackground(self, image):
-        self.__back.config(image=image)
-
-
-# ************************************************************************
-# * New idea since 2.90
-# *
-# * The card consists of two CanvasImages. Instead of raising
-# * one image above the other we move the inactive image out
-# * of the visible canvas.
-# ************************************************************************
-
-
-class _TwoImageCardWithHideItem(_HideableCard):
-    # Private instance variables:
-    #   __face, __back -- the canvas items making up the card
-    def __init__(self, id, deck, suit, rank, game, x=0, y=0):
-        _HideableCard.__init__(self, id, deck, suit, rank, game, x=x, y=y)
-        self.item = MfxCanvasGroup(game.canvas)
-        self.__face = MfxCanvasImage(
-            game.canvas, self.x, self.y + 11000,
-            image=game.getCardFaceImage(deck, suit, rank), anchor="nw")
-        self.__back = MfxCanvasImage(
-            game.canvas, self.x, self.y,
-            image=game.getCardBackImage(deck, suit, rank), anchor="nw")
-        self.__face.addtag(self.item)
-        self.__back.addtag(self.item)
-
-    def showFace(self, unhide=1):
-        if not self.face_up:
-            self.__back.move(0, 10000)
-            # self.__face.tkraise()
-            self.__face.move(0, -11000)
-            self.tkraise(unhide)
-            self.face_up = 1
-
-    def showBack(self, unhide=1):
-        if self.face_up:
-            self.__face.move(0, 11000)
-            # self.__back.tkraise()
-            self.__back.move(0, -10000)
-            self.tkraise(unhide)
-            self.face_up = 0
-
-    def updateCardBackground(self, image):
-        self.__back.config(image=image)
-
-
-# choose the implementation
-# Card = _TwoImageCardWithHideItem
-# Card = _TwoImageCard
-# Card = _OneImageCardWithHideByConfig
 Card = _OneImageCard
-
 
 '''end of file'''

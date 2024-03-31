@@ -549,21 +549,28 @@ class Hypotenuse(Gypsy):
     Layout_Method = staticmethod(Layout.klondikeLayout)
     RowStack_Class = KingAC_RowStack
 
-    def createGame(self):
-        Gypsy.createGame(self, rows=10, playcards=24)
+    def createGame(self, rows=10, playcards=24):
+        Gypsy.createGame(self, rows=rows, playcards=playcards)
 
-    def startGame(self, flip=0, reverse=1):
-        for i in range(1, 10):
-            self.s.talon.dealRow(rows=self.s.rows[:i], flip=0, frames=0)
+    def startGame(self, flip=0, rows=10):
+        for i in range(1, rows):
+            self.s.talon.dealRow(rows=self.s.rows[i:], flip=flip, frames=0)
         self._startAndDealRow()
 
 
 class EternalTriangle(Hypotenuse):
 
-    def startGame(self, flip=0, reverse=1):
-        for i in range(1, 10):
-            self.s.talon.dealRow(rows=self.s.rows[i:], frames=0)
-        self._startAndDealRow()
+    def startGame(self):
+        Hypotenuse.startGame(self, flip=1)
+
+
+class SmallTriangle(Hypotenuse):
+
+    def createGame(self):
+        Hypotenuse.createGame(self, rows=7, playcards=20)
+
+    def startGame(self):
+        Hypotenuse.startGame(self, rows=7)
 
 
 class RightTriangle_Talon(OpenStack, DealRowTalonStack):
@@ -1005,7 +1012,7 @@ registerGame(GameInfo(3, Irmgard, "Irmgard",
 registerGame(GameInfo(119, DieKoenigsbergerin, "Die Koenigsbergerin",
                       GI.GT_GYPSY, 2, 0, GI.SL_MOSTLY_SKILL))
 registerGame(GameInfo(174, DieRussische, "Russian Patience",
-                      GI.GT_2DECK_TYPE | GI.GT_OPEN | GI.GT_STRIPPED,
+                      GI.GT_KLONDIKE | GI.GT_OPEN | GI.GT_STRIPPED,
                       2, 0, GI.SL_MOSTLY_SKILL,
                       ranks=(0, 6, 7, 8, 9, 10, 11, 12),
                       altnames=("Die Russische",)))
@@ -1073,8 +1080,11 @@ registerGame(GameInfo(721, Thirty, "Thirty",
 registerGame(GameInfo(725, TopsyTurvyQueens, "Topsy-Turvy Queens",
                       GI.GT_2DECK_TYPE, 2, 2, GI.SL_BALANCED))
 registerGame(GameInfo(792, KingsSecrets, "King's Secrets",
-                      GI.GT_2DECK_TYPE, 2, 2, GI.SL_BALANCED))
+                      GI.GT_2DECK_TYPE, 2, 2, GI.SL_BALANCED,
+                      altnames=('Royal Secrets',)))
 registerGame(GameInfo(842, SwissPatience, "Swiss Patience",
                       GI.GT_GYPSY, 1, 0, GI.SL_BALANCED))
 registerGame(GameInfo(890, YeastDough, "Yeast Dough",
                       GI.GT_GYPSY, 2, 0, GI.SL_MOSTLY_SKILL))
+registerGame(GameInfo(912, SmallTriangle, "Small Triangle",
+                      GI.GT_GYPSY, 1, 0, GI.SL_BALANCED))

@@ -28,6 +28,7 @@ from pysollib.kivy.LApp import LScrollView
 from pysollib.kivy.LApp import LTopLevel
 from pysollib.kivy.LApp import LTreeNode
 from pysollib.kivy.LApp import LTreeRoot
+from pysollib.kivy.LApp import get_menu_size_hint
 from pysollib.kivy.selecttree import SelectDialogTreeData
 from pysollib.kivy.selecttree import SelectDialogTreeLeaf, SelectDialogTreeNode
 from pysollib.mygettext import _
@@ -93,9 +94,12 @@ class SelectGameData(SelectDialogTreeData):
                      ):
             gg = []
             for name, select_func in data:
-                if name is None or not filter(select_func, self.all_games_gi):
+                filtered = filter(select_func, self.all_games_gi)
+                if name is None or not filtered or len(list(filtered)) == 0:
                     continue
-                gg.append(SelectGameNode(None, _(name), select_func))
+                node = SelectGameNode(None, _(name), select_func)
+                if node:
+                    gg.append(node)
             g.append(gg)
 
         def select_mahjongg_game(gi): return gi.si.game_type == GI.GT_MAHJONGG
@@ -251,7 +255,7 @@ class SelectGameData(SelectDialogTreeData):
                                lambda gi: gi.si.redeals == 3),
                     SelectGameNode(None, _("Unlimited redeals"),
                                lambda gi: gi.si.redeals == -1),
-                    SelectGameNode(None, "Variable redeals",
+                    SelectGameNode(None, _("Variable redeals"),
                                lambda gi: gi.si.redeals == -2),
                     SelectGameNode(None, _("Other number of redeals"),
                                lambda gi: gi.si.redeals not in
@@ -270,6 +274,9 @@ class SelectGameData(SelectDialogTreeData):
                                lambda gi: gi.si.game_flags & GI.GT_STRIPPED),
                 SelectGameNode(None, _("Games with Separate Decks"),
                            lambda gi: gi.si.game_flags & GI.GT_SEPARATE_DECKS),
+                SelectGameNode(None, _("Games with Jokers"),
+                               lambda gi: gi.category == GI.GC_FRENCH and
+                               gi.subcategory == GI.GS_JOKER_DECK),
                 SelectGameNode(None, _("Open Games (all cards visible)"),
                                lambda gi: gi.si.game_flags & GI.GT_OPEN),
                 SelectGameNode(None, _("Relaxed Variants"),
@@ -382,7 +389,6 @@ class SelectGameDialog(object):
     def onClick(self, event):
         print('LTopLevel: onClick')
         SelectGameDialog.SingleInstance.parent.popWork('SelectGame')
-        SelectGameDialog.SingleInstance.running = False
 
     def selectCmd(self, gameid):
         self.app.menubar._mSelectGame(gameid)
@@ -394,30 +400,30 @@ class SelectGameDialog(object):
         self.app = app
         self.gameid = gameid
         self.random = None
-        self.running = False
         self.window = None
 
         # bestehenden Dialog rezyklieren.
 
         si = SelectGameDialog.SingleInstance
-        # if (si and si.running): return
-        if (si and si.running):
-            si.parent.popWork('SelectGame')
-            si.running = False
+        if si and si.parent.workStack.peek('SelectGame') is not None:
+            parent.popWork('SelectGame')
             return
         if (si):
             si.parent.pushWork('SelectGame', si.window)
-            si.running = True
             return
 
         # neuen Dialog aufbauen.
 
-        window = LTopLevel(parent, title)
-        window.titleline.bind(on_press=self.onClick)
-        self.parent.pushWork('SelectGame', window)
-        self.window = window
-        self.running = True
+        self.window = window = LTopLevel(parent, title)
+        self.window.titleline.bind(on_press=self.onClick)
+
+        self.parent.pushWork('SelectGame', self.window)
         SelectGameDialog.SingleInstance = self
+
+        def updrule(obj, val):
+            self.window.size_hint = get_menu_size_hint()
+        updrule(0, 0)
+        self.parent.bind(size=updrule)
 
         # Asynchron laden.
 
@@ -477,7 +483,7 @@ class SelectGameDialog(object):
             tree,
             self.app.canvas,
             root_options=dict(text='Tree One'))
-        tv.size_hint = 1, None
+        tv.size_hint = (1, None)
         tv.hide_root = True
         tv.load_func = loaderCB
         tv.bind(minimum_height=tv.setter('height'))

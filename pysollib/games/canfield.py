@@ -653,6 +653,17 @@ class TripleCanfield(Canfield):
 
 
 # ************************************************************************
+# * Quadruple Canfield
+# ************************************************************************
+
+class QuadrupleCanfield(Canfield):
+    INITIAL_RESERVE_CARDS = 39
+
+    def createGame(self):
+        Canfield.createGame(self, rows=8)
+
+
+# ************************************************************************
 # * Acme
 # ************************************************************************
 
@@ -722,7 +733,7 @@ class Duke(Game):
         for i in range(4):
             s.foundations.append(self.Foundation_Class(x, y, self, suit=i))
             x += lay.XS
-        x0, y0, w = lay.XM, lay.YM+lay.YS+2*lay.TEXT_HEIGHT,\
+        x0, y0, w = lay.XM, lay.YM+lay.YS+2*lay.TEXT_HEIGHT, \
             lay.XS+2*lay.XOFFSET
         for i, j in ((0, 0), (0, 1), (1, 0), (1, 1)):
             x, y = x0+i*w, y0+j*lay.YS
@@ -851,6 +862,71 @@ class Skippy(Canfield):
         self._startDealNumRowsAndDealRowAndCards(3)
 
     shallHighlightMatch = Game._shallHighlightMatch_RKW
+
+
+# ************************************************************************
+# * Club
+# ************************************************************************
+
+class Club_RowStack(AC_RowStack):
+    def acceptsCards(self, from_stack, cards):
+        if self.id > 2 and from_stack.id < 3:
+            return False
+        return AC_RowStack.acceptsCards(self, from_stack, cards)
+
+
+class Club(Game):
+
+    def createGame(self):
+        # create layout
+        lay, s = Layout(self), self.s
+
+        # set window
+        playcards = 8
+        w0 = lay.XS+playcards*lay.XOFFSET
+        w = lay.XM+lay.XS//2+max(10*lay.XS, lay.XS+4*w0)
+        h = lay.YM+4*lay.YS+lay.TEXT_HEIGHT
+        self.setSize(w, h)
+
+        # create stacks
+        y = lay.YM + lay.YS + lay.TEXT_HEIGHT
+        x = lay.XM + lay.XS + lay.XS // 2 + (w0 // 2)
+        for j in range(3):
+            stack = Club_RowStack(x, y, self, max_move=1)
+            s.rows.append(stack)
+            stack.CARD_XOFFSET, stack.CARD_YOFFSET = lay.XOFFSET, 0
+            x += w0
+        y += lay.YS
+        for i in range(2):
+            x = lay.XM + lay.XS + lay.XS // 2
+            for j in range(4):
+                stack = Club_RowStack(x, y, self, max_move=1)
+                s.rows.append(stack)
+                stack.CARD_XOFFSET, stack.CARD_YOFFSET = lay.XOFFSET, 0
+                x += w0
+            y += lay.YS
+
+        x, y = lay.XM, lay.YM
+        s.talon = WasteTalonStack(x, y, self, max_rounds=1)
+        lay.createText(s.talon, 's')
+        x += lay.XS
+        s.waste = WasteStack(x, y, self)
+        lay.createText(s.waste, 's')
+        x = self.width - 8*lay.XS
+        for i in range(8):
+            s.foundations.append(SS_FoundationStack(x, y, self,
+                                                    suit=i % 4, mod=13))
+            x += lay.XS
+
+        # define stack-groups
+        lay.defaultStackGroups()
+
+    def startGame(self):
+        self.startDealSample()
+        self.s.talon.dealRow(rows=self.s.rows, flip=0, frames=0)
+        self.s.talon.dealRow(rows=self.s.rows, flip=1, frames=0)
+        self.s.talon.dealRow()
+        self.s.talon.dealCards()
 
 
 # ************************************************************************
@@ -1041,3 +1117,7 @@ registerGame(GameInfo(835, CasinoCanfield, "Casino Canfield",
                       altnames="Reno"))
 registerGame(GameInfo(896, ThePlot, "The Plot",
                       GI.GT_CANFIELD, 2, 0, GI.SL_BALANCED))
+registerGame(GameInfo(922, QuadrupleCanfield, "Quadruple Canfield",
+                      GI.GT_CANFIELD, 4, -1, GI.SL_BALANCED))
+registerGame(GameInfo(947, Club, "Club",
+                      GI.GT_FAN_TYPE, 2, 0, GI.SL_BALANCED))

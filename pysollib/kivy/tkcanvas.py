@@ -28,19 +28,16 @@ import logging
 import math
 
 from kivy.clock import Clock
-from kivy.graphics import Color
-from kivy.graphics import Rectangle
+from kivy.properties import StringProperty
 from kivy.uix.anchorlayout import AnchorLayout
-from kivy.uix.widget import Widget
 
 from pysollib.kivy.LApp import LAnimationManager
 from pysollib.kivy.LApp import LColorToKivy
-from pysollib.kivy.LApp import LImage
-from pysollib.kivy.LApp import LImage as Image
 from pysollib.kivy.LApp import LImageItem
 from pysollib.kivy.LApp import LLine
 from pysollib.kivy.LApp import LRectangle
 from pysollib.kivy.LApp import LText
+from pysollib.kivy.LImage import LImage
 
 # ************************************************************************
 # * canvas items helpers
@@ -129,14 +126,103 @@ def subAnchorOffset(pos, anchor, size):
 
 class MfxCanvasGroup():
     def __init__(self, canvas, tag=None):
-        # logging.info('MfxCanvasGroup: __init__() %s - %s' %
-        #  (str(canvas), str(tag)))
+        # print(self, '__init__(', canvas, tag, ')')
+
         self.canvas = canvas
         self.bindings = {}
         self.stack = None
 
-    def tkraise(self):
-        pass
+    def __str__(self):
+        return f'<MfxCanvasGroup @ {hex(id(self))}>'
+
+    def _imglist(self, group):
+        ilst = []
+        for w in group.canvas.children:
+            if isinstance(w, LImageItem):
+                if w.group == group:
+                    ilst.append(w)
+        return ilst
+
+    def makeDeferredRaise(self, pos):
+        def animCallback():
+            self.tkraise(position=pos)
+        return animCallback
+
+    def tkraise(self, position=None):
+        # print(self, ' tkraise(', position, ')')
+        # Mainly used by Mahjongg game after a move.
+        # import inspect
+        # print('stack[1] = ',inspect.stack()[1].frame)
+        # print('stack[2] = ',inspect.stack()[2].frame)
+
+        if LAnimationManager.checkRunning():
+            LAnimationManager.addEndCallback(
+                self.makeDeferredRaise(position))
+            return
+
+        imgs = self._imglist(self)
+        if len(imgs) == 0:
+            return
+
+        if position is not None:
+            # add all images above specified position
+            pimgs = self._imglist(position)
+            if len(pimgs) == 0:
+                return
+
+            self.canvas.clear_widgets(imgs)
+            k = self.canvas.children.index(pimgs[-1])
+            for i in imgs:
+                self.canvas.add_widget(i, index=k)
+                k += 1
+        else:
+            # add all images to top
+            self.canvas.clear_widgets(imgs)
+            k = 0
+            for i in imgs:
+                self.canvas.add_widget(i, index=k)
+                k += 1
+
+    def makeDeferredLower(self, pos):
+        def animCallback():
+            self.lower(position=pos)
+        return animCallback
+
+    def lower(self, position=None):
+        # print(self, ' lower(', position, ')')
+        # import inspect
+        # print('stack[1] = ',inspect.stack()[1].frame)
+        # print('stack[2] = ',inspect.stack()[2].frame)
+
+        if LAnimationManager.checkRunning():
+            LAnimationManager.addEndCallback(
+                self.makeDeferredLower(position))
+            return
+
+        imgs = self._imglist(self)
+        if len(imgs) == 0:
+            return
+
+        if position is not None:
+            # add below specified position
+            pimgs = self._imglist(position)
+            if len(pimgs) == 0:
+                return
+
+            self.canvas.clear_widgets(imgs)
+            k = self.canvas.children.index(pimgs[0])  # the spec. item
+            k += 1  # insert before
+            for i in imgs:
+                self.canvas.add_widget(i, index=k)
+                k += 1
+        else:
+            # add all to bottom
+            self.canvas.clear_widgets(imgs)
+            k = len(self.canvas.children)-1  # the last item
+            k += 1  # insert before
+            for i in imgs:
+                self.canvas.add_widget(i, index=k)
+                k += 1
 
     def addtag(self, tag, option="withtag"):
         # logging.info('MfxCanvasGroup: addtag(%s, %s)' % (tag, option))
@@ -155,10 +241,8 @@ class MfxCanvasGroup():
 
 
 def cardmagnif(canvas, size):
-
     def pyth(s):
         return math.sqrt(s[0]*s[0]+s[1]*s[1])
-
     cs = canvas.wmain.app.images.getSize()
     csl = pyth(cs)
     sl = pyth(size)
@@ -170,6 +254,7 @@ class MfxCanvasImage(object):
 
         # print ('MfxCanvasImage: %s | %s | %s' % (canvas, args, kwargs))
 
+        self.group = None
         group = None
         if 'group' in kwargs:
             group = kwargs['group']
@@ -184,9 +269,20 @@ class MfxCanvasImage(object):
         if 'hint' in kwargs:
             self.hint = kwargs['hint']
 
+        # print ('MfxCanvasImage: group = %s ' % (group))
+        # wir kommen üblicherweise aus Card.__init__(). und da ist keine
+        # group (group wird über addtag gesetzt, sobald das image
+        # in einem stack ist.)
+
         super(MfxCanvasImage, self).__init__()
         self.canvas = canvas
-        self.animation = None
+        self.redeal = False
+
+        # animation mode support:
+        self.animation = 0
+        self.duration = 0.2
+        self.deferred_raises = []
+        self.animations = []
 
         ed = kwargs['image']
         size = ed.size
@@ -196,12 +292,15 @@ class MfxCanvasImage(object):
         else:
             image = LImage(texture=ed.texture)
             if self.hint == "redeal_image":
-                cm = cardmagnif(canvas, size)/3.0
+                cm = cardmagnif(canvas, size)/1.9
                 image.size = [cm*ed.getWidth(), cm*ed.getHeight()]
+                self.redeal = True
+                aimage = LImageItem(
+                    size=ed.size, group=group, image_type=self.hint)
             else:
                 image.size = [ed.getWidth(), ed.getHeight()]
+                aimage = LImageItem(size=ed.size, group=group)
 
-            aimage = LImageItem(size=ed.size, group=group)
             aimage.add_widget(image)
             aimage.size = image.size
             size = image.size
@@ -220,30 +319,55 @@ class MfxCanvasImage(object):
             self.addtag(group)
 
     def __del__(self):
-        print('MfxCanvasImage: __del__(%s)' % self.image)
+        # print('MfxCanvasImage: __del__(%s)' % self.image)
         self.canvas.clear_widgets([self.image])
 
+    def __str__(self):
+        return f'<MfxCanvasImage @ {hex(id(self))}>'
+
     def config(self, **kw):
+        # print('MfxCanvasImage conifg:',kw)
+        if "image" in kw:
+            # print('is redeal image:',self.redeal)
+            if self.redeal:
+                image = self.image.children[0]
+                image.texture = kw["image"].texture
+                # print('redeal texture:',image.texture)
         pass
 
+    def makeDeferredRaise(self, pos):
+        def animCallback():
+            self.canvas.tag_raise(self.image, pos)
+        return animCallback
+
     def tkraise(self, aboveThis=None):
-        # print('MfxCanvasImage: tkraise')
+
         abitm = None
         if aboveThis:
             abitm = aboveThis.widget
-        if not self.animation:
-            self.canvas.tag_raise(self.image, abitm)
-        pass
+
+        # import inspect
+        # print('stack[1] = ', inspect.stack()[1].frame)
+        # print('stack[2] = ', inspect.stack()[2].frame)
+        # print('stack[3] = ', inspect.stack()[3].frame)
+
+        if self.animation > 0:
+            # print('defer tkraise to animation', abitm)
+            if len(self.deferred_raises) < self.animation:
+                self.deferred_raises.append(self.makeDeferredRaise(abitm))
+            return
+
+        # print('direct tkraise', abitm)
+        self.canvas.tag_raise(self.image, abitm)
 
     def addtag(self, tag):
-        # print('MfxCanvasImage: addtag %s' % tag)
+        # print('MfxCanvasImage: addtag %s' % tag.stack)
         self.group = tag
         if (self.image):
             self.image.group = tag
-        pass
 
     def dtag(self, tag):
-        # print('MfxCanvasImage: remtag %s' % tag)
+        # print('MfxCanvasImage: remtag %s' % tag.stack)
         self.group = None
         if (self.image):
             self.image.group = None
@@ -254,33 +378,76 @@ class MfxCanvasImage(object):
         self.canvas.clear_widgets([self.image])
 
     def move(self, dx, dy):
-        # print ('MfxCanvasImage: move %s, %s' % (dx, dy))
+        # print('MfxCanvasImage: move %s, %s' % (dx, dy))
         image = self.image
         dsize = image.coreSize
         dpos = (image.corePos[0] + dx, image.corePos[1] + dy)
         image.corePos = dpos
-        if not self.animation:
+        if self.animation == 0:
             image.pos, image.size = self.canvas.CoreToKivy(dpos, dsize)
+        else:
+            pos, size = self.canvas.CoreToKivy(dpos, dsize)
+            self.animations[self.animation-1].updateDestPos(pos)
 
     def makeAnimStart(self):
         def animStart(anim, widget):
-            # print('MfxCanvasImage: animStart')
-            image = self.image
-            self.canvas.tag_raise(image, None)
-            pass
+            # print('MfxCanvasImage: animStart %s' % self)
+
+            # raise to top if reqested for this move
+            if self.deferred_raises:
+                self.deferred_raises[0]()
+                self.deferred_raises = self.deferred_raises[1:]
+
+            # update z-order (for some specials)
+            while 1:
+                from pysollib.games.grandfathersclock import Clock_RowStack
+                specials = [Clock_RowStack, ]
+
+                if self.group is None: break            # noqa
+                stack = self.group.stack
+                if stack is None: break                 # noqa
+                if type(stack) not in specials: break;  # noqa
+
+                cards = self.group.stack.cards
+                card = self.image.card
+                if card is None: break                  # noqa
+                if card == cards[-1]: break             # noqa
+                i = cards.index(card) + 1
+
+                # print('stack =', self.group.stack)
+                # print('cards:', [c.__str__() for c in cards])
+                # print('card =', card)
+                # print('***** adjust z-reordering:',card,'before',cards[i])
+
+                def lower_z(dt):
+                    self.canvas.tag_lower(card.item.image, cards[i].item.image)
+
+                Clock.schedule_once(lower_z, self.duration/2.0)
+                break
+
         return animStart
 
     def makeAnimEnd(self, dpos, dsize):
         def animEnd(anim, widget):
             # print('MfxCanvasImage: animEnd %s' % self)
-            self.animation = False
-            image = self.image
-            image.pos, image.size = self.canvas.CoreToKivy(dpos, dsize)
-            pass
+
+            if self.animation > 0:
+                self.animation -= 1
+                self.animations = self.animations[1:]
+
+            if self.animation == 0:
+                # just for the case, keep in sync:
+                self.deferred_raises = []
+                self.animations = []
+
+            # print('MfxCanvasImage: animEnd moved to %s, %s' % (dpos[0], dpos[1])) # noqa
         return animEnd
 
     def animatedMove(self, dx, dy, duration=0.2):
-        # print ('MfxCanvasImage: animatedMove %s, %s' % (dx, dy))
+        # print('MfxCanvasImage: animatedMove %s, %s' % (dx, dy))
+        # import inspect
+        # for insi in range(1,9):
+        #     print('stack[insi] = ', inspect.stack()[insi].frame)
 
         image = self.image
         dsize = image.coreSize
@@ -298,21 +465,22 @@ class MfxCanvasImage(object):
         if self.canvas.wmain.app.game.demo:
             transition = transition1
 
-        self.animation = True
+        self.duration = duration
         ssize = image.coreSize
         spos = (image.corePos[0], image.corePos[1])
         spos, ssize = self.canvas.CoreToKivy(spos, ssize)
-        LAnimationManager.create(
+
+        from pysollib.kivy.LApp import LAnimationTask
+        task = LAnimationTask(
             spos,
             image,
             x=pos[0], y=pos[1],
             duration=duration, transition=transition,
             bindS=self.makeAnimStart(),
             bindE=self.makeAnimEnd(dpos, dsize))
-
-    # def moveTo(self, x, y):
-    #    c = self.coords()
-    #    self.move(x - int(c[0]), y - int(c[1]))
+        self.animations.append(task)
+        self.animation += 1
+        LAnimationManager.taskInsert(task)
 
     def show(self):
         self.config(state='normal')
@@ -323,7 +491,7 @@ class MfxCanvasImage(object):
 
 class MfxCanvasLine(object):
     def __init__(self, canvas, *args, **kwargs):
-        print('MfxCanvasLine: %s %s' % (args, kwargs))
+        # print('MfxCanvasLine: %s %s' % (args, kwargs))
 
         self.canvas = canvas
         line = LLine(canvas, args, **kwargs)
@@ -334,11 +502,16 @@ class MfxCanvasLine(object):
         self.widget = line
 
     def delete_deferred(self, seconds):
-        print('MfxCanvasLine: delete_deferred(%s)' % seconds)
+        # print('MfxCanvasLine: delete_deferred(%s)' % seconds)
+        from kivy.animation import Animation
+        z = 0
+        t = 'in_expo'
+        anim = Animation(opacity=z, t=t, d=seconds/1.5)
+        anim.start(self.line)
         Clock.schedule_once(lambda dt: self.delete(), seconds)
 
     def delete(self):
-        print('MfxCanvasLine: delete()')
+        # print('MfxCanvasLine: delete()')
         self.canvas.clear_widgets([self.line])
 
 
@@ -388,10 +561,6 @@ class MfxCanvasRectangle(object):
 class MfxCanvasText(object):
     def __init__(self, canvas, x, y, preview=-1, **kwargs):
 
-        print(
-            'MfxCanvasText: %s | %s, %s, %s | %s'
-            % (canvas, x, y, preview, kwargs))
-
         if preview < 0:
             preview = canvas.preview
         if preview > 1:
@@ -410,9 +579,13 @@ class MfxCanvasText(object):
         self.canvas = canvas
         self.label = label
         self.widget = label
+        self.canvas.bind(_text_color=self.setColor)
+
+    def setColor(self, w, c):
+        self.label.label.color = LColorToKivy(c)
 
     def config(self, **kw):
-        print('MfxCanvasText: config %s' % kw)
+        # print('MfxCanvasText: config %s' % kw)
         if ('text' in kw):
             self.label.text = kw['text']
 
@@ -442,16 +615,20 @@ class MfxCanvasText(object):
 # ************************************************************************
 
 
-class MfxCanvas(Widget):
+class MfxCanvas(LImage):
+    _text_color = StringProperty("#000000")
+
+    def __str__(self):
+        return f'<MfxCanvas @ {hex(id(self))}>'
 
     def __init__(self, wmain, *args, **kw):
-        # super(MfxCanvas, self).__init__(**kw)
-        super(MfxCanvas, self).__init__()
+        super(MfxCanvas, self).__init__(background=True)
 
+        # print('MfxCanvas: __init__()')
         # self.tags = {}   # bei basisklasse widget (ev. nur vorläufig)
 
         self.wmain = wmain
-        print('MfxCanvas: wmain = %s' % self.wmain)
+        # print('MfxCanvas: wmain = %s' % self.wmain)
 
         # Tkinter.Canvas.__init__(self, *args, **kw)
         self.preview = 0
@@ -544,16 +721,19 @@ class MfxCanvas(Widget):
         self.update_widget(posorobj, size)
 
     def update_widget(self, posorobj, size):
+        def psize(s):
+            return "({:1.2f}, {:1.2f})".format(s[0], s[1])
+
+        # logging.info('MfxCanvas: update_widget to: '+psize(size))
 
         # print('MfxCanvas: update_widget size=(%s, %s)' %
         #       (self.size[0], self.size[1]))
 
         # Update Skalierungsparameter
 
-        oldscale = self.scale
+        # oldscale = self.scale
         newscale = self.scalefactor()
-        print('MfxCanvas: scale factor old= %s, new=%s' %
-              (oldscale, newscale))
+        # logging.info('MfxCanvas: scale factor: {:1.2f})'.format(newscale))
         self.scale = newscale
 
         # Anpassung Skalierung.
@@ -573,76 +753,36 @@ class MfxCanvas(Widget):
 
         # Hintergrund update.
 
-        self.canvas.before.clear()
+        kc = LColorToKivy(self._bg_color)
         texture = None
         if self._bg_img:
             texture = self._bg_img.texture
 
-            # Color only: Nur eine Hintergrundfarbe wird installiert.
+        self.texture = texture
         if texture is None:
-            kc = LColorToKivy(self._bg_color)
-            self.canvas.before.add(
-                Color(kc[0], kc[1], kc[2], kc[3]))
-            self.canvas.before.add(
-                Rectangle(pos=self.pos, size=self.size))
-            return
-
-        # Image: Das Bild wird im Fenster expandiert.
-        if self._stretch_bg_image:
-            if self._save_aspect_bg_image == 0:
-                self.canvas.before.add(
-                    Rectangle(texture=texture, pos=self.pos, size=self.size))
-            else:
-                # TBD: gesucht: aspect erhaltende skalierung
-                self.canvas.before.add(
-                    Rectangle(texture=texture, pos=self.pos, size=self.size))
-            return
-
-            # Tiles: Die Kacheln werden im Fenster ausgelegt und minim
-        # skaliert, damit sie genau passen.
+            self.setColor(kc)
         else:
-            print('tiles !')
-            stsize = (texture.size[0] * self.scale,
-                      texture.size[1] * self.scale)
-            stepsy = int(self.size[1] / stsize[1]) + 1
-            stepsx = int(self.size[0] / stsize[0]) + 1
-
-            scaley = 1.0 * self.size[1] / (stepsy * stsize[1])
-            sy = scaley * stsize[1]
-            scalex = 1.0 * self.size[0] / (stepsx * stsize[0])
-            sx = scalex * stsize[0]
-            tsize = (sx, sy)
-
-            # print ('self.size = %s, %s' % (self.size[0], self.size[1]))
-            # print ('sx, sy = %s, %s' % (stepsx, stepsy))
-            for y in range(0, stepsy):
-                py = y * sy
-                for x in range(0, stepsx):
-                    px = x * sx
-                    tpos = (self.pos[0] + px, self.pos[1] + py)
-                    self.canvas.before.add(
-                        Rectangle(texture=texture, pos=tpos, size=tsize))
-
-    def setBackgroundImage(self, event=None):
-
-        print('setBackgroundImage', self._bg_img)
-
-        if not self._bg_img:  # solid color
-            return
-        return 1
+            self.setColor([1,1,1,1]) # noqa
+            if self._stretch_bg_image:
+                if self._save_aspect_bg_image == 0:
+                    self.fit_mode = "fill"
+                else:
+                    self.fit_mode = "cover"
+            else:
+                self.fit_mode = "tiling"
 
     # Funktionen, welche vom Core aufgerufen werden.
 
     def winfo_width(self):
         # return self.r_width
         cpos, csize = self.KivyToCoreP(self.pos, self.size, self.scale)
-        print('MfxCanvas: winfo_width %s' % (csize[0]))
+        # print('MfxCanvas: winfo_width %s' % (csize[0]))
         return csize[0]
 
     def winfo_height(self):
         # return self.r_height
         cpos, csize = self.KivyToCoreP(self.pos, self.size, self.scale)
-        print('MfxCanvas: winfo_height %s' % (csize[1]))
+        # print('MfxCanvas: winfo_height %s' % (csize[1]))
         return csize[1]
 
     def cget(self, f):
@@ -672,48 +812,43 @@ class MfxCanvas(Widget):
     #
     # top-image support
     #
-
     def tag_raise(self, itm, abitm=None):
-        # print('MfxCanvas: tag_raise, itm=%s, aboveThis=%s' % (itm, abitm))
+        # print('MfxCanvas: tag_raise(%s, %s)' % (itm, abitm))
+
+        def findTop(itm):
+            t = type(itm)
+            for c in self.children:
+                if type(c) is t:
+                    return self.children.index(c)
+            return 0
+
         if (itm is not None):
             if (abitm is None):
-                # print('MfxCanvas: tag_raise: to top')
-                self.clear_widgets([itm])
-                self.add_widget(itm)
+                self.remove_widget(itm)
+                self.add_widget(itm, index=findTop(itm))
             else:
-                print('MfxCanvas: tag_raise: to specified position')
-                ws = []
-                for c in reversed(self.children):   # reversed!
-                    if c != itm and c != abitm:
-                        ws.append(c)
-                    if c == itm:
-                        ws.append(abitm)
-                        ws.append(itm)    # (~shadow image!)
-                self.clear_widgets()
-                for w in ws:
-                    self.add_widget(w)
+                self.remove_widget(itm)
+                k = self.children.index(abitm)
+                self.add_widget(itm, index=k)
 
-    def tag_lower(self, id, belowThis=None):
-        print('MfxCanvas: tag_lower(%s, %s)' % (id, belowThis))
-        # y = self.yy  # kommt das vor ?
-        pass
+    def tag_lower(self, itm, belowThis=None):
+        # print('MfxCanvas: tag_lower(%s, %s)' % (itm, belowThis))
 
-    #
-    #
-    #
+        if (itm is not None):
+            if (belowThis is None):
+                self.remove_widget(itm)
+                k = len(self.children)
+                self.add_widget(itm, index=k)
+            else:
+                self.remove_widget(itm)
+                k = self.children.index(belowThis)
+                k += 1
+                self.add_widget(itm, index=k)
+
     def setInitialSize(self, width, height):
-        print('MfxCanvas: setInitialSize request %s/%s' % (width, height))
-        print(
-            'MfxCanvas: setInitialSize actual  %s/%s'
-            % (self.size[0], self.size[1]))
         self.r_width = width
         self.r_height = height
-
-        # ev. update anstossen
         self.update_widget(self.pos, self.size)
-
-        # self.size[0] = width
-        # self.size[1] = height
         return
 
     # delete all CanvasItems, but keep the background and top tiles
@@ -730,43 +865,38 @@ class MfxCanvas(Widget):
         print('MfxCanvas: findCard no cardid')
         return -1
 
+    def findImagesByType(self, image_type):
+        images = []
+        for c in self.children:
+            if type(c) is LImageItem:
+                if c.get_image_type() == image_type:
+                    images.append(c)
+        return images
+
     def setTextColor(self, color):
-        print('MfxCanvas: setTextColor1 %s' % color)
-        if color is None:
-            c = self.cget("bg")
-            if not isinstance(c, str) or c[0] != "#" or len(c) != 7:
-                return
-            v = []
-            for i in (1, 3, 5):
-                v.append(int(c[i:i + 2], 16))
-            luminance = (0.212671 * v[0] + 0.715160 *
-                         v[1] + 0.072169 * v[2]) / 255
-            # print c, ":", v, "luminance", luminance
-            color = ("#000000", "#ffffff")[luminance < 0.3]
+        # print('MfxCanvas: setTextColor')
+        # color is ignored: it sets a predefined (option settable)
+        # color. We do not support that. Instead of this wie examine
+        # the background and set the color accordingly.
+        if self._bg_img is not None:
+            from pysollib.kivy.LApp import LTextureToLuminance
+            lumi = LTextureToLuminance(self._bg_img.texture)
+        else:
+            from pysollib.kivy.LApp import LColorToLuminance
+            lumi = LColorToLuminance(self._bg_color)
 
-        print('MfxCanvas: setTextColor2 %s' % color)
-        if self._text_color != color:
-            self._text_color = color
-
-            # falls wir das wollen in kivy:
-            # -> text_color als property deklarieren, und a.a.O binden.
-            # for item in self._text_items:
-            #    item.config(fill=self._text_color)
+        self._text_color = ("#000000", "#ffffff")[lumi < 0.4]
+        # print('average luminance =', lumi)
 
     def setTile(self, image, stretch=0, save_aspect=0):
 
-        print('setTile: %s, %s' % (image, stretch))
+        # print('setTile: %s, %s, %s' % (image, stretch, save_aspect))
         if image:
             try:
-                # print ('setTile: image.open %s, %s' % (image, Image))
-                bs = False
-                if stretch > 0:
-                    bs = True
-                self._bg_img = Image(source=image, allow_stretch=bs)
-
+                from pysollib.kivy.tkutil import LImageInfo
+                self._bg_img = LImageInfo(image)
                 self._stretch_bg_image = stretch
                 self._save_aspect_bg_image = save_aspect
-                self.setBackgroundImage()
                 self.update_widget(self.pos, self.size)
             except Exception:
                 return 0
@@ -808,6 +938,7 @@ class MfxCanvas(Widget):
     def showAllItems(self):
         print('MfxCanvas: showAllItems')
         # TBD
+        # Brauchts darum auch nicht.
         pass
 
     # Erweiterungen fuer Tk Canvas (prüfen was noch nötig!!).
@@ -835,7 +966,7 @@ class MfxCanvas(Widget):
             pass
 
     def config(self, cnf={}, **kw):
-        print('MfxCanvas: config %s %s' % (cnf, kw))
+        # print('MfxCanvas: config %s %s' % (cnf, kw))
         if ('cursor' in kw):
             pass
         if ('width' in kw):

@@ -38,7 +38,8 @@ from pysollib.stack import \
         SS_FoundationStack, \
         StackWrapper, \
         TalonStack
-from pysollib.util import ANY_RANK, ANY_SUIT, KING, NO_RANK, UNLIMITED_REDEALS
+from pysollib.util import ANY_RANK, ANY_SUIT, JACK, KING, NO_RANK, \
+    QUEEN, UNLIMITED_REDEALS
 
 # ************************************************************************
 # *
@@ -370,6 +371,72 @@ class SimpleTens(BlockTen):
 
 
 # ************************************************************************
+# * Crispy
+# ************************************************************************
+
+class Crispy_Talon(MonteCarlo_Talon):
+
+    def canDealCards(self):
+        if len(self.cards) == 0:
+            return False
+        return MonteCarlo_Talon.canDealCards(self)
+
+
+class Crispy_RowStack(MonteCarlo_RowStack):
+
+    getBottomImage = BasicRowStack._getReserveBottomImage
+
+    def acceptsCards(self, from_stack, cards):
+        cr = cards[0].rank
+        if len(self.cards) == 0:
+            if cr == KING:
+                return self.id in (1, 2, 13, 14)
+            elif cr == QUEEN:
+                return self.id in (4, 7, 8, 11)
+            elif cr == JACK:
+                return self.id in (0, 3, 12, 15)
+        if cr in (JACK, QUEEN, KING):
+            return False
+        return MonteCarlo_RowStack.acceptsCards(self, from_stack, cards)
+
+
+class Crispy(SimpleCarlo):
+    Talon_Class = Crispy_Talon
+    RowStack_Class = Crispy_RowStack
+    FILL_STACKS_AFTER_DROP = False
+    FILL_STACKS_BEFORE_SHIFT = True
+
+    def createGame(self):
+        MonteCarlo.createGame(self, rows=4, cols=4)
+
+    def isGameWon(self):
+        for i in (1, 2, 13, 14):
+            if len(self.s.rows[i].cards) != 0 and \
+                    self.s.rows[i].cards[0].rank != KING:
+                return False
+        for i in (4, 7, 8, 11):
+            if len(self.s.rows[i].cards) != 0 and \
+                    self.s.rows[i].cards[0].rank != QUEEN:
+                return False
+        for i in (0, 3, 12, 15):
+            if len(self.s.rows[i].cards) != 0 and \
+                    self.s.rows[i].cards[0].rank != JACK:
+                return False
+        for i in (5, 6, 9, 10):
+            if len(self.s.rows[i].cards) != 0:
+                return False
+        return len(self.s.talon.cards) == 0
+
+    def shiftCards(self):
+        free = 0
+        for r in self.s.rows:
+            assert len(r.cards) <= 1
+            if not r.cards:
+                free += 1
+        return free
+
+
+# ************************************************************************
 # * Neighbour
 # ************************************************************************
 
@@ -439,6 +506,7 @@ class Neighbour(MonteCarlo):
 # ************************************************************************
 # * Fourteen
 # * Double Fourteen
+# * Juvenile
 # ************************************************************************
 
 class Fourteen_RowStack(MonteCarlo_RowStack):
@@ -475,7 +543,8 @@ class Fourteen(Game):
                                                   dir=0, base_rank=NO_RANK))
         x, y = l.XM + colsperrow * l.XS, l.YM
         s.foundations.append(self.Foundation_Class(x, y, self, suit=ANY_SUIT,
-                             max_move=0, max_cards=52, base_rank=ANY_RANK))
+                             max_move=0, max_cards=(52 * self.gameinfo.decks),
+                                                   base_rank=ANY_RANK))
         l.createText(s.foundations[0], "s")
         x, y = self.width - l.XS, self.height - l.YS
         s.talon = InitialDealTalonStack(x, y, self)
@@ -507,6 +576,17 @@ class DoubleFourteen(Fourteen):
         self._startDealNumRows(4)
         self.s.talon.dealRow()
         self.s.talon.dealRow(rows=self.s.rows[:14])
+
+
+class Juvenile(DoubleFourteen):
+
+    def startGame(self):
+        self.startDealSample()
+        for i in range(2):
+            self.s.talon.dealRow(rows=[self.s.rows[0]], frames=0)
+        for i in range(5):
+            self.s.talon.dealRow(rows=self.s.rows[:17], frames=0)
+        self.s.talon.dealRow(rows=self.s.rows[:17])
 
 
 # ************************************************************************
@@ -1096,3 +1176,8 @@ registerGame(GameInfo(875, PatientPairsOpen, "Patient Pairs (Open)",
                       GI.SL_MOSTLY_SKILL, rules_filename="patientpairs.html"))
 registerGame(GameInfo(898, AcesSquare, "Aces Square",
                       GI.GT_1DECK_TYPE, 1, 0, GI.SL_BALANCED))
+registerGame(GameInfo(923, Crispy, "Crispy",
+                      GI.GT_1DECK_TYPE, 1, 0, GI.SL_BALANCED))
+registerGame(GameInfo(935, Juvenile, "Juvenile",
+                      GI.GT_PAIRING_TYPE | GI.GT_OPEN, 2, 0,
+                      GI.SL_MOSTLY_LUCK))

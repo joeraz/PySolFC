@@ -1857,6 +1857,14 @@ class TalonStack(Stack,
         for stack in self.game.allstacks:
             stack.updateText()
 
+    def updateRedealImage(self):
+        deal = self.canDealCards() != 0
+        if self.images.redeal is not None:
+            img = (self.getRedealImages())[deal]
+            if img is not None and img is not self.images.redeal_img:
+                self.images.redeal.config(image=img)
+                self.images.redeal_img = img
+
     def updateText(self, update_rounds=1, update_redeal=1):
         # assertView(self)
         Stack.updateText(self)
@@ -2286,7 +2294,7 @@ class OpenStack(Stack):
     def getHelp(self):
         if self.cap.max_accept == 0:
             return _('Reserve. No building.')
-        return ''
+        return 'Reserve.'
 
 
 # ************************************************************************

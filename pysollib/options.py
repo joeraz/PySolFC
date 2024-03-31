@@ -28,7 +28,7 @@ import traceback
 import configobj
 
 import pysollib.settings
-from pysollib.mfxutil import USE_PIL,\
+from pysollib.mfxutil import USE_PIL, \
     get_default_resampling, print_err
 from pysollib.mygettext import _
 from pysollib.mygettext import myGettext
@@ -95,9 +95,16 @@ shade = boolean
 shrink_face_down = boolean
 shade_filled_stacks = boolean
 demo_logo = boolean
+demo_logo_style = string
+pause_text_style = string
+redeal_icon_style = string
+dialog_icon_style = string
+tree_icon_style = string
 tile_theme = string
 default_tile_theme = string
 toolbar = integer(0, 4)
+toolbar_land = integer(0, 4)
+toolbar_port = integer(0, 4)
 toolbar_style = string
 toolbar_relief = string
 toolbar_compound = string
@@ -192,6 +199,7 @@ highlight_piles = float(0.2, 9.9)
 [cardsets]
 0 = string_list(min=2, max=2)
 1 = string_list(min=2, max=2)
+1_1 = string_list(min=2, max=2)
 2 = string_list(min=2, max=2)
 3 = string_list(min=2, max=2)
 4 = string_list(min=2, max=2)
@@ -201,6 +209,15 @@ highlight_piles = float(0.2, 9.9)
 8 = string_list(min=2, max=2)
 9 = string_list(min=2, max=2)
 10 = string_list(min=2, max=2)
+11_3 = string_list(min=2, max=2)
+11_4 = string_list(min=2, max=2)
+11_5 = string_list(min=2, max=2)
+11_6 = string_list(min=2, max=2)
+11_7 = string_list(min=2, max=2)
+11_8 = string_list(min=2, max=2)
+11_9 = string_list(min=2, max=2)
+11_10 = string_list(min=2, max=2)
+12 = string_list(min=2, max=2)
 scale_cards = boolean
 scale_x = float
 scale_y = float
@@ -248,9 +265,16 @@ class Options:
         ('shrink_face_down', 'bool'),
         ('shade_filled_stacks', 'bool'),
         ('demo_logo', 'bool'),
+        ('demo_logo_style', 'str'),
+        ('pause_text_style', 'str'),
+        ('redeal_icon_style', 'str'),
+        ('dialog_icon_style', 'str'),
+        ('tree_icon_style', 'str'),
         ('tile_theme', 'str'),
         ('default_tile_theme', 'str'),
         ('toolbar', 'int'),
+        ('toolbar_land', 'int'),
+        ('toolbar_port', 'int'),
         ('toolbar_style', 'str'),
         ('toolbar_relief', 'str'),
         ('toolbar_compound', 'str'),
@@ -347,12 +371,20 @@ class Options:
         self.shrink_face_down = True
         self.shade_filled_stacks = True
         self.demo_logo = True
+        self.demo_logo_style = 'komika'
+        self.pause_text_style = 'komika'
+        self.redeal_icon_style = 'modern'
+        self.dialog_icon_style = 'remix'
+        self.tree_icon_style = 'remix'
         self.tile_theme = 'default'
         self.default_tile_theme = 'default'
-        self.toolbar = 1       # 0 == hide, 1,2,3,4 == top, bottom, lef, right
+        self.toolbar = 1       # 0 == hide, 1,2,3,4 == top, bottom, left, right
+        # used with 'kivy' version in addition:
+        self.toolbar_land = 4  # (landscape)
+        self.toolbar_port = 2  # (portrait)
+        # 0 == hide,
+        # 1,2,3,4 == top, bottom, left, right
         # self.toolbar_style = 'default'
-        if TOOLKIT == 'kivy':
-            self.toolbar = 4  # 0 == hide, 1,2,3,4 == top, bottom, lef, right
         self.toolbar_style = 'remix'
         self.toolbar_relief = 'flat'
         self.toolbar_compound = 'none'  # icons only
@@ -373,7 +405,11 @@ class Options:
         self.mouse_button1 = 1
         self.mouse_button2 = 2
         self.mouse_button3 = 3
-        self.mouse_type = 'drag-n-drop'  # or 'sticky-mouse' or 'point-n-click'
+        # mouse_type:  'drag-n-drop' or 'sticky-mouse' or 'point-n-click'
+        if TOOLKIT == 'kivy':
+            self.mouse_type = 'point-n-click'
+        else:
+            self.mouse_type = 'drag-n-drop'
         self.mouse_undo = False         # use mouse for undo/redo
         self.negative_bottom = True
         self.translate_game_names = True
@@ -537,43 +573,65 @@ class Options:
             self.tabletile_name = None
         # cardsets
         c = "Standard"
+        m = "Crystal Mahjongg"
         if sw < 800 or sh < 600:
             c = "2000"
         if TOOLKIT == 'kivy':
             c = "Standard"
+            m = "Gnome Mahjongg 1"
 
         # if sw > 1024 and sh > 768:
         #    c = 'Dondorf'
         if USE_PIL:
             self.cardset = {
-                0:                  ("Neo", ""),
-                CSI.TYPE_FRENCH:    ("Neo", ""),
-                CSI.TYPE_HANAFUDA:  ("Louie Mantia Hanafuda", ""),
-                CSI.TYPE_MAHJONGG:  ("Uni Mahjongg", ""),
-                CSI.TYPE_TAROCK:    ("Neo Tarock", ""),
-                CSI.TYPE_HEXADECK:  ("Neo Hex", ""),
-                CSI.TYPE_MUGHAL_GANJIFA: ("Mughal Ganjifa XL", ""),
-                # CSI.TYPE_NAVAGRAHA_GANJIFA: ("Navagraha Ganjifa", ""),
-                CSI.TYPE_NAVAGRAHA_GANJIFA: ("Dashavatara Ganjifa XL", ""),
-                CSI.TYPE_DASHAVATARA_GANJIFA: ("Dashavatara Ganjifa XL", ""),
-                CSI.TYPE_TRUMP_ONLY: ("Next Matrix", ""),
-                CSI.TYPE_MATCHING: ("Neo", "")
+                0:                  {0: ("Neo", "")},
+                CSI.TYPE_FRENCH:    {0: ("Neo", ""), 1: ("Neo", "")},
+                CSI.TYPE_HANAFUDA:  {0: ("Louie Mantia Hanafuda", "")},
+                CSI.TYPE_MAHJONGG:  {0: ("Uni Mahjongg", "")},
+                CSI.TYPE_TAROCK:    {0: ("Neo Tarock", "")},
+                CSI.TYPE_HEXADECK:  {0: ("Neo Hex", "")},
+                CSI.TYPE_MUGHAL_GANJIFA: {0: ("Mughal Ganjifa XL", "")},
+                # CSI.TYPE_NAVAGRAHA_GANJIFA: {0: ("Navagraha Ganjifa", "")},
+                CSI.TYPE_NAVAGRAHA_GANJIFA:
+                    {0: ("Dashavatara Ganjifa XL", "")},
+                CSI.TYPE_DASHAVATARA_GANJIFA:
+                    {0: ("Dashavatara Ganjifa XL", "")},
+                CSI.TYPE_TRUMP_ONLY: {0: ("Next Matrix", "")},
+                CSI.TYPE_MATCHING: {0: ("Neo", "")},
+                CSI.TYPE_PUZZLE: {3: ("Dojouji Ukiyo E (3x3)", ""),
+                                  4: ("Knave of Hearts (4x4)", ""),
+                                  5: ("Victoria Falls (5x5)", ""),
+                                  6: ("Hokusai Ukiyo E (6x6)", ""),
+                                  7: ("Blaren (7x7)", ""),
+                                  8: ("Mid Winter's Eve (8x8)", ""),
+                                  9: ("The Card Players (9x9)", ""),
+                                  10: ("Players Trumps (10x10)", "")},
+                CSI.TYPE_ISHIDO: {0: ("Simple Ishido XL", "")},
             }
         else:
             self.cardset = {
                 # game_type:        (cardset_name, back_file)
-                0:                  (c, ""),
-                CSI.TYPE_FRENCH:    (c, ""),
-                CSI.TYPE_HANAFUDA:  ("Kintengu", ""),
-                CSI.TYPE_MAHJONGG:  ("Crystal Mahjongg", ""),
-                CSI.TYPE_TAROCK:    ("Vienna 2K", ""),
-                CSI.TYPE_HEXADECK:  ("Hex A Deck", ""),
-                CSI.TYPE_MUGHAL_GANJIFA: ("Mughal Ganjifa", ""),
-                # CSI.TYPE_NAVAGRAHA_GANJIFA: ("Navagraha Ganjifa", ""),
-                CSI.TYPE_NAVAGRAHA_GANJIFA: ("Dashavatara Ganjifa", ""),
-                CSI.TYPE_DASHAVATARA_GANJIFA: ("Dashavatara Ganjifa", ""),
-                CSI.TYPE_TRUMP_ONLY: ("Matrix", ""),
-                CSI.TYPE_MATCHING: (c, ""),
+                0:                  {0: (c, "")},
+                CSI.TYPE_FRENCH:    {0: (c, ""), 1: (c, "")},
+                CSI.TYPE_HANAFUDA:  {0: ("Kintengu", "")},
+                CSI.TYPE_MAHJONGG:  {0: (m, "")},
+                CSI.TYPE_TAROCK:    {0: ("Vienna 2K", "")},
+                CSI.TYPE_HEXADECK:  {0: ("Hex A Deck", "")},
+                CSI.TYPE_MUGHAL_GANJIFA: {0: ("Mughal Ganjifa", "")},
+                # CSI.TYPE_NAVAGRAHA_GANJIFA: {0: ("Navagraha Ganjifa", "")},
+                CSI.TYPE_NAVAGRAHA_GANJIFA: {0: ("Dashavatara Ganjifa", "")},
+                CSI.TYPE_DASHAVATARA_GANJIFA: {0: ("Dashavatara Ganjifa", "")},
+                CSI.TYPE_TRUMP_ONLY: {0: ("Matrix", "")},
+                CSI.TYPE_MATCHING: {0: (c, "")},
+                CSI.TYPE_PUZZLE: {3: ("Dojouji Ukiyo E (3x3)", ""),
+                                  4: ("Knave of Hearts (4x4)", ""),
+                                  5: ("Victoria Falls (5x5)", ""),
+                                  6: ("Hokusai Ukiyo E (6x6)", ""),
+                                  7: ("Blaren (7x7)", ""),
+                                  8: ("Mid Winter's Eve (8x8)", ""),
+                                  9: ("The Card Players (9x9)", ""),
+                                  10: ("Players Trumps (10x10)", "")},
+                CSI.TYPE_ISHIDO: {0: ("Simple Ishido", "")},
             }
 
     # not changeable options
@@ -635,7 +693,11 @@ class Options:
 
         # cardsets
         for key, val in self.cardset.items():
-            config['cardsets'][str(key)] = val
+            for key2, val2 in val.items():
+                if key2 > 0:
+                    config['cardsets'][str(key) + "_" + str(key2)] = val2
+                else:
+                    config['cardsets'][str(key)] = val2
         for key in ('scale_cards', 'scale_x', 'scale_y',
                     'auto_scale', 'spread_stacks',
                     'preserve_aspect_ratio', 'resampling'):
@@ -802,12 +864,17 @@ class Options:
 
         # cardsets
         for key in self.cardset:
-            val = self._getOption('cardsets', str(key), 'list')
-            if val is not None:
-                try:
-                    self.cardset[int(key)] = val
-                except Exception:
-                    traceback.print_exc()
+            for key2 in self.cardset[key]:
+                if key2 > 0:
+                    val = self._getOption('cardsets',
+                                          str(key) + "_" + str(key2), 'list')
+                else:
+                    val = self._getOption('cardsets', str(key), 'list')
+                if val is not None:
+                    try:
+                        self.cardset[int(key)][int(key2)] = val
+                    except Exception:
+                        traceback.print_exc()
         for key, t in (('scale_cards', 'bool'),
                        ('scale_x', 'float'),
                        ('scale_y', 'float'),

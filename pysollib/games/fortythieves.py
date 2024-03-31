@@ -42,8 +42,8 @@ from pysollib.stack import \
         UD_AC_RowStack, \
         WasteStack, \
         WasteTalonStack
-from pysollib.util import ACE, ANY_RANK, ANY_SUIT, CLUB, DIAMOND,\
-        HEART, JACK, KING, NO_RANK, SPADE, UNLIMITED_MOVES,\
+from pysollib.util import ACE, ANY_RANK, ANY_SUIT, CLUB, DIAMOND, \
+        HEART, JACK, KING, NO_RANK, SPADE, UNLIMITED_MOVES, \
         UNLIMITED_REDEALS
 
 
@@ -156,7 +156,9 @@ class FortyThieves(Game):
 # * Courtyard
 # * Waning Moon
 # * Lucas
+# * Thirty-Nine Steps
 # * Napoleon's Square
+# * Napoleon's Shoulder
 # * Carre Napoleon
 # * Josephine
 # * Marie Rose
@@ -194,8 +196,26 @@ class Lucas(WaningMoon):
     ROW_MAX_MOVE = UNLIMITED_MOVES
 
 
+class ThirtyNineSteps(WaningMoon):
+    DEAL = (0, 3)
+
+
 class NapoleonsSquare(FortyThieves):
     ROW_MAX_MOVE = UNLIMITED_MOVES
+
+    def createGame(self):
+        FortyThieves.createGame(self, rows=12)
+
+
+class NapoleonsShoulder_RowStack(RK_RowStack):
+    def acceptsCards(self, from_stack, cards):
+        if from_stack is not self.game.s.waste and len(self.cards) == 0:
+            return False
+        return RK_RowStack.acceptsCards(self, from_stack, cards)
+
+
+class NapoleonsShoulder(FortyThieves):
+    RowStack_Class = NapoleonsShoulder_RowStack
 
     def createGame(self):
         FortyThieves.createGame(self, rows=12)
@@ -818,11 +838,18 @@ class Octagon(Game):
 # ************************************************************************
 
 class Squadron(FortyThieves):
+    RowStack_Class = SS_RowStack
+    Foundation_Class = SS_FoundationStack
+
+    ROWS = 10
+    RESERVES = 3
 
     def createGame(self):
         l, s = Layout(self), self.s
+        decks = self.gameinfo.decks
 
-        self.setSize(l.XM+12*l.XS, l.YM+max(4.5*l.YS, 2*l.YS+12*l.YOFFSET))
+        self.setSize(l.XM + (2 + self.ROWS) * l.XS, l.YM
+                     + max(4.5 * l.YS, 2 * l.YS + 12 * l.YOFFSET))
 
         x, y = l.XM, l.YM
         s.talon = WasteTalonStack(x, y, self, max_rounds=1)
@@ -830,17 +857,18 @@ class Squadron(FortyThieves):
         x += l.XS
         s.waste = WasteStack(x, y, self)
         l.createText(s.waste, 's')
-        x += 2*l.XS
-        for i in range(8):
-            s.foundations.append(SS_FoundationStack(x, y, self, suit=i//2))
+        x += 2 * l.XS
+        for i in range(4 * decks):
+            s.foundations.append(self.Foundation_Class(x, y, self,
+                                                       suit=i // decks))
             x += l.XS
-        x, y = l.XM, l.YM+l.YS*3//2
-        for i in range(3):
+        x, y = l.XM, l.YM + l.YS * 3//2
+        for i in range(self.RESERVES):
             s.reserves.append(ReserveStack(x, y, self))
             y += l.YS
         x, y = l.XM+2*l.XS, l.YM+l.YS
-        for i in range(10):
-            s.rows.append(SS_RowStack(x, y, self, max_move=1))
+        for i in range(self.ROWS):
+            s.rows.append(self.RowStack_Class(x, y, self, max_move=1))
             x += l.XS
 
         l.defaultStackGroups()
@@ -848,6 +876,23 @@ class Squadron(FortyThieves):
     def startGame(self):
         self.s.talon.dealRow(rows=self.s.reserves, frames=0)
         self._startDealNumRows(3)
+        self.s.talon.dealRow()
+        self.s.talon.dealCards()          # deal first card to WasteStack
+
+
+# ************************************************************************
+# * Cascade
+# ************************************************************************
+
+class Cascade(Squadron):
+    RowStack_Class = AC_RowStack
+    Foundation_Class = AC_FoundationStack
+
+    ROWS = 7
+    RESERVES = 2
+
+    def startGame(self):
+        self._startDealNumRows(4)
         self.s.talon.dealRow()
         self.s.talon.dealCards()          # deal first card to WasteStack
 
@@ -1109,7 +1154,7 @@ class DoubleGoldMine(Streets):
 # * Interchange
 # * Unlimited
 # * Breakwater
-# * Forty Nine
+# * Forty-Nine
 # * Alternation
 # * Triple Interchange
 # ************************************************************************
@@ -1406,7 +1451,8 @@ registerGame(GameInfo(109, Deuces, "Deuces",
                       GI.GT_FORTY_THIEVES, 2, 0, GI.SL_MOSTLY_SKILL,
                       altnames=("Twos", "Les Deux")))
 registerGame(GameInfo(196, Corona, "Corona",
-                      GI.GT_FORTY_THIEVES, 2, 0, GI.SL_BALANCED))
+                      GI.GT_FORTY_THIEVES, 2, 0, GI.SL_BALANCED,
+                      altnames=("Round Dozen")))
 registerGame(GameInfo(195, Quadrangle, "Quadrangle",
                       GI.GT_FORTY_THIEVES, 2, 0, GI.SL_BALANCED))
 registerGame(GameInfo(110, Courtyard, "Courtyard",
@@ -1419,7 +1465,7 @@ registerGame(GameInfo(76, Streets, "Streets",
                       GI.GT_FORTY_THIEVES, 2, 0, GI.SL_MOSTLY_SKILL))
 registerGame(GameInfo(73, Maria, "Maria",
                       GI.GT_FORTY_THIEVES, 2, 0, GI.SL_BALANCED,
-                      altnames=("Maria Luisa", "Thirty Six Card Tableau")))
+                      altnames=("Maria Luisa", "Thirty-Six Card Tableau")))
 registerGame(GameInfo(70, NumberTen, "Number Ten",
                       GI.GT_FORTY_THIEVES, 2, 0, GI.SL_BALANCED))
 registerGame(GameInfo(71, RankAndFile, "Rank and File",
@@ -1442,11 +1488,13 @@ registerGame(GameInfo(198, NapoleonsExile, "Napoleon's Exile",
 registerGame(GameInfo(131, DoubleRail, "Double Rail",
                       GI.GT_FORTY_THIEVES, 2, 0, GI.SL_BALANCED))
 registerGame(GameInfo(199, SingleRail, "Single Rail",
-                      GI.GT_FORTY_THIEVES, 1, 0, GI.SL_MOSTLY_LUCK))
+                      GI.GT_FORTY_THIEVES, 1, 0, GI.SL_MOSTLY_LUCK,
+                      altnames=("Auxiliary Sequences")))
 registerGame(GameInfo(295, NapoleonsSquare, "Napoleon's Square",
                       GI.GT_FORTY_THIEVES, 2, 0, GI.SL_BALANCED))
 registerGame(GameInfo(310, Emperor, "Emperor",
-                      GI.GT_FORTY_THIEVES, 2, 0, GI.SL_BALANCED))
+                      GI.GT_FORTY_THIEVES, 2, 0, GI.SL_BALANCED,
+                      altnames=("Deauville")))
 registerGame(GameInfo(323, Octave, "Octave",
                       GI.GT_FORTY_THIEVES, 2, 1, GI.SL_MOSTLY_SKILL))
 registerGame(GameInfo(332, Mumbai, "Mumbai",
@@ -1500,7 +1548,7 @@ registerGame(GameInfo(575, Unlimited, "Unlimited",
                       GI.GT_FORTY_THIEVES, 2, -1, GI.SL_MOSTLY_SKILL))
 registerGame(GameInfo(576, Breakwater, "Breakwater",
                       GI.GT_FORTY_THIEVES, 2, 0, GI.SL_MOSTLY_SKILL))
-registerGame(GameInfo(577, FortyNine, "Forty Nine",
+registerGame(GameInfo(577, FortyNine, "Forty-Nine",
                       GI.GT_FORTY_THIEVES, 2, 0, GI.SL_MOSTLY_SKILL))
 registerGame(GameInfo(578, IndianPatience, "Indian Patience",
                       GI.GT_FORTY_THIEVES, 2, 0, GI.SL_MOSTLY_SKILL))
@@ -1543,3 +1591,9 @@ registerGame(GameInfo(884, JacksInTheBox, "Jacks in the Box",
                       GI.GT_FORTY_THIEVES, 2, 0, GI.SL_MOSTLY_SKILL))
 registerGame(GameInfo(895, Preference, "Preference",
                       GI.GT_FORTY_THIEVES, 1, 0, GI.SL_LUCK))
+registerGame(GameInfo(910, NapoleonsShoulder, "Napoleon's Shoulder",
+                      GI.GT_FORTY_THIEVES, 2, 0, GI.SL_BALANCED))
+registerGame(GameInfo(933, Cascade, "Cascade",
+                      GI.GT_FORTY_THIEVES, 1, 0, GI.SL_BALANCED))
+registerGame(GameInfo(940, ThirtyNineSteps, "Thirty-Nine Steps",
+                      GI.GT_FORTY_THIEVES, 2, 0, GI.SL_MOSTLY_SKILL))

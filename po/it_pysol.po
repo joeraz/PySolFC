@@ -12,7 +12,7 @@ msgstr ""
 "Project-Id-Version: it_pysol\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2021-12-10 10:19-0500\n"
-"PO-Revision-Date: 2023-06-29 22:24-0400\n"
+"PO-Revision-Date: 2024-03-21 18:23-0400\n"
 "Last-Translator: Giuliano Colla <giuliano.colla@gmail.com>\n"
 "Language-Team: Italiano <it@li.org>\n"
 "Language: it\n"
@@ -21,7 +21,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "Generated-By: pygettext.py 1.6con\n"
-"X-Generator: Poedit 3.3.1\n"
+"X-Generator: Poedit 3.4.2\n"
 
 #: pysollib/actions.py:232 pysollib/kivy/menubar.py:292
 #: pysollib/kivy/toolbar.py:191 pysollib/tile/toolbar.py:176
@@ -426,6 +426,9 @@ msgstr "Numerici"
 msgid "Pairing"
 msgstr "Coppie"
 
+msgid "Picture Gallery"
+msgstr ""
+
 #: pysollib/gamedb.py:122
 msgid "Raglan"
 msgstr "Raglan"
@@ -465,6 +468,9 @@ msgstr "Giochi con quattro mazzi"
 msgid "Cribbage"
 msgstr ""
 
+msgid "Ishido"
+msgstr ""
+
 msgid "Lights Out"
 msgstr ""
 
@@ -479,6 +485,12 @@ msgid "Pegged"
 msgstr ""
 
 msgid "Poker"
+msgstr ""
+
+msgid "Puzzle"
+msgstr ""
+
+msgid "Samegame"
 msgstr ""
 
 msgid "Shisen-Sho"
@@ -541,6 +553,9 @@ msgstr "Tipo Numerica"
 #: pysollib/gamedb.py:162
 msgid "Pairing type"
 msgstr "Tipo coppie"
+
+msgid "Picture Gallery type"
+msgstr ""
 
 #: pysollib/gamedb.py:164
 msgid "Raglan type"
@@ -624,6 +639,12 @@ msgstr ""
 msgid "Tower of Hanoi type"
 msgstr ""
 
+msgid "Ishido type"
+msgstr ""
+
+msgid "Samegame type"
+msgstr ""
+
 #: pysollib/help.py:43
 msgid "A Python Solitaire Game Collection"
 msgstr "Una raccolta di solitari in Python"
@@ -637,12 +658,15 @@ msgid "&Nice"
 msgstr "Be&ne"
 
 #: pysollib/help.py:46
-msgid "&Credits..."
+msgid "&Credits"
 msgstr "Riconos&cimenti"
 
 #: pysollib/help.py:48
 msgid "&Enjoy"
 msgstr "Buon div&ertimento"
+
+msgid "Show this on startup"
+msgstr ""
 
 #: pysollib/help.py:49
 #, python-format
@@ -664,6 +688,7 @@ msgid ""
 "Copyright (C) 1998 - 2003 Markus F.X.J. Oberhumer.\n"
 "Copyright (C) 2003 Mt. Hood Playing Card Co.\n"
 "Copyright (C) 2005 - 2009 Skomoroh.\n"
+"Copyright (C) 2020 - 2024 PySolFC.\n"
 "All Rights Reserved.\n"
 "\n"
 "PySol is free software distributed under the terms\n"
@@ -678,6 +703,7 @@ msgstr ""
 "Copyright (C) 1998 - 2003 Markus F.X.J. Oberhumer.\n"
 "Copyright (C) 2003 Mt. Hood Playing Card Co.\n"
 "Copyright (C) 2005 - 2009 Skomoroh.\n"
+"Copyright (C) 2020 - 2024 PySolFC.\n"
 "Tutti i diritti riservati.\n"
 "\n"
 "PySol è software libero distribuito alle condizioni\n"
@@ -756,6 +782,12 @@ msgstr ""
 "%s\n"
 "\n"
 "Verificare l'installazione di %s.\n"
+
+msgid "PySol cannot find cardsets of the following types:"
+msgstr ""
+
+msgid "\\"
+msgstr ""
 
 #: pysollib/main.py:66 pysollib/main.py:78 pysollib/main.py:313
 #: pysollib/ui/tktile/menubar.py:346
@@ -871,8 +903,8 @@ msgid "Unknown"
 msgstr "Sconosciuto"
 
 #: pysollib/resource.py:182
-msgid "French type (52 cards)"
-msgstr "Tipo Francese (52 carte)"
+msgid "French type (52-54 cards)"
+msgstr "Tipo Francese (52-54 carte)"
 
 #: pysollib/resource.py:183
 msgid "Hanafuda type (48 cards)"
@@ -907,6 +939,12 @@ msgid "Trumps only type (variable cards)"
 msgstr "Tipo Trionfi (carte variabili)"
 
 msgid "Matching type (variable cards)"
+msgstr ""
+
+msgid "Puzzle type (variable pieces)"
+msgstr ""
+
+msgid "Ishido type (36 tiles)"
 msgstr ""
 
 #: pysollib/resource.py:194
@@ -948,6 +986,42 @@ msgstr "Solo Trionfi"
 msgid "Matching"
 msgstr ""
 
+msgid "No Jokers"
+msgstr ""
+
+msgid "Joker Deck"
+msgstr ""
+
+msgid "3x3"
+msgstr ""
+
+msgid "4x4"
+msgstr ""
+
+msgid "5x5"
+msgstr ""
+
+msgid "6x6"
+msgstr ""
+
+msgid "7x7"
+msgstr ""
+
+msgid "8x8"
+msgstr ""
+
+msgid "9x9"
+msgstr ""
+
+msgid "10x10"
+msgstr ""
+
+msgid "With %(cards)d or more cards"
+msgstr ""
+
+msgid "Abstract"
+msgstr ""
+
 #: pysollib/resource.py:219
 msgid "Adult"
 msgstr "Adulti"
@@ -984,6 +1058,9 @@ msgstr "Da collezione"
 msgid "Computers"
 msgstr "Computers"
 
+msgid "Divination"
+msgstr ""
+
 #: pysollib/resource.py:228
 msgid "Engines"
 msgstr "Macchine"
@@ -992,6 +1069,9 @@ msgstr "Macchine"
 msgid "Fantasy"
 msgstr "Fantasia"
 
+msgid "Four Color"
+msgstr ""
+
 #: pysollib/resource.py:230
 msgid "Ganjifa"
 msgstr "Ganjifa"
@@ -999,6 +1079,9 @@ msgstr "Ganjifa"
 #: pysollib/resource.py:233
 msgid "Holiday"
 msgstr "Vacanze"
+
+msgid "Monochrome"
+msgstr ""
 
 #: pysollib/resource.py:235
 msgid "Movies"
@@ -1115,6 +1198,9 @@ msgstr "Giappone"
 #: pysollib/resource.py:269
 msgid "Netherlands"
 msgstr "Olanda"
+
+msgid "Portugal"
+msgstr ""
 
 #: pysollib/resource.py:270
 msgid "Russia"
@@ -1755,6 +1841,9 @@ msgstr "Grounds for a Divorce"
 msgid "Type:"
 msgstr "Tipi:"
 
+msgid "Subtype:"
+msgstr ""
+
 #: pysollib/wizardutil.py:151 pysollib/wizardutil.py:157
 msgid "No redeals"
 msgstr "Nessuna ridistribuzione"
@@ -2332,6 +2421,9 @@ msgid ""
 msgstr ""
 "Tableau: Decrescente per colore. Sequenze di carte dello stesso seme possono "
 "essere spostate in gruppo"
+
+msgid "Reserve."
+msgstr "Riserva."
 
 #: pysollib/games/klondike.py:461
 msgid "Reserve. Only Kings are acceptable."
@@ -2967,6 +3059,18 @@ msgstr "Sinistra"
 msgid "Right"
 msgstr "Destra"
 
+msgid "Other graphics"
+msgstr ""
+
+msgid "Demo logo"
+msgstr ""
+
+msgid "Pause text"
+msgstr ""
+
+msgid "Redeal icons"
+msgstr ""
+
 #: pysollib/kivy/menubar.py:1062
 #, fuzzy
 msgid "Startup splash screen"
@@ -3266,6 +3370,9 @@ msgstr ""
 msgid "Games with Separate Decks"
 msgstr "Giochi con mazzi separati"
 
+msgid "Games with Jokers"
+msgstr ""
+
 #: pysollib/kivy/selectgame.py:271 pysollib/pysolgtk/selectgame.py:306
 #: pysollib/tile/selectgame.py:249 pysollib/tk/selectgame.py:249
 msgid "Open Games (all cards visible)"
@@ -3456,6 +3563,10 @@ msgstr ""
 msgid "Search"
 msgstr ""
 
+#, fuzzy
+msgid "Card Size"
+msgstr "Vista carte"
+
 msgid "Search:"
 msgstr ""
 
@@ -3540,6 +3651,9 @@ msgstr "Nomi alternativi:"
 #: pysollib/tk/selectgame.py:394
 msgid "Category:"
 msgstr "Categoria:"
+
+msgid "Subcategory:"
+msgstr ""
 
 #: pysollib/pysolgtk/selectgame.py:119 pysollib/tile/selectgame.py:397
 #: pysollib/tk/selectgame.py:397
@@ -3635,6 +3749,12 @@ msgid "Games not played"
 msgstr ""
 
 msgid "Popular"
+msgstr ""
+
+msgid "Recent"
+msgstr ""
+
+msgid "Favorite"
 msgstr ""
 
 msgid "Children's"
@@ -4900,6 +5020,9 @@ msgstr "Evidenzia non corrispondenti:"
 msgid "Find card"
 msgstr "Trova carta"
 
+msgid "Full picture"
+msgstr ""
+
 msgid "Icon Style"
 msgstr ""
 
@@ -4943,6 +5066,15 @@ msgstr "&File"
 #: pysollib/ui/tktile/menubar.py:301
 msgid "R&ecent games"
 msgstr "Giochi r&ecenti"
+
+msgid "&Clear recent games"
+msgstr ""
+
+msgid "Clear recent games"
+msgstr ""
+
+msgid "Clear the recent games list?"
+msgstr ""
 
 #: pysollib/ui/tktile/menubar.py:304
 msgid "Select &random game"
@@ -5108,6 +5240,9 @@ msgstr "Evidenzia p&ile"
 #: pysollib/ui/tktile/menubar.py:438
 msgid "&Find card..."
 msgstr "&Trova carta..."
+
+msgid "Sh&ow full picture..."
+msgstr ""
 
 #: pysollib/ui/tktile/menubar.py:442
 msgid "&Demo"
@@ -5406,9 +5541,24 @@ msgstr "Mostra barra di a&iuto"
 msgid "Save games &geometry"
 msgstr "Salva gioco e &geometria"
 
+msgid "Othe&r graphics"
+msgstr ""
+
 #: pysollib/ui/tktile/menubar.py:637
 msgid "&Demo logo"
 msgstr "&Demo logo"
+
+msgid "D&ialog icons"
+msgstr ""
+
+msgid "&Pause text"
+msgstr ""
+
+msgid "&Redeal icons"
+msgstr ""
+
+msgid "&Tree icons"
+msgstr ""
 
 #: pysollib/ui/tktile/menubar.py:640
 msgid "Startup splash sc&reen"

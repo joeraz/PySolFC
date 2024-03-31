@@ -1450,6 +1450,18 @@ class Game(object):
         # 10 - used internally in game preview
         if self.app.opt.animations == 0 or frames == 0:
             return
+
+        if TOOLKIT == 'kivy':
+            c0 = cards[0]
+            dx, dy = (x - c0.x), (y - c0.y)
+            base = float(self.app.opt.animations)
+            duration = base*base/30.0 + 0.05
+            for card in cards:
+                card.animatedMove(dx, dy, duration)
+            # self.top.waitAnimation(swallow=True, pickup=True)
+            # synchronise: ev. per option ?
+            return
+
         # init timer - need a high resolution for this to work
         clock, delay, skip = None, 1, 1
         if self.app.opt.animations >= 2:
@@ -1476,16 +1488,8 @@ class Game(object):
         if shadow < 0:
             shadow = self.app.opt.shadow
         shadows = ()
-        # start animation
-        if TOOLKIT == 'kivy':
-            c0 = cards[0]
-            dx, dy = (x - c0.x), (y - c0.y)
-            for card in cards:
-                base = float(self.app.opt.animations)
-                duration = base*0.1
-                card.animatedMove(dx, dy, duration)
-            return
 
+        # start animation
         if tkraise:
             for card in cards:
                 card.tkraise()
@@ -1775,6 +1779,8 @@ class Game(object):
             return
         if TOOLKIT == 'gtk':
             return
+        if TOOLKIT == 'kivy':
+            return
         if not Image:
             return
         self.canvas.hideAllItems()
@@ -1797,6 +1803,8 @@ class Game(object):
         return
 
     def redealAnimation(self):
+        if TOOLKIT == 'kivy':
+            return
         if self.preview:
             return
         if not self.app.opt.animations or not self.app.opt.redeal_animation:
@@ -3263,6 +3271,7 @@ class Game(object):
     def saveGame(self, filename, protocol=-1):
         self.finishMove()       # just in case
         self.setCursor(cursor=CURSOR_WATCH)
+        rval = False
         try:
             self._saveGame(filename, protocol)
         except Exception as ex:
@@ -3270,8 +3279,10 @@ class Game(object):
             MfxExceptionDialog(self.top, ex, title=_("Save game error"),
                                text=_("Error while saving game"))
         else:
+            rval = True
             self.filename = filename
             self.setCursor(cursor=self.app.top_cursor)
+        return rval
 
     #
     # low level load/save
@@ -3421,6 +3432,11 @@ class Game(object):
         d = time.time() - self.stats.update_time + self.stats.elapsed_time
         self.updateStatus(time=format_time(d))
 
+    def displayPauseImage(self):
+        n = self.random.initial_seed % len(self.app.gimages.pause)
+        self.pause_logo = self.app.gimages.pause[int(n)]
+        self.canvas.setTopImage(self.pause_logo)
+
     def doPause(self):
         if self.finished:
             return
@@ -3432,9 +3448,7 @@ class Game(object):
         if self.pause:
             # self.updateTime()
             self.canvas.hideAllItems()
-            n = self.random.initial_seed % len(self.app.gimages.pause)
-            self.pause_logo = self.app.gimages.pause[int(n)]
-            self.canvas.setTopImage(self.pause_logo)
+            self.displayPauseImage()
         else:
             self.stats.update_time = time.time()
             self.updatePlayTime()
@@ -3481,7 +3495,11 @@ class Game(object):
 
     # for find_card_dialog
     def canFindCard(self):
-        return self.gameinfo.category != GI.GC_MATCHING
+        return self.gameinfo.category not in (GI.GC_MATCHING, GI.GC_PUZZLE) \
+            and self.gameinfo.si.game_type != GI.GT_SAMEGAME
+
+    def canShowFullPicture(self):
+        return self.gameinfo.category == GI.GC_PUZZLE
 
     #
     # subclass hooks

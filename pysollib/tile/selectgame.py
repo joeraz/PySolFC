@@ -251,6 +251,9 @@ class SelectGameData(SelectDialogTreeData):
                 SelectGameNode(None, _("Games with Separate Decks"),
                                lambda gi: gi.si.game_flags &
                                GI.GT_SEPARATE_DECKS),
+                SelectGameNode(None, _("Games with Jokers"),
+                               lambda gi: gi.category == GI.GC_FRENCH and
+                               gi.subcategory == GI.GS_JOKER_DECK),
                 SelectGameNode(None, _("Open Games (all cards visible)"),
                                lambda gi: gi.si.game_flags & GI.GT_OPEN),
                 SelectGameNode(None, _("Relaxed Variants"),
@@ -541,6 +544,11 @@ class SelectGameDialogWithPreview(SelectGameDialog):
                     self.criteria.categoryOptions[self.criteria.category]
                     != game.category):
                 continue
+            if (self.criteria.subcategory != "" and
+                    self.criteria.
+                    subcategoryOptionsAll[self.criteria.subcategory]
+                    != game.subcategory):
+                continue
             if (self.criteria.type != ""
                     and self.criteria.typeOptions[self.criteria.type]
                     != game.si.game_type):
@@ -619,6 +627,12 @@ class SelectGameDialogWithPreview(SelectGameDialog):
             if (self.criteria.popular and
                     not (game.si.game_flags & GI.GT_POPULAR)):
                 continue
+            if (self.criteria.recent and
+                    not (game.id in self.app.opt.recent_gameid)):
+                continue
+            if (self.criteria.favorite and
+                    not (game.id in self.app.opt.favorite_gameid)):
+                continue
             if (self.criteria.children and
                     not (game.si.game_flags & GI.GT_CHILDREN)):
                 continue
@@ -663,6 +677,7 @@ class SelectGameDialogWithPreview(SelectGameDialog):
 
             self.criteria.usealt = d.usealt.get()
             self.criteria.category = d.category.get()
+            self.criteria.subcategory = d.subcategory.get()
             self.criteria.type = d.type.get()
             self.criteria.skill = d.skill.get()
             self.criteria.decks = d.decks.get()
@@ -674,6 +689,8 @@ class SelectGameDialogWithPreview(SelectGameDialog):
             self.criteria.statistics = d.statistics.get()
 
             self.criteria.popular = d.popular.get()
+            self.criteria.recent = d.recent.get()
+            self.criteria.favorite = d.favorite.get()
             self.criteria.children = d.children.get()
             self.criteria.scoring = d.scoring.get()
             self.criteria.stripped = d.stripped.get()
@@ -734,14 +751,23 @@ class SelectGameDialogWithPreview(SelectGameDialog):
         #
 
         c = self.app.cardsets_cache.get(gi.category)
-        if not c:
+        c2 = None
+        if c:
+            c2 = c.get(gi.subcategory)
+        if not c2:
             cardset = self.app.cardset_manager.getByName(
-                self.app.opt.cardset[gi.category][0])
+                self.app.opt.cardset[gi.category][gi.subcategory][0])
             self.app.loadCardset(cardset, id=gi.category,
                                  tocache=True, noprogress=True)
             c = self.app.cardsets_cache.get(gi.category)
-        if c:
-            self.preview_app.images = c[2]
+            if c:
+                c2 = c.get(gi.subcategory)
+            if not c2:
+                c = self.app.cardsets_cache.get(cardset.type)
+                if c:
+                    c2 = c.get(cardset.subtype)
+        if c2:
+            self.preview_app.images = c2[2]
         else:
             self.preview_app.images = self.app.subsampled_images
 
@@ -845,6 +871,7 @@ class SearchCriteria:
         self.name = ""
         self.usealt = True
         self.category = ""
+        self.subcategory = ""
         self.type = ""
         self.skill = ""
         self.decks = ""
@@ -856,6 +883,8 @@ class SearchCriteria:
         self.statistics = ""
 
         self.popular = False
+        self.recent = False
+        self.favorite = False
         self.children = False
         self.scoring = False
         self.stripped = False
@@ -869,10 +898,24 @@ class SearchCriteria:
         del categoryOptions[7]  # Navagraha Ganjifa is unused.
         self.categoryOptions = dict((v, k) for k, v in categoryOptions.items())
 
+        self.subcategoryOptions = {"": -1}
+
+        subcategoryOptionsAll = {"": -1}
+        for t in CSI.SUBTYPE_NAME.values():
+            subcategoryOptionsAll.update(t)
+        self.subcategoryOptionsAll = dict((v, k) for k, v in
+                                          subcategoryOptionsAll.items())
+
         typeOptions = {-1: ""}
         typeOptions.update(GI.TYPE_NAMES)
         del typeOptions[29]  # Simple games type is unused.
         self.typeOptions = dict((v, k) for k, v in typeOptions.items())
+
+        self.deckOptions = {"": 0,
+                            "1 deck games": 1,
+                            "2 deck games": 2,
+                            "3 deck games": 3,
+                            "4 deck games": 4}
 
         skillOptions = {-1: ""}
         skillOptions.update(GI.SKILL_LEVELS)
@@ -916,6 +959,8 @@ class SelectGameAdvancedSearch(MfxDialog):
         self.usealt.set(criteria.usealt)
         self.category = tkinter.StringVar()
         self.category.set(criteria.category)
+        self.subcategory = tkinter.StringVar()
+        self.subcategory.set(criteria.subcategory)
         self.type = tkinter.StringVar()
         self.type.set(criteria.type)
         self.skill = tkinter.StringVar()
@@ -937,6 +982,10 @@ class SelectGameAdvancedSearch(MfxDialog):
 
         self.popular = tkinter.BooleanVar()
         self.popular.set(criteria.popular)
+        self.recent = tkinter.BooleanVar()
+        self.recent.set(criteria.recent)
+        self.favorite = tkinter.BooleanVar()
+        self.favorite.set(criteria.favorite)
         self.children = tkinter.BooleanVar()
         self.children.set(criteria.children)
         self.scoring = tkinter.BooleanVar()
@@ -951,6 +1000,7 @@ class SelectGameAdvancedSearch(MfxDialog):
         self.relaxed.set(criteria.relaxed)
         self.original = tkinter.BooleanVar()
         self.original.set(criteria.original)
+
         #
         row = 0
 
@@ -972,13 +1022,32 @@ class SelectGameAdvancedSearch(MfxDialog):
         categoryValues = list(criteria.categoryOptions.keys())
         categoryValues.sort()
 
+        self.categoryValues = criteria.categoryOptions
+
         labelCategory = tkinter.Label(top_frame, text="Category:", anchor="w")
         labelCategory.grid(row=row, column=0, columnspan=1, sticky='ew',
                            padx=1, pady=1)
         textCategory = PysolCombo(top_frame, values=categoryValues,
-                                  textvariable=self.category, state='readonly')
+                                  textvariable=self.category, state='readonly',
+                                  selectcommand=self.updateSubcategories)
         textCategory.grid(row=row, column=1, columnspan=4, sticky='ew',
                           padx=1, pady=1)
+        row += 1
+
+        subcategoryValues = list(criteria.subcategoryOptions.keys())
+        subcategoryValues.sort()
+
+        labelSubcategory = tkinter.Label(top_frame, text="Subcategory:",
+                                         anchor="w")
+        labelSubcategory.grid(row=row, column=0, columnspan=1, sticky='ew',
+                              padx=1, pady=1)
+        textSubcategory = PysolCombo(top_frame, values=subcategoryValues,
+                                     textvariable=self.subcategory,
+                                     state='readonly')
+        textSubcategory.grid(row=row, column=1, columnspan=4, sticky='ew',
+                             padx=1, pady=1)
+        self.subcategorySelect = textSubcategory
+        self.updateSubcategories()
         row += 1
 
         typeValues = list(criteria.typeOptions.keys())
@@ -1092,19 +1161,33 @@ class SelectGameAdvancedSearch(MfxDialog):
                                            text=_("Popular"), anchor="w")
         popularCheck.grid(row=row, column=col, columnspan=1, sticky='ew',
                           padx=1, pady=1)
-        col += 1
+        col += 2
+
+        recentCheck = tkinter.Checkbutton(top_frame, variable=self.recent,
+                                          text=_("Recent"), anchor="w")
+        recentCheck.grid(row=row, column=col, columnspan=1, sticky='ew',
+                         padx=1, pady=1)
+        col += 2
+
+        favoriteCheck = tkinter.Checkbutton(top_frame, variable=self.favorite,
+                                            text=_("Favorite"), anchor="w")
+        favoriteCheck.grid(row=row, column=col, columnspan=1, sticky='ew',
+                           padx=1, pady=1)
+
+        row += 1
+        col = 0
 
         childCheck = tkinter.Checkbutton(top_frame, variable=self.children,
                                          text=_("Children's"), anchor="w")
         childCheck.grid(row=row, column=col, columnspan=1, sticky='ew',
                         padx=1, pady=1)
-        col += 1
+        col += 2
 
         scoreCheck = tkinter.Checkbutton(top_frame, variable=self.scoring,
                                          text=_("Scored"), anchor="w")
         scoreCheck.grid(row=row, column=col, columnspan=1, sticky='ew',
                         padx=1, pady=1)
-        col += 1
+        col += 2
 
         stripCheck = tkinter.Checkbutton(top_frame, variable=self.stripped,
                                          text=_("Stripped Deck"), anchor="w")
@@ -1117,29 +1200,46 @@ class SelectGameAdvancedSearch(MfxDialog):
                                        text=_("Separate Decks"), anchor="w")
         sepCheck.grid(row=row, column=col, columnspan=1, sticky='ew',
                       padx=1, pady=1)
-        col += 1
+        col += 2
 
         openCheck = tkinter.Checkbutton(top_frame, variable=self.open,
                                         text=_("Open"), anchor="w")
         openCheck.grid(row=row, column=col, columnspan=1, sticky='ew',
                        padx=1, pady=1)
-        col += 1
+        col += 2
 
         relaxedCheck = tkinter.Checkbutton(top_frame, variable=self.relaxed,
                                            text=_("Relaxed"), anchor="w")
         relaxedCheck.grid(row=row, column=col, columnspan=1, sticky='ew',
                           padx=1, pady=1)
-        col += 1
+        row += 1
+        col = 0
 
         originalCheck = tkinter.Checkbutton(top_frame, variable=self.original,
                                             text=_("Original"), anchor="w")
         originalCheck.grid(row=row, column=col, columnspan=1, sticky='ew',
                            padx=1, pady=1)
-        col += 1
 
         focus = self.createButtons(bottom_frame, kw)
         # focus = text_w
         self.mainloop(focus, kw.timeout)
+
+    def updateSubcategories(self, *args):
+        subcategoryOptions = {-1: ""}
+        key = self.categoryValues[self.category.get()]
+        if key in CSI.SUBTYPE_NAME:
+            subcategoryOptions.update(CSI.SUBTYPE_NAME[key])
+            self.subcategorySelect['state'] = 'readonly'
+            subcategoryOptions = dict((v, k) for k, v in
+                                      subcategoryOptions.items())
+            subcategoryOptionsK = list(subcategoryOptions.keys())
+            subcategoryOptionsK.sort()
+            self.subcategorySelect['values'] = subcategoryOptionsK
+            if self.subcategory.get() not in subcategoryOptionsK:
+                self.subcategory.set("")
+        else:
+            self.subcategorySelect['state'] = 'disabled'
+            self.subcategory.set("")
 
     def initKw(self, kw):
         kw = KwStruct(kw,

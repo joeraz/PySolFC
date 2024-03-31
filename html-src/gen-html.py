@@ -19,7 +19,6 @@ builtins.n_ = lambda x: x
 import pysollib.games  # noqa: E402,F402,I100,I202
 import pysollib.games.mahjongg  # noqa: E402,F402
 import pysollib.games.special  # noqa: E402,F401,F402
-import pysollib.games.ultra  # noqa: E402,F401,F402
 
 try:
     os.mkdir('html')
@@ -46,6 +45,7 @@ fix_gettext()
 
 files = [
     ('credits.html', 'PySol Credits'),
+    ('credits_old.html', 'PySol Credits'),
     ('ganjifa.html', 'PySol - General Ganjifa Card Rules'),
     ('general_rules.html', 'PySol - General Rules'),
     ('glossary.html', 'PySol - Glossary'),
@@ -79,6 +79,8 @@ rules_files = [
     ('freecell.html', 'PySol - Rules for FreeCell'),
     ('lightsout.html', 'PySol - Rules for Lights Out'),
     ('fourrivers.html', 'PySol - Rules for Four Rivers'),
+    ('tilepuzzle.html', 'PySol - Rules for Tile Puzzle'),
+    ('samegame.html', 'PySol - Rules for Samegame'),
     ]
 
 

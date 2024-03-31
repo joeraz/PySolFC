@@ -50,9 +50,8 @@ from pysollib.stack import \
         WasteStack, \
         WasteTalonStack, \
         isSameSuitSequence
-from pysollib.util import ACE, ANY_RANK, ANY_SUIT, DIAMOND, KING, NO_RANK,\
-        RANKS, SUITS, \
-        UNLIMITED_REDEALS
+from pysollib.util import ACE, ANY_RANK, ANY_SUIT, DIAMOND, KING, NO_RANK, \
+        RANKS, SUITS, UNLIMITED_REDEALS
 
 
 class Golf_Hint(AbstractHint):
@@ -107,6 +106,9 @@ class Golf_Waste(WasteStack):
             return True
         if not WasteStack.acceptsCards(self, from_stack, cards):
             return False
+        # if there are jokers, they're wild
+        if self.cards[-1].suit == 4 or cards[0].suit == 4:
+            return True
         # check cards
         r1, r2 = self.cards[-1].rank, cards[0].rank
         if self.game.getStrictness() == 1:
@@ -215,6 +217,14 @@ class DoubleGolf(Golf):
 
     def startGame(self):
         Golf.startGame(self, 7)
+
+
+# ************************************************************************
+# * Thieves
+# ************************************************************************
+
+class Thieves(Golf):
+    pass
 
 
 # ************************************************************************
@@ -350,6 +360,8 @@ class BlackHole(Game):
     Hint_Class = Golf_Hint
     Solver_Class = BlackHoleSolverWrapper(preset='black_hole')
 
+    FOUNDATIONS = 1
+
     #
     # game layout
     #
@@ -359,8 +371,9 @@ class BlackHole(Game):
         layout, s = Layout(self), self.s
 
         # set window
-        w = max(2*layout.XS, layout.XS+(playcards-1)*layout.XOFFSET)
-        self.setSize(layout.XM + 5*w, layout.YM + 4*layout.YS)
+        w = max((1 + self.FOUNDATIONS) * layout.XS,
+                layout.XS + (playcards - 1) * layout.XOFFSET)
+        self.setSize(layout.XM + 5 * w, layout.YM + 4 * layout.YS)
 
         # create stacks
         y = layout.YM
@@ -380,9 +393,12 @@ class BlackHole(Game):
             r.CARD_XOFFSET = layout.XOFFSET
             r.CARD_YOFFSET = 0
         x, y = layout.XM + 2*w, layout.YM + 3*layout.YS//2
-        s.foundations.append(BlackHole_Foundation(x, y, self, suit=ANY_SUIT,
-                             dir=0, mod=13, max_move=0, max_cards=52))
-        layout.createText(s.foundations[0], "s")
+        for f in range(self.FOUNDATIONS):
+            s.foundations.append(BlackHole_Foundation(x, y, self,
+                                 suit=ANY_SUIT, dir=0, mod=13, max_move=0,
+                                 max_cards=52 * self.gameinfo.decks))
+            layout.createText(s.foundations[f], "s")
+            x += layout.XS
         x, y = layout.XM + 4*w, self.height - layout.YS
         s.talon = InitialDealTalonStack(x, y, self)
 
@@ -410,6 +426,29 @@ class BlackHole(Game):
         else:
             # rightclickHandler
             return ((), self.sg.dropstacks, self.sg.dropstacks)
+
+
+# ************************************************************************
+# * Binary Star
+# ************************************************************************
+
+class BinaryStar(BlackHole):
+    RowStack_Class = StackWrapper(
+        ReserveStack, max_accept=0, max_cards=6)
+    # TODO: Solver support
+    Solver_Class = BlackHoleSolverWrapper(preset='binary_star')
+    FOUNDATIONS = 2
+
+    def _shuffleHook(self, cards):
+        # move Ace and king to bottom of the Talon
+        # (i.e. last cards to be dealt)
+        return self._shuffleHookMoveToBottom(
+            cards, lambda c: (c.id in (13, 38), c.suit), 2)
+
+    def startGame(self):
+        self._startDealNumRows(5)
+        self.s.talon.dealRow()
+        self.s.talon.dealRow(rows=self.s.foundations)
 
 
 # ************************************************************************
@@ -607,7 +646,7 @@ class Robert(Game):
 
     def createGame(self, max_rounds=3, num_deal=1, num_foundations=1):
         layout, s = Layout(self), self.s
-        self.setSize(layout.XM + 4 * layout.XS,
+        self.setSize(layout.XM + max(4, num_foundations) * layout.XS,
                      layout.YM + layout.TEXT_HEIGHT + 2 * layout.YS)
         x, y = layout.XM, layout.YM
         if num_foundations == 1:
@@ -623,7 +662,8 @@ class Robert(Game):
             layout.createText(stack, 's')
             x += layout.XS
 
-        x, y = layout.XM+layout.XS, layout.YM + layout.YS + layout.TEXT_HEIGHT
+        x, y = layout.XM + (layout.XS * max((num_foundations // 2) - 1, 1)), \
+            layout.YM + layout.YS + layout.TEXT_HEIGHT
         s.talon = WasteTalonStack(x, y, self,
                                   max_rounds=max_rounds, num_deal=num_deal)
         layout.createText(s.talon, 'nw')
@@ -661,8 +701,8 @@ class Wasatch(Robert):
 
 # ************************************************************************
 # * Uintah
+# * Double Uintah
 # ************************************************************************
-
 
 class Uintah_Foundation(AbstractFoundationStack):
     def acceptsCards(self, from_stack, cards):
@@ -698,6 +738,28 @@ class Uintah(Robert):
                 cards.remove(c)
             if len(suits) == 4:
                 break
+        top_cards.sort(key=lambda x: -x.suit)  # sort by suit
+        return cards + top_cards
+
+
+class DoubleUintah(Uintah):
+    Foundation_Stack = Uintah_Foundation
+
+    def createGame(self):
+        Robert.createGame(self, max_rounds=UNLIMITED_REDEALS, num_deal=3,
+                          num_foundations=8)
+
+    def _shuffleHook(self, cards):
+        top_cards = []
+        for s in range(2):
+            suits = []
+            for c in cards[:]:
+                if c.suit not in suits:
+                    suits.append(c.suit)
+                    top_cards.append(c)
+                    cards.remove(c)
+                if len(suits) == 4:
+                    break
         top_cards.sort(key=lambda x: -x.suit)  # sort by suit
         return cards + top_cards
 
@@ -774,7 +836,7 @@ class Dolphin(Game):
             s.reserves.append(ReserveStack(x, y, self))
             x += layout.XS
         x += dx
-        max_cards = 52*self.gameinfo.decks
+        max_cards = 52 * self.gameinfo.decks
         s.foundations.append(RK_FoundationStack(x, y, self,
                              base_rank=ANY_RANK, mod=13, max_cards=max_cards))
         layout.createText(s.foundations[0], 'ne')
@@ -875,7 +937,7 @@ class Waterfall(Game):
 
 # ************************************************************************
 # * Vague
-# * Thirty Two Cards
+# * Thirty-Two Cards
 # ************************************************************************
 
 class Vague_RowStack(BasicRowStack):
@@ -1452,7 +1514,7 @@ registerGame(GameInfo(720, Vague, "Vague",
 registerGame(GameInfo(723, DevilsSolitaire, "Devil's Solitaire",
                       GI.GT_2DECK_TYPE, 2, 2, GI.SL_BALANCED,
                       altnames=('Banner',)))
-registerGame(GameInfo(728, ThirtyTwoCards, "Thirty Two Cards",
+registerGame(GameInfo(728, ThirtyTwoCards, "Thirty-Two Cards",
                       GI.GT_2DECK_TYPE, 2, 0, GI.SL_LUCK))
 registerGame(GameInfo(731, ThreeFirTrees, "Three Fir-trees",
                       GI.GT_GOLF, 2, 0, GI.SL_BALANCED))
@@ -1491,3 +1553,12 @@ registerGame(GameInfo(891, AllInARowII, "All in a Row II",
                       GI.GT_GOLF | GI.GT_OPEN, 1, 0, GI.SL_MOSTLY_SKILL))
 registerGame(GameInfo(892, DoublePutt, "Double Putt",
                       GI.GT_GOLF, 2, 0, GI.SL_BALANCED))
+registerGame(GameInfo(906, Thieves, "Thieves",
+                      GI.GT_GOLF, 1, 0, GI.SL_BALANCED,
+                      subcategory=GI.GS_JOKER_DECK, trumps=list(range(2))))
+registerGame(GameInfo(941, BinaryStar, "Binary Star",
+                      GI.GT_GOLF | GI.GT_OPEN, 2, 0, GI.SL_MOSTLY_SKILL,
+                      altnames=("Black Holes",)))
+registerGame(GameInfo(959, DoubleUintah, "Double Uintah",
+                      GI.GT_GOLF, 2, UNLIMITED_REDEALS,
+                      GI.SL_MOSTLY_LUCK))

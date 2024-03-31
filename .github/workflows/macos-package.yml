@@ -28,9 +28,9 @@ jobs:
         brew install create-dmg
     - name: Get cardsets
       run: |
-        wget -O cardsets-pack.tar.xz "https://sourceforge.net/projects/pysolfc/files/PySolFC-Cardsets/PySolFC-Cardsets-2.2/PySolFC-Cardsets-2.2.tar.bz2/download"
+        wget -O cardsets-pack.tar.xz "https://sourceforge.net/projects/pysolfc/files/PySolFC-Cardsets/PySolFC-Cardsets-3.0/PySolFC-Cardsets-3.0.tar.bz2/download"
         tar -xJf cardsets-pack.tar.xz
-        mv PySolFC-Cardsets-2.2/cardset-* data
+        mv PySolFC-Cardsets-3.0/cardset-* data
     - name: Prepare game rules (process the HTML) and translations
       run: |
         make rules mo

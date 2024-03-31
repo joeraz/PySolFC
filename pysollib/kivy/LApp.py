@@ -38,13 +38,14 @@ from kivy.graphics import Color
 from kivy.graphics import Line
 from kivy.graphics import Rectangle
 from kivy.graphics import Triangle
+from kivy.properties import NumericProperty
 from kivy.properties import StringProperty
 from kivy.uix.actionbar import ActionButton
 from kivy.uix.actionbar import ActionPrevious
 from kivy.uix.actionbar import ActionView
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.image import Image as KivyImage
+from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.label import Label
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.treeview import TreeView
@@ -52,7 +53,10 @@ from kivy.uix.treeview import TreeViewLabel
 from kivy.uix.widget import Widget
 from kivy.utils import platform
 
+from pysollib.kivy.LBase import LBase
+from pysollib.kivy.LTask import LTask, LTaskQ
 from pysollib.kivy.androidperms import requestStoragePerm
+from pysollib.kivy.androidrot import AndroidScreenRotation
 from pysollib.resource import CSI
 
 if platform != 'android':
@@ -67,12 +71,32 @@ def get_platform():
 # =============================================================================
 
 
+def get_menu_size_hint():
+    sh = (0.5, 1.0)
+    if Window.size[0] < Window.size[1]:
+        sh = (1.0, 1.0)
+    return sh
+
+# =============================================================================
+
+
+def set_fullscreen(fullscreen=True):
+    if get_platform() == 'android':
+        from jnius import autoclass
+    else:
+        return
+
+    SDLActivity = autoclass('org.libsdl.app.SDLActivity')
+    SDLActivity.setWindowStyle(fullscreen)
+
+# =============================================================================
+
+
 def get_screen_ori():
     if get_platform() == 'android':
         from jnius import autoclass
         from jnius import cast
     else:
-        logging.info("LApp: ori = unknown")
         return None
 
     PythonActivity = autoclass('org.kivy.android.PythonActivity')
@@ -94,19 +118,6 @@ def get_screen_ori():
     return so
 
 # =============================================================================
-# kivy EventDispatcher passes keywords, that to not correspond to properties
-# to the base classes. Finally they will reach 'object'. With python3 (but not
-# python2) 'object' throws an exception 'takes no parameters' in that a
-# situation. We therefore underlay a base class (right outside), which
-# swallows up remaining keywords. Thus the keywords do not reach 'object' any
-# more.
-
-
-class LBase(object):
-    def __init__(self, **kw):
-        super(LBase, self).__init__()
-
-# =============================================================================
 
 
 class LPopCommander(LBase):
@@ -123,42 +134,18 @@ class LPopCommander(LBase):
 # =============================================================================
 
 
-class LAnimationMgr(object):
-    def __init__(self, **kw):
-        super(LAnimationMgr, self).__init__()
-        self.animations = []
-        self.widgets = {}
+class LAnimationTask(LTask, LBase):
+    def __init__(self, spos, widget, **kw):
+        super(LAnimationTask, self).__init__(widget.card)
+        self.spos = spos
+        self.widget = widget
 
-    def animEnd(self, anim, widget):
-        # print('LAnimationMgr: animEnd = %s.%s' % (anim, widget))
-
-        self.widgets[widget] = self.widgets[widget][1:]
-        self.animations.remove(anim)
-        if len(self.widgets[widget]) > 0:
-            # start next animation on widget
-            nanim = self.widgets[widget][0]
-            self.animations.append(nanim)
-            print('LAnimationMgr: animEnd, append = %s' % (nanim))
-            nanim.start(widget)
-        else:
-            # no further animations for widget so stop
-            del self.widgets[widget]
-
-    def makeAnimStart(self, anim, spos, widget):
-        def animStart(dt):
-            widget.pos = spos
-            # print('LAnimationMgr: animStart = %s ... %s' % (anim, dt))
-            anim.start(widget)
-        return animStart
-
-    def checkRunning(self):
-        return len(self.animations) > 0
-
-    def create(self, spos, widget, **kw):
         x = 0.0
         y = 0.0
         duration = 0.2
         transition = 'in_out_quad'
+        bindE = None
+        bindS = None
         if 'x' in kw:
             x = kw['x']
         if 'y' in kw:
@@ -167,34 +154,95 @@ class LAnimationMgr(object):
             duration = kw['duration']
         if 'transition' in kw:
             transition = kw['transition']
-
-        anim = Animation(x=x, y=y, duration=duration, transition=transition)
-        anim.bind(on_complete=self.animEnd)
         if 'bindE' in kw:
-            anim.bind(on_complete=kw['bindE'])
+            bindE = kw['bindE']
         if 'bindS' in kw:
-            anim.bind(on_start=kw['bindS'])
+            bindS = kw['bindS']
 
-        offset = duration / 3.0
-        # offset = duration*1.2
-        timedelay = offset * len(self.animations)
-        # print('offset = %s'% offset)
-        print('LAnimationMgr: timedelay = %s' % timedelay)
+        self.delay = duration / 3.0
 
-        if widget in self.widgets:
-            # append additional animation to widget
-            self.widgets[widget].append(anim)
-        else:
-            # setup first animation for widget
-            self.animations.append(anim)
-            self.widgets[widget] = [anim]
-            Clock.schedule_once(self.makeAnimStart(
-                anim, spos, widget), timedelay)
+        self.xdest = x
+        self.ydest = y
+        self.duration = duration
+        self.transition = transition
+        self.bindE = bindE
+        self.bindS = bindS
+        print(self.widget.card)
+
+    def start(self):
+        super(LAnimationTask, self).start()
+
+        anim = Animation(
+            x=self.xdest, y=self.ydest, duration=self.duration,
+            transition=self.transition)
+
+        if self.bindE is not None:
+            anim.bind(on_complete=self.bindE)
+        if self.bindS is not None:
+            anim.bind(on_start=self.bindS)
+
+        self.widget.pos = self.spos
+        anim.bind(on_complete=self.stop)
+        anim.start(self.widget)
+
+    def updateDestPos(self, pos):
+        self.xdest = pos[0]
+        self.ydest = pos[1]
+
+# =============================================================================
+
+
+class LAnimationMgr(object):
+    def __init__(self, **kw):
+        super(LAnimationMgr, self).__init__()
+        self.tasks = []
+        self.callbacks = []
+        self.taskQ = LTaskQ()
+
+    def checkRunning(self):
+        return len(self.tasks) > 0
+
+    def addEndCallback(self, cb):
+        self.callbacks.append(cb)
+
+    def taskEnd(self, task, value):
+        if value:
+            # print('LAnimationMgr: taskEnd = %s %s' % (task, value))
+            self.tasks.remove(task)
+            if not self.checkRunning():
+                # print('LAnimationMgr: taskEnd ->', len(self.callbacks), 'callbacks') # noqa
+                for cb in self.callbacks:
+                    cb()
+                # print('LAnimationMgr: taskEnd -> callbacks done')
+                self.callbacks = []
+
+            # print('Clock.get_fps() ->', Clock.get_fps())
+
+    def taskInsert(self, task):
+        self.tasks.append(task)
+        task.bind(done=self.taskEnd)
+        Clock.schedule_once(lambda dt: self.taskQ.taskInsert(task), 0.016)
 
 
 LAnimationManager = LAnimationMgr()
 
 # =============================================================================
+
+
+def LAfterAnimation(task, delay=0.0):
+    def dotask():   # noqa
+        Clock.schedule_once(lambda dt: task())
+    def mkcb(task): # noqa
+        def cb(dt):
+            if LAnimationManager.checkRunning():
+                LAnimationManager.addEndCallback(dotask)
+            else:
+                dotask()
+        return cb
+    Clock.schedule_once(mkcb(task), delay)
+
+# =============================================================================
+
 
 LSoundLoader = SoundLoader
 
@@ -210,71 +258,6 @@ class LBoxLayout(BoxLayout, LBase):
 
     def winfo_screenheight(self):
         return self.size[1]
-
-# =============================================================================
-
-
-class LImage(KivyImage, LBase):
-
-    def __init__(self, **kwargs):
-        super(LImage, self).__init__(**kwargs)
-        self.size = self.texture.size
-        self.silent = False
-        self.allow_stretch = True
-        # self.keep_ratio = 0
-        # self.size_hint = (1.0/9.0, 1.0/4.0)
-        self.size_hint = (1.0, 1.0)
-        # self.mipmap = True     # funktioniert nicht.
-
-        self.corePos = None
-        self.coreSize = None
-
-        # logging.info('LImage: __init__() %s' % kwargs)
-
-    def getHeight(self):
-        return self.size[1]
-
-    def getWidth(self):
-        return self.size[0]
-
-    def subsample(self, r):
-        ''
-        return LImage(texture=self.texture)
-        '''
-        if (self.source!=None):
-            # logging.info("LImage: subsample, %d, %s " % (r , self.source))
-            return LImage(source=self.source)
-        elif (self.texture!=None):
-            # logging.info("LImage: subsample, %d (texture) " % r)
-            return LImage(texture=self.texture)
-        '''
-        return self
-
-    def on_touch_down(self, touch):
-        if self.silent:
-            return False
-
-        # print('LImage: touch_down on %s' % str(touch.pos))
-        if self.collide_point(*touch.pos):
-            if (self.source is not None):
-                print('LImage match %s' % self.source)
-            else:
-                print('LImage match with texture')
-            return True
-        return False
-
-    def on_touch_up(self, touch):
-        if self.silent:
-            return False
-
-        # print('LImage: touch_up on %s' % str(touch.pos))
-        if self.collide_point(*touch.pos):
-            if (self.source is not None):
-                print('LImage match %s' % self.source)
-            else:
-                print('LImage match with texture')
-            return True
-        return False
 
 # =============================================================================
 
@@ -319,6 +302,38 @@ def addAnchorOffset(pos, size, anchor):
 # =============================================================================
 
 
+def LColorToLuminance(color):
+    kc = color
+    if isinstance(color, str):
+        kc = LColorToKivy(color)
+    r = kc[0]
+    g = kc[1]
+    b = kc[2]
+    Y = 0.2989*r + 0.5866*g + 0.1145*b
+    return Y
+
+# =============================================================================
+
+
+def LTextureToLuminance(texture):
+    b = texture.pixels
+    s = 4
+    n = len(b)/1000
+    if n > 4:
+        s = n - n % 4
+    n = 0
+    ll = 0
+    for i in range(0, len(b), int(s)):
+        rr = int.from_bytes(b[i:i+1], byteorder='big', signed=False) / 256.0  # noqa
+        gg = int.from_bytes(b[i+1:i+2], byteorder='big', signed=False) / 256.0  # noqa
+        bb = int.from_bytes(b[i+2:i+3], byteorder='big', signed=False) / 256.0  # noqa
+        ll = ll + LColorToLuminance([rr, gg, bb, 1])
+        n += 1
+    return (ll/n)
+
+# =============================================================================
+
+
 def LColorToKivy(outline):
     if (outline[0] == '#'):
         outline = outline[1:]
@@ -344,8 +359,8 @@ def cardfactor(canvas):
     cardscale = 1.0
     try:
         cs = canvas.wmain.app.images.cs
-        print('Cardset:', cs)
-        print('Cardset:', cs.type)
+        # print('Cardset:', cs)
+        # print('Cardset:', cs.type)
 
         cardbase = pyth(73, 97)
         if cs.type == CSI.TYPE_FRENCH:
@@ -744,6 +759,10 @@ class LRectangle(Widget, LBase):
         return False
 
 # =============================================================================
+# Represents a Card as Kivy Window. Will contain an LImage item as child.
+# Images are managed in cards.py according to the cards state. Processes
+# Events/Action on the card or other images, as LImage is designed to not
+# process events. Should not take more than one child (LImage) at a time.
 
 
 class LImageItem(BoxLayout, LBase):
@@ -752,15 +771,26 @@ class LImageItem(BoxLayout, LBase):
         self.game = None
         self.card = None
         self.group = None
+        self.image_type = "undefined"
         if 'game' in kw:
             self.game = kw['game']
         if 'card' in kw:
             self.card = kw['card']
+            self.image_type = "card"
         if 'group' in kw:
             self.group = kw['group']
+        if 'image_type' in kw:
+            self.image_type = kw['image_type']
+
         self.dragstart = None
         # ev. noch globales cache für stacks->game und cards->stack
         # einrichten. Aber: stacks hängt vom jeweiligen spiel ab.
+
+    def __str__(self):
+        return f'<LImageItem @ {hex(id(self))}>'
+
+    def get_image_type(self):
+        return self.image_type
 
     def send_event_pressed_n(self, event, n):
         if self.group and n in self.group.bindings:
@@ -786,28 +816,28 @@ class LImageItem(BoxLayout, LBase):
 
     def on_touch_down(self, touch):
 
+        # print('LCardImage: size = %s' % self.size)
         if self.collide_point(*touch.pos):
 
-            for c in self.children:
-                # print('child at %s' % c)
-                if (c.on_touch_down(touch) and self.game):
-                    for stack in self.game.allstacks:
-                        for i in range(len(stack.cards)):
-                            if stack.cards[i] == self.card:
-                                print('LCardImage: stack = %s' % stack)
-                                print('LCardImage: touch = %s' % str(touch))
-                                print('grab')
-                                # grab the touch!
-                                touch.grab(self)
-                                ppos, psize = self.game.canvas.KivyToCore(
-                                    touch.pos, self.size)
-                                event = LEvent()
-                                event.x = ppos[0]
-                                event.y = ppos[1]
-                                self.dragstart = touch.pos
-                                event.cardid = i
-                                self.send_event_pressed(touch, event)
-                                return True
+            if (self.game):
+                for stack in self.game.allstacks:
+                    for i in range(len(stack.cards)):
+                        if stack.cards[i] == self.card:
+                            print('LCardImage: stack = %s' % stack)
+                            print('LCardImage: touch = %s' % str(touch))
+                            print('grab')
+                            # grab the touch!
+                            touch.grab(self)
+                            ppos, psize = self.game.canvas.KivyToCore(
+                                touch.pos, self.size)
+                            event = LEvent()
+                            event.x = ppos[0]
+                            event.y = ppos[1]
+                            self.dragstart = touch.pos
+                            event.cardid = i
+                            self.send_event_pressed(touch, event)
+                            AndroidScreenRotation.lock(toaster=False)
+                            return True
 
             if self.group is not None:
                 print('LCardImage: self=%s group=%s' % (self, self.group))
@@ -841,22 +871,19 @@ class LImageItem(BoxLayout, LBase):
 
         if self.collide_point(*touch.pos):
 
-            for c in self.children:
-                # print('child at %s' % c)
-
-                if (c.on_touch_up(touch) and self.game):
-                    for stack in self.game.allstacks:
-                        for i in range(len(stack.cards)):
-                            if stack.cards[i] == self.card:
-                                print('LCardImage: stack = %s' % stack)
-                                ppos, psize = self.game.canvas.KivyToCore(
-                                    touch.pos, self.size)
-                                event = LEvent()
-                                event.x = ppos[0]
-                                event.y = ppos[1]
-                                event.cardid = i
-                                self.send_event_released_1(event)
-                                return True
+            if (self.game):
+                for stack in self.game.allstacks:
+                    for i in range(len(stack.cards)):
+                        if stack.cards[i] == self.card:
+                            print('LCardImage: stack = %s' % stack)
+                            ppos, psize = self.game.canvas.KivyToCore(
+                                touch.pos, self.size)
+                            event = LEvent()
+                            event.x = ppos[0]
+                            event.y = ppos[1]
+                            event.cardid = i
+                            self.send_event_released_1(event)
+                            return True
 
             if self.group is not None:
                 print('LCardImage: self=%s group=%s' % (self, self.group))
@@ -946,7 +973,7 @@ class LTreeNode(ButtonBehavior, TreeViewLabel, LBase):
 
         if self.variable:
             self.variable.bind(value=self.onVarChange)
-            self.onVarChange(self.variable, self.variable.get())
+            self.onVarChange(self.variable, self.variable.value)
 
         # self.gameview = gameview
         self.coreFont = self.font_size
@@ -1086,7 +1113,7 @@ class LTopLevelContent(BoxLayout, LBase):
     def __init__(self, **kw):
         super(LTopLevelContent, self).__init__(**kw)
 
-        # beispiel zu canvas (hintergrund)
+        # Macht die Hintergrundfarbe der TopLevel (Dialog-) Fenster.
         with self.canvas.before:
             Color(0.45, 0.5, 0.5, 1.0)
             self.rect = Rectangle(pos=self.pos, size=self.size)
@@ -1112,10 +1139,16 @@ class LTopLine(ButtonBehavior, Label, LBase):
             self.rect = Rectangle(pos=self.pos, size=self.size)
         self.bind(pos=self.update_rect)
         self.bind(size=self.update_rect)
+        self.maxlines = 0
+        self.halign = 'center'
+        self.valign = 'center'
 
     def update_rect(self, *args):
         self.rect.pos = self.pos
         self.rect.size = self.size
+
+    def on_size(self, o, s):
+        self.text_size = s
 
     def on_press(self):
         print('press')
@@ -1126,36 +1159,23 @@ class LTopLine(ButtonBehavior, Label, LBase):
 # =============================================================================
 
 
-class LTopLevel0(BoxLayout, LBase):
-    def __init__(self, top, title=None, **kw):
-        self.main = top
-        super(LTopLevel0, self).__init__(
-            orientation="vertical", **kw)
-
-        # self.canvas.add(Color(0, 1, 0, 0.4))
-        # self.canvas.add(Rectangle(pos=(100, 100), size=(100, 100)))
-
-        self.size_hint = (0.5, 1.0)
-        '''
-        self.titleline = BoxLayout(
-            orientation="horizontal", size_hint=[1.0, 0.15], **kw)
-        self.button = Button(text="X", size_hint=[0.15, 1.0], **kw)
-        if not title:
-            title = '<>'
-        self.title = Label(text=title, **kw)
-        self.titleline.add_widget(self.title)
-        self.titleline.add_widget(self.button)
-        '''
-        self.titleline = LTopLine(text=title, size_hint=[1.0, 0.15])
+class LTopLevelBase(BoxLayout, LBase):
+    def __init__(self, title='', **kw):
+        super(LTopLevelBase, self).__init__(orientation="vertical", **kw)
         self.title = title
-
-        # self.content = BoxLayout(orientation="vertical", **kw)
+        self.titleline = LTopLine(text=title, size_hint=[1.0, 0.15])
         self.content = LTopLevelContent(orientation="vertical", **kw)
         self.add_widget(self.titleline)
         self.add_widget(self.content)
-        '''
-        self.button.bind(on_press=self.onClick)
-        '''
+
+# =============================================================================
+
+
+class LTopLevel0(LTopLevelBase, LBase):
+    def __init__(self, top, title='', **kw):
+        super(LTopLevel0, self).__init__(title=title, **kw)
+
+        self.main = top
         self.titleline.bind(on_press=self.onClick)
         self.main.pushWork(self.title, self)
 
@@ -1166,21 +1186,10 @@ class LTopLevel0(BoxLayout, LBase):
 # =============================================================================
 
 
-class LTopLevel(BoxLayout, LBase):
-    def __init__(self, parent, title=None, **kw):
+class LTopLevel(LTopLevelBase, LBase):
+    def __init__(self, parent, title='', **kw):
+        super(LTopLevel, self).__init__(title=title, **kw)
         self.mainwindow = parent
-        super(LTopLevel, self).__init__(
-            orientation="vertical", **kw)
-
-        if ('size_hint' not in kw):
-            self.size_hint = (0.5, 1.0)
-        else:
-            del kw['size_hint']
-        self.titleline = LTopLine(text=title, size_hint=(1.0, 0.10))
-
-        self.content = LTopLevelContent(orientation="vertical", **kw)
-        self.add_widget(self.titleline)
-        self.add_widget(self.content)
 
     def processAndroidBack(self):
         ret = False
@@ -1201,7 +1210,6 @@ class LTopLevel(BoxLayout, LBase):
                         ret = t.pop()
                     pass
         return ret
-
 
 # =============================================================================
 
@@ -1332,7 +1340,7 @@ class LMenuItem(ActionButton, LBase):
         pass
 
     def setCommand(self, cmd):
-        # print('LMenuItem: setCommand')
+        print('LMenuItem: setCommand')
         self.bind(on_release=cmd)
 
     # def __str__(self):
@@ -1479,7 +1487,7 @@ class LTkBase:
         pass
 
     def update_idletasks(self):
-        logging.info("LTkBase: update_idletasks")
+        # logging.info("LTkBase: update_idletasks")
         try:
             if len(EventLoop.event_listeners) > 0:
                 self.in_loop = True
@@ -1506,7 +1514,7 @@ class LTkBase:
         stopTouchApp()
 
     def interruptSleep(self):
-        logging.info('LTkBase: interruptSleep')
+        # logging.info('LTkBase: interruptSleep')
         self.update_idletasks()
         # self.sleep_var = 1
         return
@@ -1530,16 +1538,24 @@ class LTkBase:
             EventLoop.idle()
             self.in_loop = False
 
-    def waitCondition(self, condition):
-        logging.info('LTkBase: wait condition start')
+    def waitCondition(self, condition, swallow=False, pickup=False):
+        # logging.info('LTkBase: wait condition start')
         while condition():
             self.in_loop = True
+            if swallow:  # eat picked input up
+                for provider in EventLoop.input_providers:
+                    provider.update(dispatch_fn=lambda *x: None)
             EventLoop.idle()
+            if pickup:  # pick input from os
+                if EventLoop.window:
+                    EventLoop.window.mainloop()
             self.in_loop = False
-        logging.info('LTkBase: wait condition end')
+        # logging.info('LTkBase: wait condition end')
 
-    def waitAnimation(self):
-        self.waitCondition(LAnimationManager.checkRunning)
+    def waitAnimation(self, swallow=False, pickup=False):
+        self.waitCondition(LAnimationManager.checkRunning,
+                           swallow=swallow,
+                           pickup=pickup)
 
     def tkraise(self):
         pass
@@ -1583,12 +1599,16 @@ class LStack:
 
 
 class LMainWindow(BoxLayout, LTkBase):
+
+    longPress = NumericProperty(0)
+
     def __init__(self, **kw):
         super(LMainWindow, self).__init__(orientation='vertical')
         LTkBase.__init__(self)
         self.menuArea = LMenuBar()
         self.workContainer = LBoxLayout(orientation='horizontal')
         self.workContainerO = LBoxLayout(orientation='horizontal')
+        self.workContainer1 = LBoxLayout(orientation='vertical')
         self.workArea = None
         self.toolBar = None
         self.toolBarPos = 0
@@ -1610,16 +1630,16 @@ class LMainWindow(BoxLayout, LTkBase):
 
         # self.touches = []
 
-        # beispiel zu canvas (hintergrund)
-        # with self.canvas.before:
-        #   Color(0, 1, 0.7, 0.5)
-        #   self.rect = Rectangle(pos=self.pos, size=self.size)
-        # self.bind(pos=self.update_rect)
-        # self.bind(size=self.update_rect)
+        with self.canvas.before:
+            Color(0.15, 0.15, 0.15, 1)
+            self.rect = Rectangle(pos=self.pos, size=self.size)
+        self.bind(pos=self.update_rect)
+        self.bind(size=self.update_rect)
 
-    # def update_rect(self, *args):
-    #   self.rect.pos = self.pos
-    #   self.rect.size = self.size
+    def update_rect(self, *args):
+        self.pos = (0, 0)
+        self.rect.pos = self.pos
+        self.rect.size = self.size
 
     def on_motion(self, m):
         print('on_motion', m)
@@ -1629,6 +1649,8 @@ class LMainWindow(BoxLayout, LTkBase):
 
     def on_touch_down(self, touch):
         ret = False
+        if super().on_touch_down(touch):
+            return True
 
         # print(dir(touch))
 
@@ -1641,16 +1663,13 @@ class LMainWindow(BoxLayout, LTkBase):
         print("touches cnt = ",len(self.touches))
         '''
         # multiclick detection
-        '''
+
         if touch.is_double_tap:
             # print('Touch is a double tap !')
             # print(' - interval is', touch.double_tap_time)
             # print(' - distance betw. previous is', touch.double_tap_distance)
-            # test the functions of Android back key
-            ret = self.processAndroidBack()
-            if (ret):
-                return ret
-        '''
+            AndroidScreenRotation.unlock()
+
         '''
         if touch.is_triple_tap:
             print('Touch is a triple tap !')
@@ -1680,6 +1699,17 @@ class LMainWindow(BoxLayout, LTkBase):
 
     def on_touch_up(self, touch):
         ret = False
+        if super().on_touch_up(touch):
+            return True
+
+        # long press only on playground.
+        pgs = self.workStack.peek('playground')
+        if pgs:
+            pg = pgs[1]
+            if pg.collide_point(*touch.pos):
+                if (touch.time_end-touch.time_start) > 2.5:
+                    self.longPress = touch.time_end
+
         # standard notifikation:
         for c in self.children:
             ret = c.on_touch_up(touch)
@@ -1692,6 +1722,9 @@ class LMainWindow(BoxLayout, LTkBase):
         print("touches cnt = ",len(self.touches))
         '''
         return ret
+
+    def on_longPress(self, instance, timestamp):
+        print('longPressed at {time}'.format(time=timestamp))
 
     # Menubar:
 
@@ -1714,19 +1747,28 @@ class LMainWindow(BoxLayout, LTkBase):
     def removeContainer(self):
         self.workContainer.clear_widgets()
         self.workContainerO.clear_widgets()
+        self.workContainer1.clear_widgets()
 
     def buildContainer(self):
+        # (hbox)
         if self.toolBar is not None and self.toolBarPos == 3:
             self.workContainerO.add_widget(self.toolBar)
-        self.workContainerO.add_widget(self.workContainer)
+        self.workContainerO.add_widget(self.workContainer1)
         if self.toolBar is not None and self.toolBarPos == 4:
             self.workContainerO.add_widget(self.toolBar)
+        # (vbox)
+        if self.toolBar is not None and self.toolBarPos == 1:
+            self.workContainer1.add_widget(self.toolBar)
+        self.workContainer1.add_widget(self.workContainer)
+        if self.toolBar is not None and self.toolBarPos == 2:
+            self.workContainer1.add_widget(self.toolBar)
+        # (workcontainer)
         for w in self.workStack.items:
             self.workContainer.add_widget(w[1])
 
     def rebuildContainer(self):
-        self.removeContainer()
-        self.buildContainer()
+        LAfterAnimation(self.removeContainer)
+        LAfterAnimation(self.buildContainer)
 
     def pushWork(self, key, widget):
         if (widget):
@@ -1792,61 +1834,121 @@ class LApp(App):
         else:
             return False    # delegate
 
-    def __init__(self):
+    def __init__(self, args):
         super(LApp, self).__init__()
+        self.args = args
+        self.title = "PySolFC"
+        self.baseWindow = FloatLayout()
 
-        # Config.set('input', 'multitouchscreen1', 'tuio,0.0.0.0:3333')
+    def build(self):
+        class MyLabel(Label, LBase):
+            def __init__(self, **kw):
+                super(MyLabel, self).__init__(**kw)
+                with self.canvas.before:
+                    Color(0.05, 0.05, 0.05, 1)
+                    self.rect = Rectangle(pos=self.pos, size=self.size)
+                self.bind(pos=self.update_rect)
+                self.bind(size=self.update_rect)
+
+            def update_rect(self, *args):
+                self.rect.pos = self.pos
+                self.rect.size = self.size
+
+        # self.startLabel = MyLabel(text="PySolFC", color=[0.9,0.9,0.9,1]) # noqa
+        # self.baseWindow.add_widget(self.startLabel)
+
+        return self.baseWindow
+
+    def app_start(self, *args):
+        logging.info("LApp: app_start")
+        logging.info('top = %s' % str(self.baseWindow))
 
         self.mainWindow = LMainWindow()
-        logging.info('top = %s' % str(self.mainWindow))
         Cache.register('LAppCache', limit=10)
+        Cache.append('LAppCache', 'baseWindow', self.baseWindow, timeout=0)
         Cache.append('LAppCache', 'mainWindow', self.mainWindow, timeout=0)
         Cache.append('LAppCache', 'mainApp', self, timeout=0)
         self.startCode = 0
-
-    # Es gibt hier offensichtlich nur einen Bilschirm mit Höhe und Breite.
-    # Alles andere stellt das Betriebssystem zur Verfügung. Wir wissen auch
-    # nicht, wie das Gerät gerade orientiert ist, ist nicht unsere Sache.
-    # Alles was wir tun können ist Höhe und Breite zu verfolgen, sobald wir
-    # dazu informiert werden. (Android informiert leider nicht immer, wenn
-    # es nötig wäre).
-    # Update:
-    # Nachdem im Manifest nun steht 'configChange=...|screenSize' bekommen
-    # wir auch nach dem on_resume ein Signal.
-
-    def delayedRebuild(self, dt):
-        logging.info("LApp: delayedRebuild")
-        self.mainWindow.rebuildContainer()
-
-    def makeDelayedRebuild(self):
-        def delayedRebuild(dt):
-            # Clock.schedule_once(self.delayedRebuild, 0.01)
-            Clock.schedule_once(self.delayedRebuild, 0.5)
-        return delayedRebuild
-
-    def doSize(self, obj, val):
-        mval = self.mainWindow.size
-        if (val[0] != mval[0] and val[1] != mval[1]):
-            logging.info("LApp: size changed %s - %s (%s)" % (obj, val, mval))
-            Clock.schedule_once(self.makeDelayedRebuild(), 0.01)
-        pass
-
-    def on_start(self):
-        logging.info('mw = %s,  w = %s' % (self.mainWindow, Window))
-
         Window.bind(on_keyboard=self.key_input)
-        Window.bind(size=self.doSize)
 
+        from pysollib.app import Application
+        from pysollib.main import pysol_init
+
+        self.app = app = Application()
+        app.top = self.baseWindow
+        self.startCode = pysol_init(app, self.args)
         if self.startCode > 0:
             logging.info("LApp: on_start fails")
             return
 
-        logging.info("LApp: on_start")
         self.mainloop = self.app.mainproc()  # Einrichten
-        self.mainloop.send(None)                # Spielprozess starten
-        logging.info("LApp: on_start processed")
+        logging.info("LApp: mainproc initialised sending start signal")
+        self.mainloop.send(None)             # Spielprozess starten
+        logging.info("LApp: app_start processed, returned to kivy mainloop")
+
+        self.baseWindow.add_widget(self.mainWindow,index=1) # noqa
+        self.baseWindow.opacity = 0
+        anim = Animation(opacity=1,duration=0.7) # noqa
+        Clock.schedule_once(lambda dt: anim.start(self.baseWindow),0.3) # noqa
+        Clock.schedule_once(lambda dt: set_fullscreen(True),0.0) # noqa
+
+    def on_start(self):
+        logging.info("LApp: on_start")
+
+        # Window.update_viewport()
+        # There is still a black screen gap between android splash
+        # and displayed app window. But seems to depend on the device
+        # used. There are actual discussions running on that. Some
+        # suggest its a SDL2 issue.
+
+        debug = False
+        if debug:
+            # Investigation of the black screen gap on start.
+            # For testing we introduce a button. The app will start
+            # when the button is pressed.
+
+            # It gets more and more clear that the black screen is
+            # screen refresh problem. only arising, when in buildozer.spec
+            # fullscreen = 1 is set.
+            # Without fullscreen, Initialisation works perfectly and
+            # the start button is displayed right after the splash has been
+            # removed.
+            # In fullscreen mode the button is still there but not
+            # visible. It can be pressed to start the app.
+            # When the (black) device is rotated the button is displayed
+            # because this initiates a screen refresh.
+            # In the SDLActivity there are interface functions available.
+            # One of these allows to switch between normal and fullscreen.
+            # If this function is used, then the complete behaviour of
+            # fullscreen is much better. Fullscreen is stable
+            # this way and does not switch back occasionally.
+
+            # The result of that investigation is:
+            # - App will now be built with fullscreen = 0 in buildozer.spec
+            # - Fullscreen is switched on at runtime after the app has fully
+            #   started using the SDLActivity command.
+
+            from kivy.uix.button import Button
+            self.mybutton = Button(text='startbutton')
+            def addbutton(dt):  # noqa
+                self.baseWindow.add_widget(self.mybutton)
+            def delaystart(*args): # noqa
+                self.baseWindow.remove_widget(self.mybutton)
+                Clock.schedule_once(self.app_start, 0.5)
+            self.mybutton.bind(on_press=delaystart)
+            Clock.schedule_once(addbutton, 1.5)
+        else:
+            Clock.schedule_once(self.app_start, 0.0)
+            # self.app_start(0)
+
         # Android: Request missing android permissions.
         requestStoragePerm()
+        logging.info("LApp: on_start processed")
+
+        # NOTE: The Kivy Eventloop starts after this call
+        # to process input and events. (NOT EARLIER!). This is
+        # also the point, where the android splash screen will be
+        # removed.
 
     def on_stop(self):
         # Achtung wird u.U. 2 mal aufgerufen !!!
@@ -1914,6 +2016,8 @@ class LApp(App):
         if app is None:
             return
 
+        AndroidScreenRotation.unlock(toaster=False)
+
         so = get_screen_ori()
         go = so  # flake8: F841 nonsense!
         so = go
@@ -1928,6 +2032,21 @@ class LApp(App):
         # wieder falsch aufstellt. (woher kommt die und warum ist sie
         # oft falsch ?)
 
+        # Gelegentlich beobachtet: Schwarzer Bilschirm nach resume. Und
+        # das bleibt dann so auf ewig. Aber die app läuft stabil. Die
+        # einzige Interaktion mit der App ist über die Android buttons
+        # für hintrgrund und resume. Diese funktioneren gemäss logcat
+        # einwandfrei. Daher versuchen wir ... um den graphik context
+        # wieder zu aktivieren/auszurichten:
+
+        # gemäss einer neueren Antwort auf kivy issue 3671 gehört auch
+        # update-viewport zu den nützlichen massnahmen.
+
+        Clock.schedule_once(lambda dt: Window.update_viewport(),0.0) # noqa
+        Clock.schedule_once(lambda dt: self.mainWindow.rebuildContainer(), 0.5)
+        Clock.schedule_once(lambda dt: set_fullscreen(True),1.0) # noqa
+
+        # Pause modus abschalten nach resume:
         if app.game.pause:
             Clock.schedule_once(self.makeEndPauseCmd(app), 3.0)
 

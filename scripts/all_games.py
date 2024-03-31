@@ -7,10 +7,9 @@ import sys
 import time
 
 # from pprint import pprint
-import pysollib.games
+import pysollib.games  # noqa: F401
 import pysollib.games.mahjongg  # noqa: F401
-import pysollib.games.special
-import pysollib.games.ultra  # noqa: F401
+import pysollib.games.special  # noqa: F401
 from pysollib.gamedb import GAME_DB
 from pysollib.gamedb import GI
 from pysollib.mfxutil import latin1_normalize
@@ -52,6 +51,7 @@ GAME_BY_TYPE = {
     GI.GT_NAPOLEON: "Napoleon",
     GI.GT_NUMERICA: "Numerica",
     GI.GT_PAIRING_TYPE: "Pairing",
+    GI.GT_PICTURE_GALLERY: "Picture Gallery",
     GI.GT_RAGLAN: "Raglan",
     GI.GT_SIMPLE_TYPE: "Simple game",
     GI.GT_SPIDER: "Spider",
@@ -77,6 +77,8 @@ GAME_BY_TYPE = {
     GI.GT_HANOI: "Tower of Hanoi",
     GI.GT_PEGGED: "Pegged",
     GI.GT_CRIBBAGE_TYPE: "Cribbage",
+    GI.GT_ISHIDO: "Ishido",
+    GI.GT_SAMEGAME: "Samegame",
 }
 
 

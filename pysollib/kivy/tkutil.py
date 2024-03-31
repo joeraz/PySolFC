@@ -31,12 +31,10 @@ import logging
 import os
 from array import array
 
-from kivy.clock import Clock
 from kivy.core.image import Image as CoreImage
 from kivy.core.text import Label as CoreLabel
 from kivy.graphics.texture import Texture
 
-from pysollib.kivy.LApp import LImage
 from pysollib.kivy.LApp import LTopLevel0
 
 # ************************************************************************
@@ -67,6 +65,9 @@ def setTransient(window, parent, relx=None, rely=None, expose=1):
     # not used in kivy (highly tk specific).
     return
 
+
+# ANM: werden ev. immer noch vom pysollib core benötigt/referenziert:
+# (intern in kivy bitte nicht direkt benutzen).
 
 def makeToplevel(parent, title=None):
     print('tkutil: makeTopLevel')
@@ -179,10 +180,14 @@ def unbind_destroy(widget):
 
 
 def after(widget, ms, func, *args):
-    print('tkutil: after(%s, %s, %s, %s)' % (widget, ms, func, args))
-    if (ms == 'idle'):
+    # print('tkutil: after(%s, %s, %s, %s)' % (widget, ms, func, args))
+    if (ms == 'demo'):
         print('demo use')
-        Clock.schedule_once(lambda dt: func(), 1.0)
+
+        from pysollib.kivy.LApp import LAfterAnimation
+        LAfterAnimation(func, 0.6)
+        return
+
     elif (isinstance(ms, int)):
         # print('ms: play timer (accounting)')
         # Clock.schedule_once(lambda dt: func(), float(ms)/1000.0)
@@ -191,51 +196,77 @@ def after(widget, ms, func, *args):
 
 
 def after_idle(widget, func, *args):
-    print('tkutil: after_idle()')
-    return after(widget, "idle", func, *args)
+    # NOTE: This is called from the core in demo mode only.
+    # 'func' executes the next step in the game.
+    return after(widget, "demo", func, *args)
 
 
 def after_cancel(t):
-    print('tkutil: after_cancel()')
+    # print('tkutil: after_cancel()')
     pass
 
 
 # ************************************************************************
 # * image handling
 # ************************************************************************
+# Wrappers
+
+LCoreImage = CoreImage  # noqa
+
+class LImageInfo(object):   # noqa
+    def __init__(self, arg):
+        if type(arg) is Texture:
+            self.filename = None
+            self.source = None
+            self.texture = arg
+            self.size = self.texture.size
+        if type(arg) is str:
+            self.filename = arg
+            self.source = arg
+            self.texture = LCoreImage(arg).texture
+            self.size = self.texture.size
+
+    # pysol core needs that:
+
+    def subsample(self, image):
+        return self
+
+    def width(self):
+        return self.size[0]
+
+    def height(self):
+        return self.size[1]
+
+    def getWidth(self):
+        return self.size[0]
+
+    def getHeight(self):
+        return self.size[1]
+
+# ************************************************************************
+# Interface to core.
 
 
 def makeImage(file=None, data=None, dither=None, alpha=None):
-    kw = {}
     if data is None:
         assert file is not None
-        kw["source"] = file
-        # print('makeImage: source = %s' % file)
-        # if (file=='/home/lb/PRG/Python/Kivy/pysolfc/data/images/redeal.gif'):
-        #    y = self.yy
+        return LImageInfo(file)
     else:
         assert data is not None
-        kw["texture"] = data
-        # ob das geht ?? - kommt das vor ?
-        # yy = self.yy
-    '''
-    if 'source' in kw:
-        logging.info ("makeImage: " + kw["source"])
-    if 'texture' in kw:
-        logging.info ("makeImage: " + str(kw["texture"]))
-    '''
+        return LImageInfo(data)
 
-    return LImage(**kw)
-
-
-loadImage = makeImage
+loadImage = makeImage   # noqa - sorry flake8, aber das gehört zu oben dazu!
 
 
 def copyImage(image, x, y, width, height):
 
-    # return Image(source=image.source)
-    # return Image(texture=image.texture)
-    return image
+    # wird das überhaupt aufgerufen - ja bei SubSampleImage.
+    # aber: wo wird das gebraucht? - oder ist es eine altlast
+    # welche gar keine Relevanz mehr hat ? (Kann auch None
+    # zurückgeben, ohne dass etwas fehlt oder abstürzt).
+
+    tregion = image.texture.get_region(x, y, width, height)
+    return LImageInfo(tregion)
 
 
 def fillTexture(texture, fill, outline=None, owidth=1):
@@ -324,14 +355,16 @@ def createImage(width, height, fill, outline=None, outwidth=1):
 
     texture = Texture.create(size=(width, height), colorfmt='rgba')
     fillTexture(texture, fill, outline, outwidth)
-    image = LImage(texture=texture)
-    # logging.info("createImage: LImage create %s" % image)
+    image = LImageInfo(texture)
+    # logging.info("createImage: LImageInfo create %s" % image)
     return image
 
 
 def createImagePIL(width, height, fill, outline=None, outwidth=1):
     # Is this needed for Kivy?
     createImage(width, height, fill, outline=outline, outwidth=outwidth)
+    # wird nur mit USE_PIL benutzt: nicht relevant. Der code wird mit
+    # Kivy nie durchlaufen.
 
 
 def shadowImage(image, color='#3896f8', factor=0.3):
@@ -475,15 +508,14 @@ def createBottom(image, color='white', backfile=None):
 
     tmp0 = _createImageMask(image.texture, color)
     if backfile:
-        tmp1 = CoreImage(backfile)
+        tmp1 = LCoreImage(backfile)
         txtre = _scaleTextureToSize(tmp1.texture, image.texture.size)
         tmp = _pasteTextureTo(txtre, tmp0)
     else:
         tmp = tmp0
 
-    img = LImage(texture=tmp)
-    img.size[0] = image.getWidth()
-    img.size[1] = image.getHeight()
+    img = LImageInfo(tmp)
+    img.size = (image.getWidth(), image.getHeight())
     return img
     '''
     im = image._pil_image

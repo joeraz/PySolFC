@@ -93,9 +93,10 @@ class SelectCardsetData(SelectDialogTreeData):
                     SelectCardsetNode(
                         None, name, lambda cs, key=key: key in cs.si.styles))
         if nodes:
-            nodes.append(
-                SelectCardsetNode(
-                    None, _("Uncategorized"), lambda cs: not cs.si.styles))
+            if manager.uncategorized_styles:
+                nodes.append(
+                    SelectCardsetNode(
+                        None, _("Uncategorized"), lambda cs: not cs.si.styles))
             select_by_style = SelectCardsetNode(
                 None, _("by Style"), tuple(nodes))
         #
@@ -110,10 +111,11 @@ class SelectCardsetData(SelectDialogTreeData):
                         None, name,
                         lambda cs, key=key: key in cs.si.nationalities))
         if nodes:
-            nodes.append(
-                SelectCardsetNode(
-                    None, _("Uncategorized"),
-                    lambda cs: not cs.si.nationalities))
+            if manager.uncategorized_nationalities:
+                nodes.append(
+                    SelectCardsetNode(
+                        None, _("Uncategorized"),
+                        lambda cs: not cs.si.nationalities))
             select_by_nationality = SelectCardsetNode(
                 None, _("by Nationality"), tuple(nodes))
         #
@@ -127,9 +129,10 @@ class SelectCardsetData(SelectDialogTreeData):
                     SelectCardsetNode(
                         None, name, lambda cs, key=key: key in cs.si.dates))
         if nodes:
-            nodes.append(
-                SelectCardsetNode(
-                    None, _("Uncategorized"), lambda cs: not cs.si.dates))
+            if manager.uncategorized_dates:
+                nodes.append(
+                    SelectCardsetNode(
+                        None, _("Uncategorized"), lambda cs: not cs.si.dates))
             select_by_date = SelectCardsetNode(
                 None, _("by Date"), tuple(nodes))
         #
@@ -220,7 +223,7 @@ class SelectCardsetDialogWithPreview(MfxDialog):
         self.manager = manager
         self.key = key
         self.app = app
-        self.criteria = SearchCriteria()
+        self.criteria = SearchCriteria(manager)
         self.cardset_values = None
         # padx, pady = kw.padx, kw.pady
         padx, pady = 4, 4
@@ -297,11 +300,13 @@ class SelectCardsetDialogWithPreview(MfxDialog):
         self.list_scrollbar.config(command=self.list.yview)
 
         if USE_PIL:
+            size_frame = ttk.Frame(notebook)
+            notebook.add(size_frame, text=_('Card Size'))
             #
             var = tkinter.DoubleVar()
             var.set(app.opt.scale_x)
             self.scale_x = PysolScale(
-                left_frame, label=_('Scale X:'),
+                size_frame, label=_('Scale X:'),
                 from_=0.5, to=4.0, resolution=0.1,
                 orient='horizontal', variable=var,
                 value=app.opt.scale_x,
@@ -312,7 +317,7 @@ class SelectCardsetDialogWithPreview(MfxDialog):
             var = tkinter.DoubleVar()
             var.set(app.opt.scale_y)
             self.scale_y = PysolScale(
-                left_frame, label=_('Scale Y:'),
+                size_frame, label=_('Scale Y:'),
                 from_=0.5, to=4.0, resolution=0.1,
                 orient='horizontal', variable=var,
                 value=app.opt.scale_y,
@@ -325,7 +330,7 @@ class SelectCardsetDialogWithPreview(MfxDialog):
 
             var = tkinter.IntVar()
             self.x_offset = PysolScale(
-                left_frame, label=_('X offset:'),
+                size_frame, label=_('X offset:'),
                 from_=5, to=100, resolution=1,
                 orient='horizontal', variable=var,
                 value=cs.CARD_XOFFSET
@@ -336,7 +341,7 @@ class SelectCardsetDialogWithPreview(MfxDialog):
 
             var = tkinter.IntVar()
             self.y_offset = PysolScale(
-                left_frame, label=_('Y offset:'),
+                size_frame, label=_('Y offset:'),
                 from_=5, to=100, resolution=1,
                 orient='horizontal', variable=var,
                 value=cs.CARD_YOFFSET
@@ -347,7 +352,7 @@ class SelectCardsetDialogWithPreview(MfxDialog):
             self.auto_scale = tkinter.BooleanVar()
             self.auto_scale.set(app.opt.auto_scale)
             check = ttk.Checkbutton(
-                left_frame, text=_('Auto scaling'),
+                size_frame, text=_('Auto scaling'),
                 variable=self.auto_scale,
                 takefocus=False,
                 command=self._updateAutoScale
@@ -358,7 +363,7 @@ class SelectCardsetDialogWithPreview(MfxDialog):
             self.preserve_aspect = tkinter.BooleanVar()
             self.preserve_aspect.set(app.opt.preserve_aspect_ratio)
             self.aspect_check = ttk.Checkbutton(
-                left_frame, text=_('Preserve aspect ratio'),
+                size_frame, text=_('Preserve aspect ratio'),
                 variable=self.preserve_aspect,
                 takefocus=False,
                 # command=self._updateScale
@@ -367,6 +372,7 @@ class SelectCardsetDialogWithPreview(MfxDialog):
                                    padx=padx, pady=pady)
 
             self._updateAutoScale()
+            size_frame.columnconfigure(0, weight=1)
 
         #
         left_frame.rowconfigure(0, weight=1)
@@ -502,7 +508,10 @@ class SelectCardsetDialogWithPreview(MfxDialog):
                     and self.criteria.typeOptions[self.criteria.type]
                     != cardset.si.type):
                 continue
-
+            if (self.criteria.subtype != "" and
+                    self.criteria.subtypeOptionsAll[self.criteria.subtype]
+                    != cardset.si.subtype):
+                continue
             if (self.criteria.style != ""
                     and self.criteria.styleOptions[self.criteria.style]
                     not in cardset.si.styles):
@@ -527,7 +536,7 @@ class SelectCardsetDialogWithPreview(MfxDialog):
 
     def advancedSearch(self):
         d = SelectCardsetAdvancedSearch(self.top, _("Advanced search"),
-                                        self.criteria)
+                                        self.criteria, self.manager)
         if d.status == 0 and d.button == 0:
             self.criteria.name = d.name.get()
 
@@ -536,6 +545,7 @@ class SelectCardsetDialogWithPreview(MfxDialog):
 
             self.criteria.size = d.size.get()
             self.criteria.type = d.type.get()
+            self.criteria.subtype = d.subtype.get()
             self.criteria.style = d.style.get()
             self.criteria.date = d.date.get()
             self.criteria.nationality = d.nationality.get()
@@ -712,10 +722,11 @@ class CardsetInfoDialog(MfxDialog):
 
 
 class SearchCriteria:
-    def __init__(self):
+    def __init__(self, manager):
         self.name = ""
         self.size = ""
         self.type = ""
+        self.subtype = ""
         self.style = ""
         self.date = ""
         self.nationality = ""
@@ -729,25 +740,40 @@ class SearchCriteria:
                             "Hi-Res cardsets": CSI.SIZE_HIRES}
 
         typeOptions = {-1: ""}
-        typeOptions.update(CSI.TYPE_NAME)
-        del typeOptions[7]  # Navagraha Ganjifa is unused.
+        for key, name in CSI.TYPE_NAME.items():
+            if manager.registered_types.get(key):
+                typeOptions[key] = name
         self.typeOptions = dict((v, k) for k, v in typeOptions.items())
 
+        self.subtypeOptions = {"": -1}
+
+        subtypeOptionsAll = {"": -1}
+        for t in CSI.SUBTYPE_NAME.values():
+            subtypeOptionsAll.update(t)
+        self.subtypeOptionsAll = dict((v, k) for k, v in
+                                      subtypeOptionsAll.items())
+
         styleOptions = {-1: ""}
-        styleOptions.update(CSI.STYLE)
+        for key, name in CSI.STYLE.items():
+            if manager.registered_styles.get(key):
+                styleOptions[key] = name
         self.styleOptions = dict((v, k) for k, v in styleOptions.items())
 
         dateOptions = {-1: ""}
-        dateOptions.update(CSI.DATE)
+        for key, name in CSI.DATE.items():
+            if manager.registered_dates.get(key):
+                dateOptions[key] = name
         self.dateOptions = dict((v, k) for k, v in dateOptions.items())
 
         natOptions = {-1: ""}
-        natOptions.update(CSI.NATIONALITY)
+        for key, name in CSI.NATIONALITY.items():
+            if manager.registered_nationalities.get(key):
+                natOptions[key] = name
         self.natOptions = dict((v, k) for k, v in natOptions.items())
 
 
 class SelectCardsetAdvancedSearch(MfxDialog):
-    def __init__(self, parent, title, criteria, **kw):
+    def __init__(self, parent, title, criteria, manager, **kw):
         kw = self.initKw(kw)
         MfxDialog.__init__(self, parent, title, kw.resizable, kw.default)
         top_frame, bottom_frame = self.createFrames(kw)
@@ -760,6 +786,8 @@ class SelectCardsetAdvancedSearch(MfxDialog):
         self.size.set(criteria.size)
         self.type = tkinter.StringVar()
         self.type.set(criteria.type)
+        self.subtype = tkinter.StringVar()
+        self.subtype.set(criteria.subtype)
         self.style = tkinter.StringVar()
         self.style.set(criteria.style)
         self.date = tkinter.StringVar()
@@ -791,13 +819,32 @@ class SelectCardsetAdvancedSearch(MfxDialog):
         typeValues = list(criteria.typeOptions.keys())
         typeValues.sort()
 
+        self.typeValues = criteria.typeOptions
+
         labelType = tkinter.Label(top_frame, text="Type:", anchor="w")
         labelType.grid(row=row, column=0, columnspan=1, sticky='ew',
                        padx=1, pady=1)
         textType = PysolCombo(top_frame, values=typeValues,
-                              textvariable=self.type, state='readonly')
+                              textvariable=self.type, state='readonly',
+                              selectcommand=self.updateSubtypes)
         textType.grid(row=row, column=1, columnspan=4, sticky='ew',
                       padx=1, pady=1)
+        row += 1
+
+        subtypeValues = list(criteria.subtypeOptions.keys())
+        subtypeValues.sort()
+
+        labelSubtype = tkinter.Label(top_frame, text="Subtype:",
+                                     anchor="w")
+        labelSubtype.grid(row=row, column=0, columnspan=1, sticky='ew',
+                          padx=1, pady=1)
+        textSubtype = PysolCombo(top_frame, values=subtypeValues,
+                                 textvariable=self.subtype,
+                                 state='readonly')
+        textSubtype.grid(row=row, column=1, columnspan=4, sticky='ew',
+                         padx=1, pady=1)
+        self.subtypeSelect = textSubtype
+        self.updateSubtypes()
         row += 1
 
         styleValues = list(criteria.styleOptions.keys())
@@ -841,6 +888,23 @@ class SelectCardsetAdvancedSearch(MfxDialog):
         focus = self.createButtons(bottom_frame, kw)
         # focus = text_w
         self.mainloop(focus, kw.timeout)
+
+    def updateSubtypes(self, *args):
+        subtypeOptions = {-1: ""}
+        key = self.typeValues[self.type.get()]
+        if key in CSI.SUBTYPE_NAME:
+            subtypeOptions.update(CSI.SUBTYPE_NAME[key])
+            self.subtypeSelect['state'] = 'readonly'
+            subtypeOptions = dict((v, k) for k, v in
+                                  subtypeOptions.items())
+            subtypeOptionsK = list(subtypeOptions.keys())
+            subtypeOptionsK.sort()
+            self.subtypeSelect['values'] = subtypeOptionsK
+            if self.subtype.get() not in subtypeOptionsK:
+                self.subtype.set("")
+        else:
+            self.subtypeSelect['state'] = 'disabled'
+            self.subtype.set("")
 
     def initKw(self, kw):
         kw = KwStruct(kw,

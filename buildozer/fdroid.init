@@ -2,8 +2,6 @@
 set -eux
 
 tmpdir=..
-cardsets_dir=PySolFC-Cardsets--Minimal-2.2.0
-cardsets_file=${cardsets_dir}.tar.xz
 
 echo '### prepare source'
 
@@ -16,17 +14,20 @@ echo "" > ${tmpdir}/data/images/cards/bottoms/trumps-only/.keep
 echo '### prepare cardsets'
 
 ./mkcards
+cp -a cardsets/* ${tmpdir}/data
 
-cp -a ${cardsets_dir}/* ${tmpdir}/data
+echo '### resize 4k images'
+
+./resize4k ${tmpdir}/data/tiles
 
 echo '### eval version'
 
-./version.py > ${tmpdir}/version.txt
+./aversion ${tmpdir} > ${tmpdir}/version.txt
 
 echo '### prepare buildozer'
 
 sed -r "s:#? ?source\.dir =.*:source.dir = ..:" -i buildozer.spec
-sed -r "s:#? ?source\.exclude_dirs =.*:source.exclude_dirs = Screenshots,android,buildozer,tests:" -i buildozer.spec
+sed -r "s:#? ?source\.exclude_dirs =.*:source.exclude_dirs = Screenshots,android,buildozer,tests,fastlane:" -i buildozer.spec
 sed -r "s:#? ?source\.exclude_patterns =.*:source.exclude_patterns = README.*,AUTHORS.md,CONTRIBUTING.md,COPYING,MANIFEST.in,Makefile,NEWS.asciidoc,appdata.xml,pysol.py,run-tests.pl,setup.cfg,setup.py,setup_osx.py,local.properties,p4a_env_vars.txt:" -i buildozer.spec
 sed -r "s:#? ?android\.skip_update =.*:android.skip_update = True:" -i buildozer.spec
 sed -r "s:#? ?android\.accept_sdk_license =.*:android.accept_sdk_license = False:" -i buildozer.spec

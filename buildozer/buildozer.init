@@ -2,8 +2,6 @@
 set -eux
 
 tmpdir=./tmp
-cardsets_dir=PySolFC-Cardsets--Minimal-2.2.0
-cardsets_file=${cardsets_dir}.tar.xz
 
 # NOTE: $1 will be set with fdroid builds only.
 
@@ -30,11 +28,12 @@ echo "" > ${tmpdir}/data/images/cards/bottoms/trumps-only/.keep
 echo '### prepare cardsets'
 
 ./mkcards
+./resize4k ${tmpdir}/data/tiles
 
-cp -a ${cardsets_dir}/* ${tmpdir}/data
+cp -a cardsets/* ${tmpdir}/data
 
 echo '### eval version'
 
-./version.py > ${tmpdir}/version.txt
+./aversion ${tmpdir} > ${tmpdir}/version.txt
 
 echo '### end init'

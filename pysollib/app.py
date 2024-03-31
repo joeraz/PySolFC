@@ -132,6 +132,7 @@ class Application:
             config=config,
             plugins=os.path.join(config, "plugins"),
             savegames=os.path.join(config, "savegames"),
+            boards=os.path.join(config, "boards"),
             maint=os.path.join(config, "maint"),          # debug
         )
         for k, v in self.dn.__dict__.items():
@@ -508,6 +509,7 @@ class Application:
     def loadImages1(self):
         # load dialog images
         dirname = os.path.join("images", "logos")
+        self.gimages.logos = []
         for f in ("joker07_40_774",
                   "joker08_40_774",
                   "joker07_50_774",
@@ -515,11 +517,7 @@ class Application:
                   "joker11_100_774",
                   "joker10_100",):
             self.gimages.logos.append(self.dataloader.findImage(f, dirname))
-        # if WIN_SYSTEM == 'win32':
-        #     dirname = os.path.join('images', 'dialog', 'default')
-        # else:
-        #     dirname = os.path.join('images', 'dialog', 'bluecurve')
-        dirname = os.path.join('images', 'dialog', 'remix')
+        dirname = os.path.join('images', 'dialog', self.opt.dialog_icon_style)
         for f in ('error', 'info', 'question', 'warning'):
             fn = self.dataloader.findImage(f, dirname)
             im = loadImage(fn)
@@ -539,16 +537,38 @@ class Application:
 
     def loadImages2(self):
         # load canvas images
-        dirname = "images"
+        dirname = os.path.join("images", "redealicons",
+                               self.opt.redeal_icon_style)
         # for f in ("noredeal", "redeal",):
+        self.gimages.redeal = []
         for f in ("stopsign", "redeal",):
             self.gimages.redeal.append(self.dataloader.findImage(f, dirname))
-        dirname = os.path.join("images", "demo")
-        for f in ("demo01", "demo02", "demo03", "demo04", "demo05",):
-            self.gimages.demo.append(self.dataloader.findImage(f, dirname))
-        dirname = os.path.join("images", "pause")
-        for f in ("pause01", "pause02", "pause03",):
-            self.gimages.pause.append(self.dataloader.findImage(f, dirname))
+        dirname = os.path.join("images", "demo", self.opt.demo_logo_style)
+        self.gimages.demo = []
+        foundall = False
+        count = 0
+        while not foundall:
+            count += 1
+            try:
+                self.gimages.demo.append(self.dataloader.findImage("demo" +
+                                                                   ("%02d" %
+                                                                    (count,)),
+                                                                   dirname))
+            except OSError:
+                foundall = True
+        dirname = os.path.join("images", "pause", self.opt.pause_text_style)
+        self.gimages.pause = []
+        foundall = False
+        count = 0
+        while not foundall:
+            count += 1
+            try:
+                self.gimages.pause.append(self.dataloader.findImage("pause" +
+                                                                    ("%02d" %
+                                                                     (count,)),
+                                                                    dirname))
+            except OSError:
+                foundall = True
         # dirname = os.path.join("images", "stats")
         # for f in ("barchart",):
         #     self.gimages.stats.append(self.dataloader.findImage(f, dirname))
@@ -556,7 +576,7 @@ class Application:
     def loadImages3(self):
         # load treeview images
         SelectDialogTreeData.img = []
-        dirname = os.path.join('images', 'tree')
+        dirname = os.path.join('images', 'tree', self.opt.tree_icon_style)
         for f in ('folder', 'openfolder', 'node', 'emptynode'):
             fn = self.dataloader.findImage(f, dirname)
             im = loadImage(fn)
@@ -652,22 +672,25 @@ class Application:
         self.images.setNegative(self.opt.negative_bottom)
         self.subsampled_images.setNegative(self.opt.negative_bottom)
         if update & 1:
-            self.opt.cardset[0] = (cs.name, cs.backname)
+            self.opt.cardset[0][0] = (cs.name, cs.backname)
         if update & 2:
-            self.opt.cardset[cs.si.type] = (cs.name, cs.backname)
+            self.opt.cardset[cs.si.type][cs.si.subtype] = (cs.name,
+                                                           cs.backname)
         gi = self.getGameInfo(id)
         if gi:
             if update & 256:
                 try:
-                    del self.opt.cardset[(1, gi.id)]
+                    del self.opt.cardset[(1, gi.id)][gi.subcategory]
                 except KeyError:
                     pass
             t = self.checkCompatibleCardsetType(gi, cs)
             if not t[1]:
                 if update & 4:
-                    self.opt.cardset[gi.category] = (cs.name, cs.backname)
+                    self.opt.cardset[gi.category][gi.subcategory] = \
+                        (cs.name, cs.backname)
                 if update & 8:
-                    self.opt.cardset[(1, gi.id)] = (cs.name, cs.backname)
+                    self.opt.cardset[(1, gi.id)][gi.subcategory] = \
+                        (cs.name, cs.backname)
         # from pprint import pprint; pprint(self.opt.cardset)
 
     def loadCardset(self, cs, id=0, update=7, progress=None,
@@ -685,14 +708,16 @@ class Application:
         #   key: Cardset.type
         #   value: (Cardset.ident, Images, SubsampledImages)
         c = self.cardsets_cache.get(cs.type)
-        if c and c[0] == cs.ident:
-            # print 'load from cache', c
-            self.images, self.subsampled_images = c[1], c[2]
-            if not tocache:
-                self.updateCardset(id, update=update)
-                if self.menubar is not None:
-                    self.menubar.updateBackgroundImagesMenu()
-            return 1
+        if c:
+            c2 = c.get(cs.subtype)
+            if c2 and c2[0] == cs.ident:
+                # print 'load from cache', c
+                self.images, self.subsampled_images = c2[1], c2[2]
+                if not tocache:
+                    self.updateCardset(id, update=update)
+                    if self.menubar is not None:
+                        self.menubar.updateBackgroundImagesMenu()
+                return 1
         #
         if progress is None and not noprogress:
             self.wm_save_state()
@@ -718,9 +743,13 @@ class Application:
             # if self.opt.save_cardsets:
             c = self.cardsets_cache.get(cs.type)
             if c:
-                # c[1].destruct()
-                destruct(c[1])
-            self.cardsets_cache[cs.type] = (cs.ident, images, simages)
+                c2 = c.get(cs.subtype)
+                if c2:
+                    # c2[1].destruct()
+                    destruct(c2[1])
+            self.cardsets_cache[cs.type] = {}
+            self.cardsets_cache[cs.type][cs.subtype] = (cs.ident, images,
+                                                        simages)
             if not tocache:
                 # elif self.images is not None:
                 #    # self.images.destruct()
@@ -757,13 +786,18 @@ class Application:
         assert gi is not None
         assert cs is not None
         gc = gi.category
+        gs = gi.subcategory
         cs_type = cs.si.type
+        cs_subtype = cs.si.subtype
         t0, t1 = None, None
         if gc == GI.GC_FRENCH:
             t0 = "French"
             if cs_type not in (CSI.TYPE_FRENCH,
                                # CSI.TYPE_TAROCK,
                                ):
+                t1 = t0
+            if (cs_subtype == CSI.SUBTYPE_NONE
+                    and gs == CSI.SUBTYPE_JOKER_DECK):
                 t1 = t0
         elif gc == GI.GC_HANAFUDA:
             t0 = "Hanafuda"
@@ -806,6 +840,14 @@ class Application:
             t0 = "Matching"
             if cs.ncards < (gi.ncards / 2):    # not enough cards
                 t1 = t0
+        elif gc == GI.GC_PUZZLE:
+            t0 = "Puzzle"
+            if cs_type not in (CSI.TYPE_PUZZLE,) or cs_subtype != gs:
+                t1 = t0
+        elif gc == GI.GC_ISHIDO:
+            t0 = "Ishido"
+            if cs_type not in (CSI.TYPE_ISHIDO,):
+                t1 = t0
         else:
             # we should not come here
             t0 = t1 = "Unknown"
@@ -823,14 +865,17 @@ class Application:
             # try by gameid / category
             for key, flag in (((1, gi.id), 8), (gi.category, 4)):
                 c = self.opt.cardset.get(key)
-                if not c or len(c) != 2:
+                c2 = None
+                if c:
+                    c2 = c.get(gi.subcategory)
+                if not c2 or len(c2) != 2:
                     continue
-                cs = self.cardset_manager.getByName(c[0])
+                cs = self.cardset_manager.getByName(c2[0])
                 if not cs:
                     continue
                 t = self.checkCompatibleCardsetType(gi, cs)
                 if not t[1]:
-                    cs.updateCardback(backname=c[1])
+                    cs.updateCardback(backname=c2[1])
                     return cs, flag, t
         # ask
         return None, 0, t
@@ -1189,9 +1234,10 @@ class Application:
             tile = Tile()
             tile.filename = f
             n = image_ext_re.sub("", name)
-            if os.path.split(dirname)[-1] == 'stretch':
+            subdir = os.path.split(dirname)[-1]
+            if subdir == 'stretch' or subdir == 'stretch-4k':
                 tile.stretch = 1
-            if os.path.split(dirname)[-1] == 'save-aspect':
+            if subdir == 'save-aspect' or subdir == 'save-aspect-4k':
                 tile.stretch = 1
                 tile.save_aspect = 1
             # n = re.sub("[-_]", " ", n)
@@ -1209,7 +1255,9 @@ class Application:
             self,
             ("tiles-*",
                 os.path.join("tiles", "stretch"),
-                os.path.join("tiles", "save-aspect")),
+                os.path.join("tiles", "stretch-4k"),
+                os.path.join("tiles", "save-aspect"),
+                os.path.join("tiles", "save-aspect-4k")),
             "PYSOL_TILES")
         # print dirs
         found, t = [], set()
