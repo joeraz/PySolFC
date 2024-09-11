@@ -1,5 +1,5 @@
 ---
-image: Previous Visual Studio 2022
+image: Visual Studio 2022
 environment:
     matrix:
         - PYTHON: "C:\\Python312"
