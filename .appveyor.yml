@@ -33,7 +33,7 @@ test_script:
     - perl run-tests.pl
     - gmake rules
     #- gmake pot
-    #- gmake mo
+    - gmake mo
     - pyinstaller pysol.py --windowed --icon=data\pysol.ico
     - python3 setup.py install_data -d dist\pysol
     - appveyor DownloadFile https://sourceforge.net/projects/pysolfc/files/PySolFC-Cardsets/minimal/PySolFC-Cardsets--Minimal-3.0.0.tar.xz/download -FileName cardsets.tar.xz
