@@ -87,6 +87,7 @@ def parse_option(argv):
     try:
         optlist, args = getopt.getopt(argv[1:], "g:i:hD:",
                                       ["deal=", "game=", "gameid=",
+                                       "random-game",
                                        "french-only",
                                        "noplugins",
                                        "nosound",
@@ -100,6 +101,7 @@ def parse_option(argv):
             "deal": None,
             "game": None,
             "gameid": None,
+            "random-game": False,
             "french-only": False,
             "noplugins": False,
             "nosound": False,
@@ -108,12 +110,14 @@ def parse_option(argv):
     for i in optlist:
         if i[0] in ("-h", "--help"):
             opts["help"] = True
-        elif i[0] in ("--deal"):
+        elif i[0] == "--deal":
             opts["deal"] = i[1]
         elif i[0] in ("-g", "--game"):
             opts["game"] = i[1]
         elif i[0] in ("-i", "--gameid"):
             opts["gameid"] = i[1]
+        elif i[0] == "--random-game":
+            opts["random-game"] = True
         elif i[0] == "--french-only":
             opts["french-only"] = True
         elif i[0] == "--noplugins":
@@ -127,11 +131,13 @@ def parse_option(argv):
     if opts["help"]:
         print(_("""Usage: %s [OPTIONS] [FILE]
   -g    --game=GAMENAME        start game GAMENAME
-  -i    --gameid=GAMEID
-        --french-only
-        --sound-mod=MOD
+  -i    --gameid=GAMEID        start game with ID GAMEID
+        --deal=DEAL            start game deal by number DEAL
+        --random-game          start a random game
+        --french-only          disable non-french games
+        --sound-mod=MOD        use a certain sound module
         --nosound              disable sound support
-        --noplugins            disable load plugins
+        --noplugins            disable loading plugins
   -h    --help                 display this help and exit
 
   FILE - file name of a saved game
@@ -315,6 +321,9 @@ Please check your %(app)s installation.
                              bitmap="error", strings=(_("&Quit"),))
         return 1
 
+    if opts['random-game']:
+        app.commandline.gameid = app.getRandomGameId()
+
     # init cardsets
     app.initCardsets()
     cardset = None
@@ -403,19 +412,38 @@ Cardsets package is up to date.
     app.loadImages3()
     app.loadImages4()
 
-    # load cardset
-    progress = app.intro.progress
-    if not app.loadCardset(cardset, progress=progress, id=app.opt.last_gameid):
-        if not cardset:
-            for cardset in app.cardset_manager.getAll():
-                progress.reset()
+    startgameid = app.opt.last_gameid
 
-                if app.loadCardset(cardset, progress=progress,
-                                   id=app.opt.last_gameid):
-                    break
-            else:
-                fatal_no_cardsets(app)
-                return 3
+    if app.commandline.loadgame:
+        pass
+    elif app.commandline.game is not None:
+        gameid = app.gdb.getGameByName(app.commandline.game)
+        if gameid is None:
+            print_err(_("can't find game: %(game)s") % {
+                'game': app.commandline.game})
+            sys.exit(-1)
+        else:
+            startgameid = gameid
+    elif app.commandline.gameid is not None:
+        startgameid = app.commandline.gameid
+
+    progress = app.intro.progress
+    # load cardset
+    if startgameid != app.opt.last_gameid and app.opt.game_holded == 0:
+        success = app.requestCompatibleCardsetType(startgameid,
+                                                   progress=progress)
+    else:
+        success = app.loadCardset(cardset, progress=progress, id=startgameid)
+    if not success and not cardset:
+        for cardset in app.cardset_manager.getAll():
+            progress.reset()
+
+            if app.loadCardset(cardset, progress=progress,
+                               id=startgameid):
+                break
+        else:
+            fatal_no_cardsets(app)
+            return 3
 
     # ok
     return 0
