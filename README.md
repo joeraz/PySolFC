@@ -31,7 +31,7 @@ can be implemented.
 
 ## Requirements.
 
-- Python (2.7 or 3.x)
+- Python (3.7 or later)
 - Tkinter (Tcl/Tk 8.4 or later)
 
 - For sound support (optional)
@@ -97,10 +97,10 @@ cd PySolFC
 gmake test
 gmake rules
 ln -s data/images images
-tar -xvf PySolFC-Cardsets-2.0.tar.bz2 # Needs to be downloaded from sourceforge
+tar -xvf PySolFC-Cardsets-3.0.tar.bz2 # Needs to be downloaded from sourceforge
 mkdir -p ~/.PySolFC
 rmdir ~/.PySolFC/cardsets
-ln -s "`pwd`/PySolFC-Cardsets-2.0" ~/.PySolFC/cardsets
+ln -s "`pwd`/PySolFC-Cardsets-3.0" ~/.PySolFC/cardsets
 python pysol.py
 ```
 
@@ -118,21 +118,19 @@ per the instructions above.
 At the moment, this only works on POSIX (Linux, FreeBSD and similar) systems.
 Windows and Mac users - you'll need to chip in with a script for your system.
 
-#### 1 - Install build prerequisites: six, random2 and pysol-cards
+#### 1 - Install build prerequisites: six and pysol-cards
 
 This is kind of stupid and maybe it can be fixed in the future, but for now:
 
 ```
 pip install six
-pip install random2
 pip install pysol-cards
 ```
 
 You may want to use your OS distribution package system instead, for example:
 
 ```
-sudo apt-get install python-six
-sudo apt-get install python-random2
+sudo apt-get install python3-six
 ```
 
 For Pillow compilation, libjpeg headers and libraries need to be available:

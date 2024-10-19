@@ -35,9 +35,6 @@ from pysollib.mygettext import myGettext
 from pysollib.pysoltk import STATUSBAR_ITEMS, TOOLBAR_BUTTONS, TOOLKIT
 from pysollib.resource import CSI
 
-
-import six
-
 import validate
 
 # ************************************************************************
@@ -100,6 +97,7 @@ pause_text_style = string
 redeal_icon_style = string
 dialog_icon_style = string
 tree_icon_style = string
+button_icon_style = string
 tile_theme = string
 default_tile_theme = string
 toolbar = integer(0, 4)
@@ -270,6 +268,7 @@ class Options:
         ('redeal_icon_style', 'str'),
         ('dialog_icon_style', 'str'),
         ('tree_icon_style', 'str'),
+        ('button_icon_style', 'str'),
         ('tile_theme', 'str'),
         ('default_tile_theme', 'str'),
         ('toolbar', 'int'),
@@ -376,6 +375,7 @@ class Options:
         self.redeal_icon_style = 'modern'
         self.dialog_icon_style = 'remix'
         self.tree_icon_style = 'remix'
+        self.button_icon_style = 'none'
         self.tile_theme = 'default'
         self.default_tile_theme = 'default'
         self.toolbar = 1       # 0 == hide, 1,2,3,4 == top, bottom, left, right
@@ -568,7 +568,7 @@ class Options:
                           top.winfo_screendepth())
         # bg
         if sd > 8:
-            self.tabletile_name = "Felt_Green.gif"  # basename
+            self.tabletile_name = "Felt Green"  # name
         else:
             self.tabletile_name = None
         # cardsets
@@ -660,7 +660,7 @@ class Options:
             val = getattr(self, key)
             if isinstance(val, str):
                 if sys.version_info < (3,):
-                    val = six.text_type(val, 'utf-8')
+                    val = str(val, 'utf-8')
             config['general'][key] = val
 
         config['general']['recent_gameid'] = self.recent_gameid

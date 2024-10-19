@@ -21,22 +21,13 @@
 #
 # ---------------------------------------------------------------------------##
 
+from importlib import util
+
 import pysollib.settings
 from pysollib.mfxutil import Struct, print_err
 from pysollib.mygettext import _, n_
 from pysollib.resource import CSI
 
-import six
-
-# Handle import of import library - different libraries are needed
-# for different Python versions.
-imp = None
-util = None
-try:
-    from importlib import util
-except ImportError:
-    util = None
-    import imp
 
 # ************************************************************************
 # * constants
@@ -418,7 +409,7 @@ class GI:
 
         # Solitude for Windows
         # still missing:
-        #       Bowling (Sackson version), Four Kingdoms, Icicles
+        #       Bowling (Sackson version), Icicles
         ("Solitude for Windows", (
             2, 8, 11, 13, 19, 24, 25, 29, 30, 31, 33, 34, 36, 38, 42,
             43, 45, 48, 50, 53, 56, 57, 58, 62, 64, 67, 69, 71, 86, 87,
@@ -426,7 +417,7 @@ class GI:
             128, 133, 134, 135, 139, 146, 147, 171, 172, 173, 221, 222,
             224, 228, 233, 234, 235, 256, 257, 258, 282, 314, 327, 330,
             355, 356, 398, 406, 414, 418, 434, 437, 484, 593, 715, 716,
-            737, 751, 805, 830, 845, 847, 888, 901, 903
+            737, 751, 805, 830, 845, 847, 888, 901, 903, 970
         )),
 
         # XM Solitaire
@@ -437,36 +428,35 @@ class GI:
         # from XM Solitaire should be researched before being added to PySol.
         #
         # still missing:
-        #       Ace of Hearts, Agnes Three, Antares, Avenue, Baker's Fan,
-        #       Baker's Spider, Bedeviled, Binding, Black Spider,
-        #       California, Color Cell, Cornelius, Desert Fox,
-        #       Double Antares, Double Antarctica, Double Arctica,
-        #       Double Baker's Spider, Double Cascade, Double Majesty,
-        #       Double Spidercells, Doublet Cell 5, Doubt, Dream Fan,
-        #       Dumfries Cell, Falcon Wing, Fan Nine, Four By Ten,
+        #       Agnes Three, Antares, Avenue, Baker's Fan, Baker's Spider,
+        #       Bedeviled, Binding, Black Spider, California, Color Cell,
+        #       Cornelius, Desert Fox, Double Antares, Double Antarctica,
+        #       Double Arctica, Double Baker's Spider, Double Cascade,
+        #       Double Majesty, Double Spidercells, Doublet Cell 5, Doubt,
+        #       Dream Fan, Dumfries Cell, Falcon Wing, Fan Nine, Four By Ten,
         #       FreeCell AK, Gaps Alter, Gaps Diff, George V,
         #       Grandmother's Clock, In a Frame, Inverted FreeCell, Kings,
         #       Klondike FreeCell, La Cabane, La Double Entente,
         #       Little Gazette, Magic FreeCell, Mini Gaps, Montreal,
         #       Napoleon at Iena, Napoleon at Waterloo, Napoleon's Guards,
         #       Oasis, Opera, Ordered Suits, Osmotic FreeCell, Pair FreeCell,
-        #       Pairs 2, Reserved Thirteens, Sea Spider, Sept Piles 0,
-        #       Short Solitaire, Simple Alternations, Smart Osmosis,
-        #       Step By Step, Stripped FreeCell, Tarantula, Triple Dispute,
-        #       Trusty Twenty, Two Ways 3, Up Or Down, Versailles,
-        #       Vertical FreeCell, Wasp Baby, Yukon FreeCell
+        #       Pairs 2, Reserved Thirteens, Sept Piles 0, Short Solitaire,
+        #       Simple Alternations, Smart Osmosis, Step By Step,
+        #       Stripped FreeCell, Tarantula, Triple Dispute, Trusty Twenty,
+        #       Two Ways 3, Up Or Down, Versailles, Vertical FreeCell,
+        #       Wasp Baby, Yukon FreeCell
         ("XM Solitaire", (
             2, 8, 9, 13, 15, 18, 19, 20, 29, 30, 31, 34, 36, 38, 41, 42,
             45, 46, 50, 53, 54, 56, 57, 64, 77, 78, 86, 96, 97, 98, 105,
             110, 112, 124, 145, 173, 220, 222, 223, 224, 228, 231, 233,
             234, 235, 236, 257, 258, 264, 265, 267, 270, 271, 290, 291,
             292, 293, 303, 309, 314, 318, 320, 322, 324, 325, 336, 338,
-            341, 363, 364, 372, 376, 383, 384, 385, 386, 390, 391, 393,
-            398, 405, 415, 416, 425, 451, 453, 461, 464, 466, 467, 476,
-            480, 484, 511, 512, 513, 516, 561, 610, 613, 625, 629, 631,
-            638, 641, 647, 650, 655, 678, 684, 702, 734, 751, 784, 825,
-            829, 834, 837, 844, 862, 867, 880, 889, 901, 911, 933, 941,
-            947, 953
+            341, 359, 363, 364, 372, 376, 383, 384, 385, 386, 390, 391,
+            393, 398, 405, 415, 416, 425, 451, 453, 461, 464, 466, 467,
+            476, 480, 484, 511, 512, 513, 516, 561, 610, 613, 625, 629,
+            631, 638, 641, 647, 650, 655, 678, 684, 702, 734, 751, 784,
+            825, 829, 834, 837, 844, 862, 867, 880, 889, 901, 911, 933,
+            941, 947, 953, 966
         )),
 
         # xpat2 1.06 (we have 14 out of 16 games)
@@ -480,7 +470,7 @@ class GI:
         ("Paul Alfille", (8,)),
         ("C.L. Baker", (45,)),
         ("Mark S. Ball", (909,)),
-        ("David Bernazzani", (314, 830,)),
+        ("David Bernazzani", (314, 830, 970,)),
         ("Gordon Bower", (763, 783, 852, 959,)),
         ("Art Cabral", (9,)),
         ("Richard A. Canfield", (105, 835,)),
@@ -496,7 +486,7 @@ class GI:
         ("Mark Masten", (811,)),
         ("Albert Morehead and Geoffrey Mott-Smith", (25, 42, 48, 173, 282,
                                                      303, 362, 547, 738,
-                                                     845)),
+                                                     845, 967, 968)),
         ("Toby Ord", (788,)),
         ("David Parlett", (64, 98, 294, 338, 654, 796, 812, 844)),
         ("Joe R.", (938, 960,)),
@@ -514,9 +504,9 @@ class GI:
         ("Thomas Warfield", (189, 264, 300, 320, 336, 337, 359,
                              415, 427, 458, 495, 496, 497, 508,
                              800, 814, 820, 825, 889, 911, 926,
-                             941)),
+                             941, 966)),
         ("Mary Whitmore Jones", (421, 624,)),
-        ("Jan Wolter", (917, 939, 946,)),
+        ("Jan Wolter", (917, 939, 946, 963,)),
         )
 
     GAMES_BY_PYSOL_VERSION = (
@@ -604,6 +594,7 @@ class GI:
          tuple(range(13168, 13170)) + tuple(range(18000, 18005)) +
          tuple(range(19000, 19012)) + tuple(range(22303, 22311)) +
          tuple(range(22353, 22361))),
+        ('fc-3.1', tuple(range(961, 971))),
     )
 
     # deprecated - the correct way is to or a GI.GT_XXX flag
@@ -661,13 +652,13 @@ class GameInfo(Struct):
                  ):
         #
         def to_unicode(s):
-            if isinstance(s, six.text_type):
+            if isinstance(s, str):
                 return s
             try:
-                s = six.text_type(s, 'utf-8')
+                s = str(s, 'utf-8')
             except UnicodeDecodeError as err:
                 print_err(err)
-                s = six.text_type(s, 'utf-8', 'ignore')
+                s = str(s, 'utf-8', 'ignore')
             return s
         ncards = decks * (len(suits) * len(ranks) + len(trumps))
         game_flags = game_type & ~1023
@@ -682,7 +673,7 @@ class GameInfo(Struct):
             short_name = to_unicode(short_name)
             if pysollib.settings.TRANSLATE_GAME_NAMES:
                 short_name = _(short_name)
-        if isinstance(altnames, six.string_types):
+        if isinstance(altnames, str):
             altnames = (altnames,)
         altnames = [to_unicode(n) for n in altnames]
         if pysollib.settings.TRANSLATE_GAME_NAMES:
@@ -918,12 +909,9 @@ def loadGame(modname, filename, check_game=False):
     # print "load game", modname, filename
     GAME_DB.check_game = check_game
     GAME_DB.current_filename = filename
-    if util is not None:
-        spec = util.spec_from_file_location(modname, filename)
-        module = util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-    else:
-        imp.load_source(modname, filename)
+    spec = util.spec_from_file_location(modname, filename)
+    module = util.module_from_spec(spec)
+    spec.loader.exec_module(module)
 
     # execfile(filename, globals(), globals())
     GAME_DB.current_filename = None

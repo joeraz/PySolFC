@@ -23,8 +23,10 @@
 
 
 import math
+import random
 import time
 import traceback
+from io import BytesIO
 from pickle import Pickler, Unpickler, UnpicklingError
 
 import attr
@@ -67,12 +69,6 @@ from pysollib.settings import PACKAGE, TITLE, TOOLKIT, TOP_SIZE
 from pysollib.settings import VERSION, VERSION_TUPLE
 from pysollib.struct_new import NewStruct
 
-import random2
-
-import six
-from six import BytesIO
-from six.moves import range
-
 if TOOLKIT == 'tk':
     from pysollib.ui.tktile.solverdialog import reset_solver_dialog
 else:
@@ -105,7 +101,7 @@ def _updateStatus_process_key_val(tb, sb, k, v):
             # self.top.wm_title("%s - %s"
             # % (TITLE, self.getTitleName()))
             return
-        if isinstance(v, six.string_types):
+        if isinstance(v, str):
             if sb:
                 sb.updateText(gamenumber=v)
             # self.top.wm_title("%s - %s %s" % (TITLE,
@@ -147,7 +143,7 @@ def _updateStatus_process_key_val(tb, sb, k, v):
             if tb:
                 tb.updateText(player=_("Player\n"))
             return
-        if isinstance(v, six.string_types):
+        if isinstance(v, str):
             if tb:
                 # if self.app.opt.toolbar_size:
                 if tb.getSize():
@@ -169,7 +165,7 @@ def _updateStatus_process_key_val(tb, sb, k, v):
         if v is None:
             if sb:
                 sb.updateText(time='')
-        if isinstance(v, six.string_types):
+        if isinstance(v, str):
             if sb:
                 sb.updateText(time=v)
         return
@@ -1342,7 +1338,7 @@ class Game(object):
         if self.preview:
             return
         tb, sb = self.app.toolbar, self.app.statusbar
-        for k, v in six.iteritems(kw):
+        for k, v in kw.items():
             _updateStatus_process_key_val(tb, sb, k, v)
 
     def _unmapHandler(self, event):
@@ -2145,8 +2141,17 @@ class Game(object):
             self.finished = True
             self.playSample("gamelost", priority=1000)
             text = _("Game finished, but not without my help...")
-            hintsused = _("You used %(h)s hint(s) during this game.") % {
-                'h': self.stats.hints}
+            if self.stats.hints > 0 and not self.app.opt.free_hint:
+                if self.stats.demo_moves > 0:
+                    hintsused = _("You used %(h)s hint(s) and the demo " +
+                                  "during this game.") % {
+                        'h': self.stats.hints}
+                else:
+                    hintsused = _("You used %(h)s hint(s) during this " +
+                                  "game.") % {
+                        'h': self.stats.hints}
+            else:
+                hintsused = _("You used the demo during this game.")
             d = MfxMessageDialog(
                 self.top, title=_("Game finished"), bitmap="info",
                 text=_(text + '\n\n' + hintsused),
@@ -3354,7 +3359,7 @@ class Game(object):
         game.random = construct_random(initial_seed)
         state = pload()
         if (game.random is not None and
-                not isinstance(game.random, random2.Random) and
+                not isinstance(game.random, random.Random) and
                 isinstance(state, int)):
             game.random.setstate(state)
         # if not hasattr(game.random, "origin"):

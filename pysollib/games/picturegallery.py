@@ -317,6 +317,7 @@ class HugePictureGallery(PictureGallery):
 # ************************************************************************
 # * Great Wheel
 # * Greater Wheel
+# * Carousel
 # ************************************************************************
 
 
@@ -404,6 +405,20 @@ class GreaterWheel(GreatWheel):
 
     def createGame(self):
         PictureGallery.createGame(self, waste=True, numstacks=12)
+
+
+class Carousel_RowStack(BasicRowStack):
+    def acceptsCards(self, from_stack, cards):
+        if not self.cards:
+            return True
+        c1, c2 = self.cards[-1], cards[0]
+        return c1.suit == c2.suit and c1.rank == c2.rank+1
+
+    getBottomImage = Stack._getTalonBottomImage
+
+
+class Carousel(GreatWheel):
+    RowStack_Class = StackWrapper(Carousel_RowStack, max_accept=1)
 
 # ************************************************************************
 # * Mount Olympus
@@ -670,7 +685,7 @@ class DevilsGrip(RoyalParade):
         StackWrapper(DevilsGrip_TableauStack,
                      base_rank=3, max_cards=4, dir=3),
         ]
-    Talon_Class = StackWrapper(WasteTalonStack, max_rounds=1, num_deal=3)
+    Talon_Class = StackWrapper(WasteTalonStack, max_rounds=-1, num_deal=3)
 
     NORMAL_OFFSET = True
 
@@ -691,13 +706,13 @@ class DevilsGrip(RoyalParade):
 
     def fillStack(self, stack):
         if not stack.cards and stack in self.s.tableaux:
-            if self.s.waste.cards:
-                old_state = self.enterState(self.S_FILL)
-                self.s.waste.moveMove(1, stack)
-                self.leaveState(old_state)
-            elif self.s.talon.cards:
+            if self.s.talon.cards:
                 old_state = self.enterState(self.S_FILL)
                 self.s.talon.moveMove(1, stack)
+                self.leaveState(old_state)
+            elif self.s.waste.cards:
+                old_state = self.enterState(self.S_FILL)
+                self.s.waste.moveMove(1, stack)
                 self.leaveState(old_state)
 
 
@@ -715,7 +730,7 @@ registerGame(GameInfo(399, Zeus, "Zeus",
                       GI.GT_PICTURE_GALLERY, 2, 0, GI.SL_BALANCED))
 registerGame(GameInfo(546, RoyalParade, "Royal Parade",
                       GI.GT_PICTURE_GALLERY, 2, 0, GI.SL_MOSTLY_SKILL,
-                      altnames=("Hussars", "Financier")))
+                      altnames=("Hussars", "Financier", "Cavalcade")))
 registerGame(GameInfo(547, VirginiaReel, "Virginia Reel",
                       GI.GT_PICTURE_GALLERY, 2, 0, GI.SL_MOSTLY_SKILL))
 registerGame(GameInfo(782, GreaterWheel, "Greater Wheel",
@@ -731,9 +746,13 @@ registerGame(GameInfo(927, BigPictureGallery, "Big Picture Gallery",
 registerGame(GameInfo(928, HugePictureGallery, "Huge Picture Gallery",
                       GI.GT_PICTURE_GALLERY, 4, 0, GI.SL_BALANCED))
 registerGame(GameInfo(932, DevilsGrip, "Devil's Grip",
-                      GI.GT_PICTURE_GALLERY | GI.GT_STRIPPED, 2, 0,
+                      GI.GT_PICTURE_GALLERY | GI.GT_STRIPPED, 2, -1,
                       GI.SL_MOSTLY_LUCK,
                       ranks=list(range(1, 13))  # without Aces
                       ))
 registerGame(GameInfo(944, BlueJacket, "Blue Jacket",
                       GI.GT_PICTURE_GALLERY, 2, 0, GI.SL_MOSTLY_SKILL))
+registerGame(GameInfo(962, Carousel, "Carousel",
+                      GI.GT_PICTURE_GALLERY | GI.GT_STRIPPED, 2, 0,
+                      GI.SL_BALANCED, ranks=list(range(12))  # without Kings
+                      ))

@@ -23,6 +23,7 @@
 
 import os
 import time
+import tkinter
 
 from pysollib.mfxutil import KwStruct
 from pysollib.mfxutil import format_time
@@ -31,7 +32,6 @@ from pysollib.settings import TOP_TITLE
 from pysollib.stats import ProgressionFormatter, PysolStatsFormatter
 from pysollib.ui.tktile.tkutil import bind, loadImage
 
-from six.moves import tkinter
 from six.moves import tkinter_font
 from six.moves import tkinter_ttk as ttk
 
@@ -49,6 +49,8 @@ class StatsDialog(MfxDialog):
 
         kw = self.initKw(kw)
         title = _('Statistics')
+        if player is None:
+            title = _('Demo Statistics')
         MfxDialog.__init__(self, parent, title, kw.resizable, kw.default)
 
         self.font = app.getFont('default')
@@ -383,6 +385,7 @@ class TreeFormatter(PysolStatsFormatter):
             t1, t2, t3, t4, t5, t6 = result
             id = self.tree.insert("", "end", text=t1, values=(t2, t3, t4))
             self.parent_window.tree_items.append(id)
+            self.parent_window.games[id] = (t6, t2)
             num_rows += 1
             if num_rows > self.MAX_ROWS:
                 break
@@ -512,7 +515,8 @@ class LogDialog(MfxDialog):
         title = _('Log')
         MfxDialog.__init__(self, parent, title, kw.resizable, kw.default)
 
-        # self.selected_game = None
+        self.selected_game = None
+        self.selected_game_num = None
 
         top_frame, bottom_frame = self.createFrames(kw)
         notebook = ttk.Notebook(top_frame)
@@ -520,26 +524,42 @@ class LogDialog(MfxDialog):
 
         self.notebook_tabs = []
 
-        full_frame = FullLogFrame(self, notebook, app, player)
-        notebook.add(full_frame, text=_('Full log'))
-        self.notebook_tabs.append(full_frame._w)
-
         session_frame = SessionLogFrame(self, notebook, app, player)
         notebook.add(session_frame, text=_('Session log'))
+        self.session_log_frame = session_frame
         self.notebook_tabs.append(session_frame._w)
 
+        full_frame = FullLogFrame(self, notebook, app, player)
+        notebook.add(full_frame, text=_('Full log'))
+        self.full_log_frame = full_frame
+        self.notebook_tabs.append(full_frame._w)
+
         notebook.select(LogDialog.SELECTED_TAB)
-        #  bind(notebook, '<<NotebookTabChanged>>', self.tabChanged)
+        bind(notebook, '<<NotebookTabChanged>>', self.tabChanged)
 
         self.notebook = notebook
 
         focus = self.createButtons(bottom_frame, kw)
-        # self.tabChanged()               # configure buttons state
+        self.tabChanged()               # configure buttons state
         self.mainloop(focus, kw.timeout)
+
+    def tabChanged(self, *args):
+        w = self.notebook.select()
+        run_button = self.buttons[0]
+        indx = self.notebook_tabs.index(w)
+        if indx == 0:
+            g = self.session_log_frame.getSelectedGame()
+        else:
+            g = self.full_log_frame.getSelectedGame()
+        if g[0] is None:
+            run_button.config(state='disabled')
+        else:
+            run_button.config(state='normal')
 
     def initKw(self, kw):
         kw = KwStruct(kw,
-                      strings=(_("&OK"),
+                      strings=((_("&Play this game"), 402),
+                               "sep", _("&OK"),
                                (_("&Save to file"), 500)),
                       default=0,
                       width=76*self.CHAR_W,
@@ -548,16 +568,17 @@ class LogDialog(MfxDialog):
         return MfxDialog.initKw(self, kw)
 
     def mDone(self, button):
-        # self.selected_game = self.all_games_frame.getSelectedGame()
+
         w = self.notebook.select()
         indx = self.notebook_tabs.index(w)
         LogDialog.SELECTED_TAB = indx
-        if button == 500:               # "Save to file"
-            assert indx in (0, 1)
-            if indx == 0:               # "Full log"
-                button = 203
-            else:                       # "Session log"
-                button = 204
+        if indx == 0:
+            self.selected_game, self.selected_game_num \
+                = self.session_log_frame.getSelectedGame()
+        else:
+            self.selected_game, self.selected_game_num \
+                = self.full_log_frame.getSelectedGame()
+
         MfxDialog.mDone(self, button)
 
 
@@ -576,6 +597,7 @@ class FullLogFrame(AllGamesFrame):
         AllGamesFrame.__init__(self, dialog, parent, app, player, **kw)
         header = ('', '99999999999999999999', '9999-99-99  99:99',
                   'XXXXXXXXXXXX')
+        self.games = {}
         self.formatter.resizeHeader(player, header)
 
     def createHeader(self, player):
@@ -587,11 +609,15 @@ class FullLogFrame(AllGamesFrame):
             return
         self.formatter.writeFullLog(player)
 
-    def treeviewSelected(self, *args):
-        pass
-
     def headerClick(self, column):
         pass
+
+    def getSelectedGame(self):
+        sel = self.tree.selection()
+        if sel and len(sel) == 1:
+            if sel[0] in self.games:
+                return self.games[sel[0]]
+        return (None, None)
 
 
 class SessionLogFrame(FullLogFrame):

@@ -22,14 +22,14 @@
 # ---------------------------------------------------------------------------##
 
 import os
+import tkinter
 
 from pysollib.mfxutil import KwStruct, USE_PIL
 from pysollib.mygettext import _
+from pysollib.resource import TTI
 from pysollib.ui.tktile.selecttree import SelectDialogTreeData
 from pysollib.ui.tktile.tkutil import bind
 
-import six
-from six.moves import tkinter
 from six.moves import tkinter_colorchooser
 from six.moves import tkinter_ttk as ttk
 
@@ -265,7 +265,7 @@ class SelectTileDialogWithPreview(MfxDialog):
     def initKw(self, kw):
         kw = KwStruct(kw,
                       strings=((_("&Solid color..."), 10),
-                               'sep', _("&OK"), _("&Cancel"),),
+                               'sep', _("&Select"), _("&Cancel"),),
                       default=0,
                       resizable=True,
                       font=None,
@@ -275,7 +275,7 @@ class SelectTileDialogWithPreview(MfxDialog):
 
     def mDone(self, button):
         if button == 0:  # "OK" or double click
-            if isinstance(self.tree.selection_key, six.string_types):
+            if isinstance(self.tree.selection_key, str):
                 self.key = str(self.tree.selection_key)
             else:
                 self.key = self.tree.selection_key
@@ -324,9 +324,12 @@ class SelectTileDialogWithPreview(MfxDialog):
                     ('stretch', 'save-aspect', 'stretch-4k',
                      'save-aspect-4k')):
                 continue
-
             if (self.criteria.type == "Tiles" and os.path.basename(
                     os.path.dirname(tile.filename)) != 'tiles'):
+                continue
+            if (self.criteria.size != ""
+                    and self.criteria.sizeOptions[self.criteria.size]
+                    != tile.size):
                 continue
 
             if self.app.checkSearchString(self.criteria.name,
@@ -348,6 +351,7 @@ class SelectTileDialogWithPreview(MfxDialog):
             self.list_searchtext.insert(0, d.name.get())
 
             self.criteria.type = d.type.get()
+            self.criteria.size = d.size.get()
 
             self.performSearch()
 
@@ -373,7 +377,7 @@ class SelectTileDialogWithPreview(MfxDialog):
         canvas.deleteAllItems()
 
         self.preview_scaling = scaling
-        if isinstance(key, six.string_types):
+        if isinstance(key, str):
             if USE_PIL:
                 self.textScale['state'] = 'disabled'
             # solid color
@@ -401,6 +405,13 @@ class SearchCriteria:
     def __init__(self):
         self.name = ""
         self.type = ""
+        self.size = ""
+
+        self.sizeOptions = {"": -1,
+                            "Tile": TTI.SIZE_TILE,
+                            "SD": TTI.SIZE_SD,
+                            "HD": TTI.SIZE_HD,
+                            "4K": TTI.SIZE_4K}
         self.typeOptions = ("", "Images", "Tiles")
 
 
@@ -416,6 +427,8 @@ class SelectTileAdvancedSearch(MfxDialog):
         self.name.set(criteria.name)
         self.type = tkinter.StringVar()
         self.type.set(criteria.type)
+        self.size = tkinter.StringVar()
+        self.size.set(criteria.size)
         #
         row = 0
 
@@ -437,6 +450,17 @@ class SelectTileAdvancedSearch(MfxDialog):
         textType.grid(row=row, column=1, columnspan=4, sticky='ew',
                       padx=1, pady=1)
         row += 1
+        if USE_PIL:
+            sizeValues = list(criteria.sizeOptions.keys())
+
+            labelSize = tkinter.Label(top_frame, text="Size:", anchor="w")
+            labelSize.grid(row=row, column=0, columnspan=1, sticky='ew',
+                           padx=1, pady=1)
+            textSize = PysolCombo(top_frame, values=sizeValues,
+                                  textvariable=self.size, state='readonly')
+            textSize.grid(row=row, column=1, columnspan=4, sticky='ew',
+                          padx=1, pady=1)
+            row += 1
 
         focus = self.createButtons(bottom_frame, kw)
         # focus = text_w

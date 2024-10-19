@@ -2045,6 +2045,12 @@ msgstr ""
 msgid "You used %(h)s hint(s) during this game."
 msgstr ""
 
+msgid "You used %(h)s hint(s) and the demo during this game."
+msgstr ""
+
+msgid "You used the demo during this game."
+msgstr ""
+
 msgid "You are Stuck"
 msgstr ""
 
@@ -2228,6 +2234,21 @@ msgid "\n"
 "8: 3 J 6 A 9 4 Q 7 2 T 5 K"
 msgstr ""
 
+msgid "Dungeon"
+msgstr ""
+
+msgid "Tower"
+msgstr ""
+
+msgid "Guest"
+msgstr ""
+
+msgid "Castle"
+msgstr ""
+
+msgid "Subjects"
+msgstr ""
+
 #: pysollib/games/curdsandwhey.py:76
 msgid "Tableau. Build down by suit or of the same rank."
 msgstr ""
@@ -2246,6 +2267,9 @@ msgstr ""
 
 #: pysollib/games/golf.py:118 pysollib/games/royalcotillion.py:383
 msgid "Waste. Build up or down regardless of suit."
+msgstr ""
+
+msgid "Waste. Build up or down by alternate color."
 msgstr ""
 
 #: pysollib/games/klondike.py:125
@@ -2359,6 +2383,9 @@ msgstr ""
 #: pysollib/tile/toolbar.py:188 pysollib/tk/selectgame.py:384
 #: pysollib/tk/toolbar.py:188
 msgid "Statistics"
+msgstr ""
+
+msgid "Demo Statistics"
 msgstr ""
 
 #: pysollib/kivy/menubar.py:197
@@ -3430,10 +3457,10 @@ msgstr ""
 msgid "Inventor:"
 msgstr ""
 
-msgid "PySol Version:"
+msgid "PySol version:"
 msgstr ""
 
-msgid "Statistics:"
+msgid "Play history:"
 msgstr ""
 
 #: pysollib/pysolgtk/selectgame.py:122 pysollib/tile/selectgame.py:400
@@ -3989,6 +4016,9 @@ msgstr ""
 msgid "Year:"
 msgstr ""
 
+msgid "Compatible with current game"
+msgstr ""
+
 #: pysollib/tile/selectcardset.py:488
 msgid "Settings"
 msgstr ""
@@ -4017,6 +4047,15 @@ msgid "Tiles"
 msgstr ""
 
 msgid "Images"
+msgstr ""
+
+msgid "SD"
+msgstr ""
+
+msgid "HD"
+msgstr ""
+
+msgid "4K"
 msgstr ""
 
 #: pysollib/tile/solverdialog.py:54 pysollib/tk/solverdialog.py:62
@@ -5228,6 +5267,9 @@ msgid "Othe&r graphics"
 msgstr ""
 
 #: pysollib/ui/tktile/menubar.py:637
+msgid "&Button icons"
+msgstr ""
+
 msgid "&Demo logo"
 msgstr ""
 

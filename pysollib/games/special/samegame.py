@@ -34,8 +34,6 @@ from pysollib.stack import \
         OpenStack
 from pysollib.util import ANY_SUIT
 
-from six.moves import range
-
 
 # ************************************************************************
 # * Samegame
@@ -245,6 +243,9 @@ class AbstractSamegameGame(Game):
                         self.moveMove(1, self.s.rows[r],
                                       self.s.rows[r - (numrows * emptycols)],
                                       frames=0)
+
+    def getAutoStacks(self, event=None):
+        return ((), (), ())
 
 
 class Samegame3_20x10(AbstractSamegameGame):

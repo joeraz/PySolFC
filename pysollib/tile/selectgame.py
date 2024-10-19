@@ -22,6 +22,8 @@
 # ---------------------------------------------------------------------------
 
 import os
+import tkinter
+from collections import UserList
 
 from pysollib.gamedb import GI
 from pysollib.mfxutil import KwStruct, Struct, destruct
@@ -31,8 +33,6 @@ from pysollib.resource import CSI
 from pysollib.ui.tktile.selecttree import SelectDialogTreeData
 from pysollib.ui.tktile.tkutil import bind, unbind_destroy
 
-from six.moves import UserList
-from six.moves import tkinter
 from six.moves import tkinter_ttk as ttk
 
 from .selecttree import SelectDialogTreeCanvas
@@ -328,6 +328,12 @@ class SelectGameDialog(MfxDialog):
         if button == 0:                 # Ok or double click
             self.gameid = self.tree.selection_key
             self.tree.n_expansions = 1  # save xyview in any case
+        if button == 1:                 # Cancel button
+            # If the user cancels, revert any cardset change from the preview.
+            if self.app.cardset.name != self.cardset.name:
+                self.app.loadCardset(self.cardset,
+                                     id=self.game.gameinfo.category,
+                                     tocache=True, noprogress=True)
         if button == 10:                # Rules
             doc = self.app.getGameRulesFilename(self.tree.selection_key)
             if not doc:
@@ -358,6 +364,7 @@ class SelectGameDialogWithPreview(SelectGameDialog):
         self.gameid = gameid
         self.bookmark = bookmark
         self.criteria = SearchCriteria()
+        self.cardset = self.app.cardset.copy()
         self.random = None
         if self.TreeDataHolder_Class.data is None:
             self.TreeDataHolder_Class.data = self.TreeData_Class(app)
@@ -1130,7 +1137,7 @@ class SelectGameAdvancedSearch(MfxDialog):
         for name, games in GI.GAMES_BY_PYSOL_VERSION:
             versionValues.append(name)
 
-        labelVersion = tkinter.Label(top_frame, text="PySol Version:",
+        labelVersion = tkinter.Label(top_frame, text="PySol version:",
                                      anchor="w")
         labelVersion.grid(row=row, column=0, columnspan=1, sticky='ew',
                           padx=1, pady=1)
@@ -1147,7 +1154,7 @@ class SelectGameAdvancedSearch(MfxDialog):
 
         statisticsValues = list(criteria.statisticsOptions.keys())
 
-        labelStats = tkinter.Label(top_frame, text="Statistics:", anchor="w")
+        labelStats = tkinter.Label(top_frame, text="Play history:", anchor="w")
         labelStats.grid(row=row, column=0, columnspan=1, sticky='ew',
                         padx=1, pady=1)
         textStats = PysolCombo(top_frame, values=statisticsValues,

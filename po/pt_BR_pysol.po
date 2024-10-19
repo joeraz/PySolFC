@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2021-12-10 10:19-0500\n"
-"PO-Revision-Date: 2024-03-21 18:24-0400\n"
+"PO-Revision-Date: 2024-10-19 14:34-0400\n"
 "Last-Translator: Matheus Knack <mtknack555@gmail.com>\n"
 "Language-Team: \n"
 "Language: pt_BR\n"
@@ -2188,6 +2188,12 @@ msgstr "O jogo acabou, mas não sem minha ajuda..."
 msgid "You used %(h)s hint(s) during this game."
 msgstr "Você usou %(h)s dica(s) durante este jogo"
 
+msgid "You used %(h)s hint(s) and the demo during this game."
+msgstr ""
+
+msgid "You used the demo during this game."
+msgstr ""
+
 msgid "You are Stuck"
 msgstr "Você está preso"
 
@@ -2402,6 +2408,21 @@ msgstr ""
 "7: A 8 2 9 3 T 4 J 5 Q 6 K\n"
 "8: 3 J 6 A 9 4 Q 7 2 T 5 K"
 
+msgid "Dungeon"
+msgstr ""
+
+msgid "Tower"
+msgstr ""
+
+msgid "Guest"
+msgstr ""
+
+msgid "Castle"
+msgstr ""
+
+msgid "Subjects"
+msgstr ""
+
 #: pysollib/games/curdsandwhey.py:76
 msgid "Tableau. Build down by suit or of the same rank."
 msgstr "Tableau. Construa decrescente por naipe or por valor igual."
@@ -2422,6 +2443,9 @@ msgstr "Carta base - Ás ou Rei."
 msgid "Waste. Build up or down regardless of suit."
 msgstr ""
 "Descarte. Construa crescente ou descrescente independentemente de naipe."
+
+msgid "Waste. Build up or down by alternate color."
+msgstr ""
 
 #: pysollib/games/klondike.py:125
 #, python-format
@@ -2551,6 +2575,9 @@ msgstr "Ferramentas"
 #: pysollib/tk/toolbar.py:188
 msgid "Statistics"
 msgstr "Estatísticas"
+
+msgid "Demo Statistics"
+msgstr ""
 
 #: pysollib/kivy/menubar.py:197
 msgid "Assist"
@@ -3632,10 +3659,10 @@ msgstr "Compatibilidade:"
 msgid "Inventor:"
 msgstr "Inventor:"
 
-msgid "PySol Version:"
+msgid "PySol version:"
 msgstr ""
 
-msgid "Statistics:"
+msgid "Play history:"
 msgstr ""
 
 #: pysollib/pysolgtk/selectgame.py:122 pysollib/tile/selectgame.py:400
@@ -4207,6 +4234,9 @@ msgstr "Nacionalidade:"
 msgid "Year:"
 msgstr "Ano:"
 
+msgid "Compatible with current game"
+msgstr ""
+
 #: pysollib/tile/selectcardset.py:488
 msgid "Settings"
 msgstr "Configurações"
@@ -4235,6 +4265,15 @@ msgid "Tiles"
 msgstr ""
 
 msgid "Images"
+msgstr ""
+
+msgid "SD"
+msgstr ""
+
+msgid "HD"
+msgstr ""
+
+msgid "4K"
 msgstr ""
 
 #: pysollib/tile/solverdialog.py:54 pysollib/tk/solverdialog.py:62
@@ -5502,6 +5541,9 @@ msgid "Othe&r graphics"
 msgstr ""
 
 #: pysollib/ui/tktile/menubar.py:637
+msgid "&Button icons"
+msgstr ""
+
 msgid "&Demo logo"
 msgstr "&Logo da demo"
 

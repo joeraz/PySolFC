@@ -524,12 +524,40 @@ class Application:
             MfxMessageDialog.img[f] = im
 
         # load button images
-        if 0 and TOOLKIT == 'tk':
-            dirname = os.path.join('images', 'buttons', 'bluecurve')
+        MfxDialog.button_img = {}
+        if TOOLKIT == 'tk' and self.opt.button_icon_style != 'none':
+            dirname = os.path.join('images', 'buttons',
+                                   self.opt.button_icon_style)
             for n, f in (
                 (_('&OK'), 'ok'),
+                (_('&Select'), 'ok'),
+                (_('&Nice'), 'ok'),
+                (_('&Enjoy'), 'ok'),
+                (_("&Great"), 'ok'),
+                (_("&Cool"), 'ok'),
+                (_("&Yeah"), 'ok'),
+                (_("&Wow"), 'ok'),
+                (_("&Oh well"), 'ok'),
+                (_("&That's life"), 'ok'),
+                (_("&Hmm"), 'ok'),
                 (_('&Cancel'), 'cancel'),
+                (_('&Close'), 'cancel'),
+                (_("&Apply"), 'apply'),
+                (_("&Start"), 'apply'),
+                (_('&New'), 'new'),
                 (_('&New game'), 'new'),
+                (_('&Back to game'), 'back'),
+                (_('&Reset...'), 'reset'),
+                (_('&Restart'), 'reset'),
+                (_('&Rules'), 'help'),
+                (_('&Info...'), 'help'),
+                (_('&Credits'), 'help'),
+                (_('&Next number'), 'next'),
+                (_('&Play'), 'next'),
+                (_('&Play this game'), 'next'),
+                (_('&Solid color...'), 'color'),
+                (_('&Save to file'), 'save'),
+                (_('&Statistics...'), 'statistics'),
             ):
                 fn = self.dataloader.findImage(f, dirname)
                 im = loadImage(fn)
@@ -636,7 +664,7 @@ class Application:
                 self.opt.colors['table'] = tile.color
                 self.opt.tabletile_name = None
             else:
-                self.opt.tabletile_name = tile.basename
+                self.opt.tabletile_name = tile.name
             self.tabletile_index = i
             self.tabletile_manager.setSelected(i)
             return True
@@ -784,11 +812,13 @@ class Application:
 
     def checkCompatibleCardsetType(self, gi, cs):
         assert gi is not None
-        assert cs is not None
+        cs_type = "None"
+        cs_subtype = "None"
         gc = gi.category
         gs = gi.subcategory
-        cs_type = cs.si.type
-        cs_subtype = cs.si.subtype
+        if cs is not None:
+            cs_type = cs.si.type
+            cs_subtype = cs.si.subtype
         t0, t1 = None, None
         if gc == GI.GC_FRENCH:
             t0 = "French"
@@ -880,14 +910,14 @@ class Application:
         # ask
         return None, 0, t
 
-    def requestCompatibleCardsetType(self, id):
+    def requestCompatibleCardsetType(self, id, progress=None):
         gi = self.getGameInfo(id)
         #
         cs, cs_update_flag, t = self.getCompatibleCardset(gi, self.cardset)
         if cs is self.cardset:
             return 0
         if cs is not None:
-            self.loadCardset(cs, update=1)
+            self.loadCardset(cs, update=1, progress=progress)
             return 1
 
         self.requestCompatibleCardsetTypeDialog(self.cardset, gi, t)
@@ -895,7 +925,7 @@ class Application:
         cs = self.__selectCardsetDialog(t)
         if cs is None:
             return -1
-        self.loadCardset(cs, id=id)
+        self.loadCardset(cs, id=id, progress=progress)
         return 1
 
     def requestCompatibleCardsetTypeDialog(self, cardset, gi, t):
