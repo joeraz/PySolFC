@@ -243,6 +243,17 @@ def connect_game_find_card_dialog(game):
         pass
 
 
+def raise_find_card_dialog(game):
+    try:
+        if game.app.opt.topmost_dialogs:
+            find_card_dialog.tkraise()
+            find_card_dialog.attributes("-topmost", True)
+        else:
+            find_card_dialog.attributes("-topmost", False)
+    except Exception:
+        pass
+
+
 def destroy_find_card_dialog():
     global find_card_dialog
     try:

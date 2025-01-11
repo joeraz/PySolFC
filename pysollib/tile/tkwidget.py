@@ -25,6 +25,8 @@ import locale
 import os
 import time
 import tkinter
+import tkinter.font
+import tkinter.ttk as ttk
 import traceback
 
 from pysollib.mfxutil import KwStruct, destruct, kwdefault, openURL
@@ -34,9 +36,6 @@ from pysollib.ui.tktile.tkcanvas import MfxCanvas
 from pysollib.ui.tktile.tkutil import after, after_cancel
 from pysollib.ui.tktile.tkutil import bind, unbind_destroy
 from pysollib.ui.tktile.tkutil import makeToplevel, setTransient
-
-from six.moves import tkinter_font
-from six.moves import tkinter_ttk as ttk
 
 # ************************************************************************
 # * abstract base class for the dialogs in this module
@@ -155,7 +154,7 @@ class MfxDialog:  # ex. _ToplevelDialog
             separator = ttk.Separator(self._frame)
             separator.pack(side='bottom', fill='x')
         top_frame = ttk.Frame(self._frame)
-        top_frame.pack(side='top', fill='both', expand=1)
+        top_frame.pack(side='top', fill='both', expand=True)
         return top_frame, bottom_frame
 
     def createBitmaps(self, frame, kw):
@@ -313,7 +312,7 @@ class PysolAboutDialog(MfxMessageDialog):
 
         # font_name = msg.lookup('TLabel', 'font')
         font_name = 'TkDefaultFont'
-        font = tkinter_font.Font(parent, name=font_name, exists=True)
+        font = tkinter.font.Font(parent, name=font_name, exists=True)
         font = font.copy()
         font.configure(underline=True)
         url_label = ttk.Label(frame, text=kw.url, font=font,

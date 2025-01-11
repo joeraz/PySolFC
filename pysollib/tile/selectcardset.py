@@ -23,6 +23,7 @@
 
 import os
 import tkinter
+import tkinter.ttk as ttk
 
 from pysollib.mfxutil import KwStruct, USE_PIL
 from pysollib.mygettext import _
@@ -31,8 +32,6 @@ from pysollib.ui.tktile.selecttree import SelectDialogTreeData
 from pysollib.ui.tktile.tkcanvas import MfxCanvasImage
 from pysollib.ui.tktile.tkutil import bind, loadImage
 from pysollib.util import CARDSET
-
-from six.moves import tkinter_ttk as ttk
 
 from .selecttree import SelectDialogTreeCanvas
 from .selecttree import SelectDialogTreeLeaf, SelectDialogTreeNode
@@ -549,6 +548,10 @@ class SelectCardsetDialogWithPreview(MfxDialog):
         d = SelectCardsetAdvancedSearch(self.top, _("Advanced search"),
                                         self.criteria, self.manager)
         if d.status == 0 and d.button == 0:
+            self.criteria = SearchCriteria(self.manager)
+            self.performSearch()
+
+        if d.status == 0 and d.button == 1:
             self.criteria.name = d.name.get()
 
             self.list_searchtext.delete(0, "end")
@@ -904,11 +907,14 @@ class SelectCardsetAdvancedSearch(MfxDialog):
             top_frame, variable=self.compatible,
             text=_("Compatible with current game"), anchor="w"
         )
-        compatCheck.grid(row=row, column=0, columnspan=2, sticky='ew',
+        compatCheck.grid(row=row, column=0, columnspan=5, sticky='ew',
                          padx=1, pady=1)
+
+        top_frame.columnconfigure(4, weight=1)
 
         focus = self.createButtons(bottom_frame, kw)
         # focus = text_w
+
         self.mainloop(focus, kw.timeout)
 
     def updateSubtypes(self, *args):
@@ -930,7 +936,7 @@ class SelectCardsetAdvancedSearch(MfxDialog):
 
     def initKw(self, kw):
         kw = KwStruct(kw,
-                      strings=(_("&OK"), _("&Cancel")), default=0,
-                      padx=10, pady=10,
+                      strings=(_("C&lear"), 'sep', _("&OK"), _("&Cancel")),
+                      default=1, padx=10, pady=10,
                       )
         return MfxDialog.initKw(self, kw)

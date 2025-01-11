@@ -21,7 +21,6 @@
 #
 # ---------------------------------------------------------------------------##
 
-import locale
 import os
 
 from pysollib.gamedb import GI
@@ -46,6 +45,9 @@ from pysollib.pysoltk import TimeoutsDialog
 from pysollib.pysoltk import create_find_card_dialog
 from pysollib.pysoltk import create_full_picture_dialog
 from pysollib.pysoltk import create_solver_dialog
+from pysollib.pysoltk import raise_find_card_dialog
+from pysollib.pysoltk import raise_full_picture_dialog
+from pysollib.pysoltk import raise_solver_dialog
 from pysollib.settings import DEBUG
 from pysollib.settings import PACKAGE_URL, TITLE
 from pysollib.settings import TOP_SIZE
@@ -358,9 +360,11 @@ class PysolMenubar(PysolMenubarTk):
             if 1 and gi.id == self.game.id:
                 # force change of game
                 continue
-            if 1 and gi.category != self.game.gameinfo.category:
+            # Not sure why this check to not change game category existed,
+            # but commented, as it doesn't make sense.
+            # if 1 and gi.category != self.game.gameinfo.category:
                 # don't change game category
-                continue
+                # continue
             won, lost = self.app.stats.getStats(self.app.opt.player, gi.id)
             if type == 'all':
                 games.append(gi.id)
@@ -532,13 +536,16 @@ class PysolMenubar(PysolMenubarTk):
         if self.game.canFindCard():
             create_find_card_dialog(self.game.top, self.game,
                                     self.app.getFindCardImagesDir())
+            raise_find_card_dialog(self.game)
 
     def mFullPicture(self, *args):
         if self.game.canShowFullPicture():
             create_full_picture_dialog(self.game.top, self.game)
+            raise_full_picture_dialog(self.game)
 
     def mSolver(self, *args):
         create_solver_dialog(self.game.top, self.app)
+        raise_solver_dialog(self.game)
 
     def mEditGameComment(self, *args):
         if self._cancelDrag(break_pause=False):
@@ -548,7 +555,8 @@ class PysolMenubar(PysolMenubarTk):
               'id': game.getGameNumber(format=1)}
         cc = _("Comments for %(game)s %(id)s:\n\n") % kw
         c = game.gsaveinfo.comment or cc
-        d = EditTextDialog(game.top, _("Comments for %(id)s") % kw, text=c)
+        d = EditTextDialog(game.top, _("Comments for %(id)s") % kw, text=c,
+                           resizable=True)
         if d.status == 0 and d.button == 0:
             text = d.text
             if text.strip() == cc.strip():
@@ -560,20 +568,17 @@ class PysolMenubar(PysolMenubarTk):
                 fn = os.path.normpath(fn)
                 if not text.endswith(os.linesep):
                     text += os.linesep
-                enc = locale.getpreferredencoding()
                 try:
                     with open(fn, 'at') as fh:
-                        fh.write(text.encode(enc, 'replace'))
+                        fh.write(d.text)
                 except Exception as err:
-                    d = MfxExceptionDialog(
-                        self.top, err,
-                        text=_("Error while writing to file"))
+                    MfxExceptionDialog(
+                        self.top, err, text=_("Error while writing to file"))
                 else:
-                    d = MfxMessageDialog(
+                    MfxMessageDialog(
                         self.top, title=_("%s Info") % TITLE, bitmap="info",
                         text=_("Comments were appended to\n\n%(filename)s")
                         % {'filename': fn})
-        self._setCommentMenu(bool(game.gsaveinfo.comment))
 
     #
     # Game menu - statistics
@@ -640,13 +645,15 @@ class PysolMenubar(PysolMenubarTk):
             elif mode == 103:
                 header = (_("%(app)s Demo Full log") if demo
                           else _("Full log for %(player)s")) % transkw
-                d = FullLog_StatsDialog(self.top, header, self.app, player)
+                d = FullLog_StatsDialog(self.top, header, self.app, player,
+                                        resizable=True)
                 gameid = d.selected_game
                 gamenum = d.selected_game_num
             elif mode == 104:
                 header = (_("%(app)s Demo Session log") if demo
                           else _("Session log for %(player)s")) % transkw
-                d = SessionLog_StatsDialog(self.top, header, self.app, player)
+                d = SessionLog_StatsDialog(self.top, header, self.app, player,
+                                           resizable=True)
                 gameid = d.selected_game
                 gamenum = d.selected_game_num
             elif mode == 105:

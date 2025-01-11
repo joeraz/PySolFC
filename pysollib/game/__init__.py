@@ -781,7 +781,7 @@ class Game(object):
     def getGameNumber(self, format):
         s = self.random.getSeedAsStr()
         if format:
-            return "# " + s
+            return "#" + s
         return s
 
     # this is called from within createGame()
@@ -827,7 +827,8 @@ class Game(object):
         reset_solver_dialog()
         # unhide toplevel when we use a progress bar
         if not self.preview:
-            wm_map(self.top, maximized=self.app.opt.wm_maximized)
+            wm_map(self.top, maximized=self.app.opt.wm_maximized,
+                   fullscreen=self.app.opt.wm_fullscreen)
             self.top.busyUpdate()
         if TOOLKIT == 'gtk':
             # FIXME
@@ -909,7 +910,8 @@ class Game(object):
             stats=self.app.stats.getStats(self.app.opt.player, self.id))
         if not self.preview:
             self.updateMenus()
-            wm_map(self.top, maximized=self.app.opt.wm_maximized)
+            wm_map(self.top, maximized=self.app.opt.wm_maximized,
+                   fullscreen=self.app.opt.wm_fullscreen)
         self.setCursor(cursor=self.app.top_cursor)
         self.stats.update_time = time.time()
         self.busy = old_busy
@@ -1345,6 +1347,7 @@ class Game(object):
         # pause game if root window has been iconified
         if self.app and not self.pause:
             self.app.menubar.mPause()
+        # should return EVENT_HANDLED or EVENT_PROPAGATE
 
     _resizeHandlerID = None
 
@@ -1368,6 +1371,7 @@ class Game(object):
         if self._resizeHandlerID:
             self.canvas.after_cancel(self._resizeHandlerID)
         self._resizeHandlerID = self.canvas.after(250, self._resizeHandler)
+        # should return EVENT_HANDLED or EVENT_PROPAGATE explicitly.
 
     def playSample(self, name, priority=0, loop=0):
 
@@ -2270,6 +2274,9 @@ class Game(object):
                     self.finishMove()
                     if self.checkForWin():
                         return 1
+            if self.top is not None:
+                self.top.update_idletasks()
+                self.top.busyUpdate()
         return 0
 
     def _autoDeal(self, sound=True):
@@ -2627,6 +2634,7 @@ class Game(object):
         self.canvas.setTopImage(None)
         self.demo_logo = None
         self.demo = None
+        self.busy = False
         self.updateMenus()
 
     # demo event - play one demo move and check for win/loss
@@ -3360,7 +3368,7 @@ class Game(object):
         state = pload()
         if (game.random is not None and
                 not isinstance(game.random, random.Random) and
-                isinstance(state, int)):
+                isinstance(state, tuple)):
             game.random.setstate(state)
         # if not hasattr(game.random, "origin"):
         # game.random.origin = game.random.ORIGIN_UNKNOWN

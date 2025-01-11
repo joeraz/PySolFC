@@ -56,7 +56,7 @@ def help_about(app, timeout=0, sound=True):
 Copyright (C) 1998 - 2003 Markus F.X.J. Oberhumer.
 Copyright (C) 2003 Mt. Hood Playing Card Co.
 Copyright (C) 2005 - 2009 Skomoroh.
-Copyright (C) 2020 - 2024 PySolFC.
+Copyright (C) 2020 - 2025 PySolFC.
 All Rights Reserved.
 
 PySol is free software distributed under the terms
@@ -160,7 +160,19 @@ def help_html(app, document, dir_, top=None):
     viewer.parent.wm_deiconify()
     viewer.parent.tkraise()
     help_html_viewer = viewer
+    raise_help_html(app.game)
     return viewer
+
+
+def raise_help_html(game):
+    try:
+        if game.app.opt.topmost_dialogs:
+            help_html_viewer.parent.tkraise()
+            help_html_viewer.parent.attributes("-topmost", True)
+        else:
+            help_html_viewer.parent.attributes("-topmost", False)
+    except Exception:
+        pass
 
 
 def destroy_help_html():

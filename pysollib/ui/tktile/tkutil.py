@@ -24,12 +24,11 @@
 import os
 import re
 import tkinter
+import tkinter.font
 
 from pysollib.mfxutil import Image, ImageDraw, ImageOps, ImageTk, \
     get_default_resampling
 from pysollib.settings import TITLE, WIN_SYSTEM
-
-from six.moves import tkinter_font
 
 
 # ************************************************************************
@@ -44,12 +43,13 @@ def wm_deiconify(window):
     window.wm_deiconify()
 
 
-def wm_map(window, maximized=0):
+def wm_map(window, maximized=0, fullscreen=0):
     if window.wm_state() != "iconic":
         if maximized and WIN_SYSTEM == "win32":
             window.wm_state("zoomed")
         else:
             wm_deiconify(window)
+    window.attributes('-fullscreen', fullscreen)
 
 
 __wm_get_geometry_re = re.compile(r"^(\d+)x(\d+)\+([\-]?\d+)\+([\-]?\d+)$")
@@ -498,4 +498,4 @@ def resizeBottom(image, maskimage, color='white', backfile=None):
 # ************************************************************************
 
 def get_text_width(text, font, root=None):
-    return tkinter_font.Font(root=root, font=font).measure(text)
+    return tkinter.font.Font(root=root, font=font).measure(text)

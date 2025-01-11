@@ -112,6 +112,7 @@ num_recent_games = integer(10, 100)
 last_gameid = integer
 game_holded = integer
 wm_maximized = boolean
+wm_fullscreen = boolean
 splashscreen = boolean
 date_format = string
 mouse_type = string
@@ -122,6 +123,7 @@ use_cardset_bottoms = boolean
 dragcursor = boolean
 save_games_geometry = boolean
 game_geometry = int_list(min=2, max=2)
+topmost_dialogs = boolean
 sound = boolean
 sound_mode = integer(0, 1)
 sound_sample_volume = integer(0, 128)
@@ -142,6 +144,7 @@ solver_iterations_output_step = integer
 solver_preset = string
 display_win_message = boolean
 language = string
+table_zoom = list
 
 [sound_samples]
 move = boolean
@@ -287,6 +290,7 @@ class Options:
         ('last_gameid', 'int'),
         ('game_holded', 'int'),
         ('wm_maximized', 'bool'),
+        ('wm_fullscreen', 'bool'),
         ('splashscreen', 'bool'),
         ('date_format', 'str'),
         ('mouse_type', 'str'),
@@ -297,6 +301,7 @@ class Options:
         # ('save_cardsets', 'bool'),
         ('dragcursor', 'bool'),
         ('save_games_geometry', 'bool'),
+        ('topmost_dialogs', 'bool'),
         ('sound', 'bool'),
         ('sound_mode', 'int'),
         ('sound_sample_volume', 'int'),
@@ -320,6 +325,9 @@ class Options:
         # ('favorite_gameid', 'list'),
         ('display_win_message', 'bool'),
         ('language', 'str'),
+        # ('table_zoom', 'list'),
+        ('fontscale', 'str'),
+        # ('fontsizefactor', 'float'),
         ]
 
     def __init__(self):
@@ -415,6 +423,9 @@ class Options:
         self.translate_game_names = True
         self.display_win_message = True
         self.language = ''
+        self.table_zoom = [1.0, 0.0, 0.0]
+        self.fontscale = 'default'        # (kivy,  platform defaults)
+        # self.fontsizefactor = 1.0
         # sound
         self.sound = True
         self.sound_mode = 1
@@ -490,7 +501,9 @@ class Options:
         self.last_gameid = 0            # last game played
         self.game_holded = 0            # gameid or 0
         self.wm_maximized = 1
+        self.wm_fullscreen = 0
         self.save_games_geometry = False
+        self.topmost_dialogs = True
         # saved games geometry (gameid: (width, height))
         self.games_geometry = {}
         self.game_geometry = (0, 0)  # game geometry before exit
@@ -665,6 +678,7 @@ class Options:
 
         config['general']['recent_gameid'] = self.recent_gameid
         config['general']['favorite_gameid'] = self.favorite_gameid
+        config['general']['table_zoom'] = self.table_zoom
         visible_buttons = [b for b in self.toolbar_vars
                            if self.toolbar_vars[b]]
         config['general']['visible_buttons'] = visible_buttons
@@ -784,8 +798,6 @@ class Options:
                     continue
                 for key, value in data.items():
                     if value is False:
-                        print_err('config file: validation error: '
-                                  'section: "%s", key: "%s"' % (section, key))
                         config[section][key] = None
 
         # general
@@ -809,6 +821,13 @@ class Options:
         if favorite_gameid is not None:
             try:
                 self.favorite_gameid = [int(i) for i in favorite_gameid]
+            except Exception:
+                traceback.print_exc()
+
+        table_zoom = self._getOption('general', 'table_zoom', 'list')
+        if table_zoom is not None:
+            try:
+                self.table_zoom = [float(i) for i in table_zoom]
             except Exception:
                 traceback.print_exc()
 

@@ -35,7 +35,7 @@ from pysollib.app_stat_result import GameStatResult
 from pysollib.app_statistics import Statistics
 from pysollib.cardsetparser import read_cardset_config
 from pysollib.gamedb import GAME_DB, GI, loadGame
-from pysollib.help import destroy_help_html, help_about
+from pysollib.help import destroy_help_html, help_about, raise_help_html
 from pysollib.images import Images, SubsampledImages
 from pysollib.mfxutil import Struct, destruct
 from pysollib.mfxutil import USE_PIL
@@ -53,7 +53,11 @@ from pysollib.pysoltk import PysolStatusbar
 from pysollib.pysoltk import SelectCardsetDialogWithPreview
 from pysollib.pysoltk import SelectDialogTreeData
 from pysollib.pysoltk import destroy_find_card_dialog
+from pysollib.pysoltk import destroy_full_picture_dialog
 from pysollib.pysoltk import loadImage, wm_withdraw
+from pysollib.pysoltk import raise_find_card_dialog
+from pysollib.pysoltk import raise_full_picture_dialog
+from pysollib.pysoltk import raise_solver_dialog
 from pysollib.resource import CSI, CardsetManager
 from pysollib.resource import Music, MusicManager
 from pysollib.resource import Sample, SampleManager
@@ -277,6 +281,7 @@ class Application:
             #
             destroy_help_html()
             destroy_find_card_dialog()
+            destroy_full_picture_dialog()
             destroy_solver_dialog()
             # update options
             self.opt.last_gameid = id_
@@ -334,6 +339,7 @@ class Application:
                     self.nextgame.loadedgame = tmpgame._loadGame(
                         self.commandline.loadgame, self)
                     self.nextgame.loadedgame.gstats.holded = 0
+                    self.nextgame.id = self.nextgame.loadedgame.id
                 except Exception:
                     traceback.print_exc()
                     self.nextgame.loadedgame = None
@@ -506,6 +512,19 @@ class Application:
             wm_withdraw(self.top)
             self.top.busyUpdate()
 
+    def wm_toggle_fullscreen(self):
+        self.opt.wm_fullscreen = not self.opt.wm_fullscreen
+        self.top.attributes("-fullscreen", self.opt.wm_fullscreen)
+        # Topmost dialogs need to be reset when toggling fullscreen.
+        self.raiseAll()
+        self.top.attributes('-topmost', False)
+
+    def raiseAll(self):
+        raise_find_card_dialog(self.game)
+        raise_full_picture_dialog(self.game)
+        raise_solver_dialog(self.game)
+        raise_help_html(self.game)
+
     def loadImages1(self):
         # load dialog images
         dirname = os.path.join("images", "logos")
@@ -555,6 +574,7 @@ class Application:
                 (_('&Next number'), 'next'),
                 (_('&Play'), 'next'),
                 (_('&Play this game'), 'next'),
+                (_('C&lear'), 'clear'),
                 (_('&Solid color...'), 'color'),
                 (_('&Save to file'), 'save'),
                 (_('&Statistics...'), 'statistics'),

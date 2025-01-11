@@ -113,6 +113,9 @@ msgstr ""
 msgid "&Cancel"
 msgstr ""
 
+msgid "C&lear"
+msgstr ""
+
 #: pysollib/actions.py:311
 msgid "Select random game"
 msgstr ""
@@ -654,7 +657,7 @@ msgid ""
 "Copyright (C) 1998 - 2003 Markus F.X.J. Oberhumer.\n"
 "Copyright (C) 2003 Mt. Hood Playing Card Co.\n"
 "Copyright (C) 2005 - 2009 Skomoroh.\n"
-"Copyright (C) 2020 - 2024 PySolFC.\n"
+"Copyright (C) 2020 - 2025 PySolFC.\n"
 "All Rights Reserved.\n"
 "\n"
 "PySol is free software distributed under the terms\n"
@@ -2249,6 +2252,29 @@ msgstr ""
 msgid "Subjects"
 msgstr ""
 
+msgid ""
+"Castle.  From left to right, accepts the king, queen, "
+"and jack of the suit, in that order."
+msgstr ""
+
+msgid ""
+"Dungeon.  Accepts the ace (dragon) of the suit, but only "
+"once the tower and castle are filled."
+msgstr ""
+
+msgid "Tower.  Accepts the ten (wizard) of the suit."
+msgstr ""
+
+msgid ""
+"Subjects.  Builds down by suit from 9 to 2, but can only "
+"be built to once the castle is filled."
+msgstr ""
+
+msgid ""
+"Guest Chambers.  A free cell, but only accepts cards of "
+"the suit, and only once the king and queen are in the castle."
+msgstr ""
+
 #: pysollib/games/curdsandwhey.py:76
 msgid "Tableau. Build down by suit or of the same rank."
 msgstr ""
@@ -2407,6 +2433,9 @@ msgstr ""
 
 #: pysollib/kivy/menubar.py:241
 msgid "Favorite games"
+msgstr ""
+
+msgid "Random game"
 msgstr ""
 
 #: pysollib/kivy/menubar.py:244
@@ -4748,10 +4777,10 @@ msgstr ""
 msgid "Full picture"
 msgstr ""
 
-msgid "Icon Style"
+msgid "Icon style"
 msgstr ""
 
-msgid "Icon Size"
+msgid "Icon size"
 msgstr ""
 
 msgid "Small icons"
@@ -5121,7 +5150,7 @@ msgstr ""
 msgid "&Hamming"
 msgstr ""
 
-msgid "Card la&yout"
+msgid "Game la&yout"
 msgstr ""
 
 msgid "&Spread stacks"
@@ -5223,6 +5252,9 @@ msgstr ""
 msgid "&Sticky mouse"
 msgstr ""
 
+msgid "D&rag cards cursor"
+msgstr ""
+
 #: pysollib/ui/tktile/menubar.py:610
 msgid "Use mouse for undo/redo"
 msgstr ""
@@ -5261,6 +5293,9 @@ msgstr ""
 
 #: pysollib/ui/tktile/menubar.py:633
 msgid "Save games &geometry"
+msgstr ""
+
+msgid "&Keep dialogs on top"
 msgstr ""
 
 msgid "Othe&r graphics"
@@ -5308,7 +5343,7 @@ msgstr ""
 msgid "What's &new?"
 msgstr ""
 
-msgid "R&eport a Bug"
+msgid "R&eport a bug"
 msgstr ""
 
 #: pysollib/ui/tktile/menubar.py:660

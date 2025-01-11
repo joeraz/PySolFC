@@ -4,6 +4,7 @@ import platform
 import re
 import sys
 import tkinter
+import tkinter.filedialog
 
 from pysollib.gamedb import GI
 from pysollib.hint import PySolHintLayoutImportError
@@ -18,13 +19,11 @@ from pysollib.ui.tktile.tkconst import EVENT_PROPAGATE
 from pysollib.ui.tktile.tkconst import STATUSBAR_ITEMS, TOOLBAR_BUTTONS
 from pysollib.ui.tktile.tkutil import after_idle, bind
 
-from six.moves import tkinter_tkfiledialog
-
 
 def createToolbarMenu(menubar, menu):
     tearoff = menu.cget('tearoff')
     data_dir = os.path.join(menubar.app.dataloader.dir, 'images', 'toolbar')
-    submenu = MfxMenu(menu, label=n_('Icon Style'), tearoff=tearoff)
+    submenu = MfxMenu(menu, label=n_('Icon style'), tearoff=tearoff)
     styledirs = os.listdir(data_dir)
     styledirs.sort()
     for f in styledirs:
@@ -35,7 +34,7 @@ def createToolbarMenu(menubar, menu):
               label=name,
               variable=menubar.tkopt.toolbar_style,
               value=f, command=menubar.mOptToolbarStyle)
-    submenu = MfxMenu(menu, label=n_('Icon Size'), tearoff=tearoff)
+    submenu = MfxMenu(menu, label=n_('Icon size'), tearoff=tearoff)
     submenu.add_radiobutton(label=n_("Small icons"),
                             variable=menubar.tkopt.toolbar_size, value=0,
                             command=menubar.mOptToolbarSize)
@@ -292,7 +291,6 @@ class PysolMenubarTkCommon:
         self.tkopt = Struct(
             gameid=tkinter.IntVar(),
             gameid_popular=tkinter.IntVar(),
-            comment=tkinter.BooleanVar(),
             autofaceup=tkinter.BooleanVar(),
             autodrop=tkinter.BooleanVar(),
             autodeal=tkinter.BooleanVar(),
@@ -319,6 +317,7 @@ class PysolMenubarTkCommon:
             spread_stacks=tkinter.BooleanVar(),
             center_layout=tkinter.BooleanVar(),
             save_games_geometry=tkinter.BooleanVar(),
+            topmost_dialogs=tkinter.BooleanVar(),
             cardback=tkinter.IntVar(),
             tabletile=tkinter.IntVar(),
             animations=tkinter.IntVar(),
@@ -349,6 +348,7 @@ class PysolMenubarTkCommon:
             tree_icon_style=tkinter.StringVar(),
             mouse_type=tkinter.StringVar(),
             mouse_undo=tkinter.BooleanVar(),
+            mouse_dragcursor=tkinter.BooleanVar(),
             negative_bottom=tkinter.BooleanVar(),
             pause=tkinter.BooleanVar(),
             theme=tkinter.StringVar(),
@@ -393,6 +393,7 @@ class PysolMenubarTkCommon:
         tkopt.spread_stacks.set(opt.spread_stacks)
         tkopt.center_layout.set(opt.center_layout)
         tkopt.save_games_geometry.set(opt.save_games_geometry)
+        tkopt.topmost_dialogs.set(opt.topmost_dialogs)
         tkopt.cardback.set(self.app.cardset.backindex)
         tkopt.tabletile.set(self.app.tabletile_index)
         tkopt.animations.set(opt.animations)
@@ -423,6 +424,7 @@ class PysolMenubarTkCommon:
         tkopt.splashscreen.set(opt.splashscreen)
         tkopt.mouse_type.set(opt.mouse_type)
         tkopt.mouse_undo.set(opt.mouse_undo)
+        tkopt.mouse_dragcursor.set(opt.dragcursor)
         tkopt.negative_bottom.set(opt.negative_bottom)
         for w in TOOLBAR_BUTTONS:
             tkopt.toolbar_vars[w].set(opt.toolbar_vars.get(w, False))
@@ -437,7 +439,6 @@ class PysolMenubarTkCommon:
         tkopt = self.tkopt
         tkopt.gameid.set(game.id)
         tkopt.gameid_popular.set(game.id)
-        tkopt.comment.set(bool(game.gsaveinfo.comment))
         tkopt.pause.set(self.game.pause)
         if game.canFindCard():
             self._connect_game_find_card_dialog(game)
@@ -620,8 +621,8 @@ class PysolMenubarTkCommon:
             label=n_("Log..."),
             command=lambda: self.mPlayerStats(mode=103))
         menu.add_separator()
-        menu.add_checkbutton(
-            label=n_("&Comments..."), variable=self.tkopt.comment,
+        menu.add_command(
+            label=n_("&Comments..."),
             command=self.mEditGameComment)
 
         menu = MfxMenu(self.menubar, label=n_("&Assist"))
@@ -757,7 +758,7 @@ class PysolMenubarTkCommon:
                 command=self.mOptPreserveAspectRatio)
             submenu.add_separator()
             createResamplingMenu(self, submenu)
-            submenu = MfxMenu(menu, label=n_("Card la&yout"))
+            submenu = MfxMenu(menu, label=n_("Game la&yout"))
             submenu.add_checkbutton(
                 label=n_("&Spread stacks"), variable=self.tkopt.spread_stacks,
                 command=self.mOptSpreadStacks)
@@ -768,6 +769,10 @@ class PysolMenubarTkCommon:
                 label=n_("Save games &geometry"),
                 variable=self.tkopt.save_games_geometry,
                 command=self.mOptSaveGamesGeometry)
+            submenu.add_checkbutton(
+                label=n_("&Keep dialogs on top"),
+                variable=self.tkopt.topmost_dialogs,
+                command=self.mOptTopmostDialogs)
         # manager = self.app.cardset_manager
         # n = manager.len()
         menu.add_command(
@@ -853,6 +858,10 @@ class PysolMenubarTkCommon:
             command=self.mOptMouseType)
         submenu.add_separator()
         submenu.add_checkbutton(
+            label=n_("D&rag cards cursor"),
+            variable=self.tkopt.mouse_dragcursor,
+            command=self.mOptMouseDragCursor)
+        submenu.add_checkbutton(
             label=n_("Use mouse for undo/redo"),
             variable=self.tkopt.mouse_undo,
             command=self.mOptMouseUndo)
@@ -874,6 +883,10 @@ class PysolMenubarTkCommon:
                 label=n_("Save games &geometry"),
                 variable=self.tkopt.save_games_geometry,
                 command=self.mOptSaveGamesGeometry)
+            submenu.add_checkbutton(
+                label=n_("&Keep dialogs on top"),
+                variable=self.tkopt.topmost_dialogs,
+                command=self.mOptTopmostDialogs)
 
         # menu.add_checkbutton(
         #     label=n_("Startup splash sc&reen"),
@@ -906,7 +919,7 @@ class PysolMenubarTkCommon:
             label=n_("What's &new?"),
             command=self.mHelpNews)
         menu.add_command(
-            label=n_("R&eport a Bug"),
+            label=n_("R&eport a bug"),
             command=self.mHelpReportBug)
         menu.add_command(
             label=n_("&License terms"),
@@ -995,6 +1008,7 @@ class PysolMenubarTkCommon:
         self._bindKey(ctrl, "Down", self.mSelectNextGameById)
 
         self._bindKey("", "F5", self.refresh)
+        self._bindKey("", "F11", self.togglefullscreen)
 
         if os.name == 'posix' and platform.system() != 'Darwin':
             self._bindKey('Alt-', 'F4', self.mQuit)
@@ -1113,8 +1127,8 @@ class PysolMenubarTkCommon:
             if not mahjongg_games[n:n + d]:
                 break
             m = min(n + d - 1, len(mahjongg_games) - 1)
-            label = mahjongg_games[n].short_name[:3] + ' - ' + \
-                mahjongg_games[m].short_name[:3]
+            label = mahjongg_games[n].short_name[:3].strip() + ' - ' + \
+                mahjongg_games[m].short_name[:3].strip()
             submenu = MfxMenu(menu, label=label, name=None)
             self._addSelectGameSubSubMenu(mahjongg_games[n:n + d], submenu,
                                           command, variable, short_name=True)
@@ -1176,7 +1190,8 @@ class PysolMenubarTkCommon:
             if not games[n:n+d]:
                 break
             m = min(n+d-1, len(games)-1)
-            label = games[n].name[:3] + ' - ' + games[m].name[:3]
+            label = games[n].name[:3].strip() + ' - ' + \
+                games[m].name[:3].strip()
             submenu = MfxMenu(menu, label=label, name=None)
             self._addSelectGameSubSubMenu(games[n:n+d], submenu,
                                           command, variable)
@@ -1393,9 +1408,6 @@ class PysolMenubarTkCommon:
         w = getattr(self.app.toolbar, path + "_button")
         w["state"] = s
 
-    def _setCommentMenu(self, v):
-        self.tkopt.comment.set(v)
-
     def _setPauseMenu(self, v):
         self.tkopt.pause.set(v)
 
@@ -1440,7 +1452,7 @@ class PysolMenubarTkCommon:
             idir, ifile = "", ""
         if not idir:
             idir = self.app.dn.savegames
-        d = tkinter_tkfiledialog.Open()
+        d = tkinter.filedialog.Open()
         filename = d.show(filetypes=self.FILETYPES,
                           defaultextension=self.DEFAULTEXTENSION,
                           initialdir=idir, initialfile=ifile)
@@ -1477,7 +1489,7 @@ Unsupported game for export.
         if not idir:
             idir = self.app.dn.boards
         # print self.game.filename, ifile
-        d = tkinter_tkfiledialog.SaveAs()
+        d = tkinter.filedialog.SaveAs()
         filename = d.show(filetypes=self.FILETYPES,
                           defaultextension=self.DEFAULTEXTENSION,
                           initialdir=idir, initialfile=ifile)
@@ -1509,7 +1521,7 @@ Unsupported game for import.
             idir, ifile = "", ""
         if not idir:
             idir = self.app.dn.boards
-        d = tkinter_tkfiledialog.Open()
+        d = tkinter.filedialog.Open()
         key = 'PYSOL_DEBUG_IMPORT'
         if key not in os.environ:
             filename = d.show(filetypes=self.FILETYPES,
@@ -1556,7 +1568,7 @@ Unsupported game for import.
         if not idir:
             idir = self.app.dn.savegames
         # print self.game.filename, ifile
-        d = tkinter_tkfiledialog.SaveAs()
+        d = tkinter.filedialog.SaveAs()
         filename = d.show(filetypes=self.FILETYPES,
                           defaultextension=self.DEFAULTEXTENSION,
                           initialdir=idir, initialfile=ifile)
@@ -1877,6 +1889,12 @@ Unsupported game for import.
             return
         self.app.opt.save_games_geometry = self.tkopt.save_games_geometry.get()
 
+    def mOptTopmostDialogs(self, *event):
+        if self._cancelDrag(break_pause=False):
+            return
+        self.app.opt.topmost_dialogs = self.tkopt.topmost_dialogs.get()
+        self.app.raiseAll()
+
     def _mOptCardback(self, index):
         if self._cancelDrag(break_pause=False):
             return
@@ -2013,6 +2031,11 @@ Unsupported game for import.
             return
         self.app.opt.mouse_type = self.tkopt.mouse_type.get()
 
+    def mOptMouseDragCursor(self, *event):
+        if self._cancelDrag(break_pause=False):
+            return
+        self.app.opt.dragcursor = self.tkopt.mouse_dragcursor.get()
+
     def mOptMouseUndo(self, *event):
         if self._cancelDrag(break_pause=False):
             return
@@ -2030,6 +2053,9 @@ Unsupported game for import.
         self.app.updateCardset()
         self.game.endGame(bookmark=1)
         self.game.quitGame(bookmark=1)
+
+    def togglefullscreen(self, *event):
+        self.app.wm_toggle_fullscreen()
 
     #
     # toolbar support

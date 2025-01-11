@@ -1689,6 +1689,9 @@ class DealRow_StackMethods:
             if flip:
                 self.game.flipMove(self)
             self.game.moveMove(1, self, r, frames=frames)
+        if frames > 0 and self.game.top is not None:
+            self.game.top.update_idletasks()
+            self.game.top.busyUpdate()
         self.game.leaveState(old_state)
         if TOOLKIT == 'kivy':
             self.game.top.waitAnimation()

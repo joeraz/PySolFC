@@ -24,6 +24,8 @@
 import os
 import time
 import tkinter
+import tkinter.font
+import tkinter.ttk as ttk
 
 from pysollib.mfxutil import KwStruct
 from pysollib.mfxutil import format_time
@@ -31,9 +33,6 @@ from pysollib.mygettext import _
 from pysollib.settings import TOP_TITLE
 from pysollib.stats import ProgressionFormatter, PysolStatsFormatter
 from pysollib.ui.tktile.tkutil import bind, loadImage
-
-from six.moves import tkinter_font
-from six.moves import tkinter_ttk as ttk
 
 from .tkwidget import MfxDialog, MfxMessageDialog
 
@@ -54,11 +53,11 @@ class StatsDialog(MfxDialog):
         MfxDialog.__init__(self, parent, title, kw.resizable, kw.default)
 
         self.font = app.getFont('default')
-        self.tkfont = tkinter_font.Font(parent, self.font)
+        self.tkfont = tkinter.font.Font(parent, self.font)
         self.font_metrics = self.tkfont.metrics()
         style = ttk.Style(parent)
         heading_font = style.lookup('Heading', 'font')  # treeview heading
-        self.heading_tkfont = tkinter_font.Font(parent, heading_font)
+        self.heading_tkfont = tkinter.font.Font(parent, heading_font)
 
         self.selected_game = None
 
@@ -377,11 +376,18 @@ class TreeFormatter(PysolStatsFormatter):
         self.parent_window.tree_items.append(id)
         return 1
 
-    def writeLog(self, player, prev_games):
+    def writeLog(self, player, prev_games, sort_by='date'):
         if not player or not prev_games:
             return 0
         num_rows = 0
-        for result in self.getLogResults(player, prev_games):
+        results = self.getLogResults(player, prev_games)
+        if sort_by == 'gamenumber':
+            results.sort(key=lambda x: x[1])
+        elif sort_by == 'name':
+            results.sort(key=lambda x: x[0])
+        elif sort_by == 'status':
+            results.sort(key=lambda x: x[3])
+        for result in results:
             t1, t2, t3, t4, t5, t6 = result
             id = self.tree.insert("", "end", text=t1, values=(t2, t3, t4))
             self.parent_window.tree_items.append(id)
@@ -389,15 +395,16 @@ class TreeFormatter(PysolStatsFormatter):
             num_rows += 1
             if num_rows > self.MAX_ROWS:
                 break
+
         return 1
 
-    def writeFullLog(self, player):
+    def writeFullLog(self, player, sort_by='date'):
         prev_games = self.app.stats.prev_games.get(player)
-        return self.writeLog(player, prev_games)
+        return self.writeLog(player, prev_games, sort_by=sort_by)
 
-    def writeSessionLog(self, player):
+    def writeSessionLog(self, player, sort_by='date'):
         prev_games = self.app.stats.session_games.get(player)
-        return self.writeLog(player, prev_games)
+        return self.writeLog(player, prev_games, sort_by=sort_by)
 
 
 # ************************************************************************
@@ -502,10 +509,10 @@ class LogDialog(MfxDialog):
     def __init__(self, parent, title, app, player, **kw):
 
         self.font = app.getFont('default')
-        self.tkfont = tkinter_font.Font(parent, self.font)
+        self.tkfont = tkinter.font.Font(parent, self.font)
         style = ttk.Style(parent)
         heading_font = style.lookup('Heading', 'font')  # treeview heading
-        self.heading_tkfont = tkinter_font.Font(parent, heading_font)
+        self.heading_tkfont = tkinter.font.Font(parent, heading_font)
         self.font_metrics = self.tkfont.metrics()
 
         self.CHAR_H = self.font_metrics['linespace']
@@ -514,6 +521,8 @@ class LogDialog(MfxDialog):
         kw = self.initKw(kw)
         title = _('Log')
         MfxDialog.__init__(self, parent, title, kw.resizable, kw.default)
+
+        self.top.wm_minsize(400, 200)
 
         self.selected_game = None
         self.selected_game_num = None
@@ -599,6 +608,7 @@ class FullLogFrame(AllGamesFrame):
                   'XXXXXXXXXXXX')
         self.games = {}
         self.formatter.resizeHeader(player, header)
+        self.sort_by = 'date'
 
     def createHeader(self, player):
         header = self.formatter.getLogHeader()
@@ -606,11 +616,10 @@ class FullLogFrame(AllGamesFrame):
 
     def fillTreeview(self, player):
         if self.tree_items:
-            return
-        self.formatter.writeFullLog(player)
-
-    def headerClick(self, column):
-        pass
+            for item in self.tree.get_children():
+                self.tree.delete(item)
+            self.tree_items = []
+        self.formatter.writeFullLog(player, sort_by=self.sort_by)
 
     def getSelectedGame(self):
         sel = self.tree.selection()
@@ -623,8 +632,10 @@ class FullLogFrame(AllGamesFrame):
 class SessionLogFrame(FullLogFrame):
     def fillTreeview(self, player):
         if self.tree_items:
-            return
-        self.formatter.writeSessionLog(player)
+            for item in self.tree.get_children():
+                self.tree.delete(item)
+            self.tree_items = []
+        self.formatter.writeSessionLog(player, sort_by=self.sort_by)
 
 
 # ************************************************************************
