@@ -42,39 +42,31 @@ You can also reach '<i>R</i>' (redo) from there.
 Left-handed people may prefer using '<i>L</i>' (auto drop),
 '<i>K</i>' (undo) and '<i>J</i>' (deal).
 
+<h2>Keyboard play</h2>
+<p>
+PySol games can also be played exclusively using the keyboard:
+<ul>
+<li>Use the arrow keys to navigate around the different stacks.
+<li>Use the tab key to navigate quickly between talon, waste,
+tableau, foundation, and reserve.
+<li>Use enter to select/move a card, or shift+enter for a quick
+play move.
+<li>In some games, you can use shift plus the up and down arrow
+to navigate between layers in the game layout.
+</ul>
+
 <h2>Automatic play</h2>
 <p>
 Note that automatic play can spoil the gameplay, so purists should
-not enable any option but maybe <i>Auto face up</i>. Also, some games
+not enable any option but maybe <i>Auto face-up</i>. Also, some games
 disable certain features as they would be trivial otherwise.
 <ul type="disc">
-<li> <i>Auto face up</i> - Automatically face up all cards.
+<li> <i>Auto face-up</i> - Automatically face-up all cards.
 <li> <i>Auto drop</i> - Automatically drop cards to the Foundations.
 <li> <i>Auto deal</i> - Automatically deal cards to the Waste stack if it is empty.
 <li> <i>Quick play</i> - Use the right mouse button to move piles around quickly.
 The logic involved is not too clever on purpose (i.e. it does not consult the hint system).
 </ul>
-
-<h2>The animation is too slow...</h2>
-<p>
-Unfortunately the Tcl/Tk toolkit lacks a sprite concept, so
-there is a lot of (invisible double-buffered) redraw going on
-when dragging cards around.
-<p>
-Disabling <i>Card shadow</i>, <i>Shade legal moves</i>,
-background table tiles and sound will somewhat improve the display speed.
-
-
-<h2>The table tiles look strange</h2>
-<p>
-Background table tiles should only be enabled when using
-a true-color video mode - otherwise they may look bad
-because of dithering.
-<p>
-BTW, you can add your own background tiles by copying the images
-to the main <i>data/tiles</i> or your home <i>~/.PySolFC/tiles</i> directory.
-<!-- They must be in GIF or PPM format. -->
-
 
 <h2>Some notes about scoring</h2>
 <p>
@@ -105,7 +97,7 @@ to the main <i>data/tiles</i> or your home <i>~/.PySolFC/tiles</i> directory.
 <li> <i>Space</i> - Deal
 <li> <i>S</i> - Undo
 <li> <i>Backspace</i> - Undo
-<li> <i>Ctrl-A</i> - Auto drop and face up cards in one step
+<li> <i>Ctrl-A</i> - Auto drop and face-up cards in one step
 <li> <i>Ctrl-B</i> - Change card background
 <li> <i>Ctrl-H</i> - Show internal rating when giving a hint
 <li> <i>Ctrl-I</i> - Change table tile

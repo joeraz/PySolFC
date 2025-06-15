@@ -27,6 +27,7 @@ from pysollib.game import Game
 from pysollib.gamedb import GI, GameInfo, registerGame
 from pysollib.layout import Layout
 from pysollib.mfxutil import kwdefault
+from pysollib.mygettext import _
 from pysollib.settings import TOOLKIT
 from pysollib.stack import \
         InitialDealTalonStack, \
@@ -198,6 +199,11 @@ class LightsOut(Game):
                 return 0
         return 1
 
+    def parseCard(self, card):
+        if not card.face_up:
+            return _("Face-down")
+        return _("Face-up")
+
     def shallHighlightMatch(self, stack1, card1, stack2, card2):
         return ((card1.rank + 1 == card2.rank) or
                 (card1.rank - 1 == card2.rank))
@@ -222,6 +228,7 @@ def r(id, short_name, width):
     return gi
 
 
+r(22399, "Lights Out 3x3", 3)
 r(22400, "Lights Out 4x4", 4)
 r(22401, "Lights Out 5x5", 5)
 r(22402, "Lights Out 6x6", 6)

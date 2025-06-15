@@ -271,7 +271,6 @@ class SelectCardsetDialogWithPreview(MfxDialog):
             check = tkinter.Checkbutton(
                 left_frame, text=_('Auto scaling'),
                 variable=self.auto_scale,
-                takefocus=False,
                 command=self._updateAutoScale
                 )
             check.grid(row=3, column=0, columnspan=2, sticky='w',
@@ -282,7 +281,6 @@ class SelectCardsetDialogWithPreview(MfxDialog):
             self.aspect_check = tkinter.Checkbutton(
                 left_frame, text=_('Preserve aspect ratio'),
                 variable=self.preserve_aspect,
-                takefocus=False,
                 # command=self._updateScale
                 )
             self.aspect_check.grid(row=4, column=0, sticky='w',
@@ -438,20 +436,21 @@ class CardsetInfoDialog(MfxDialog):
                         padx=0, pady=5, ipadx=5, ipady=5)
         styles = nationalities = year = None
         if cardset.si.styles:
-            styles = '\n'.join([CSI.STYLE[i] for i in cardset.si.styles])
+            styles = '\n'.join(sorted([CSI.STYLE[i]
+                                       for i in cardset.si.styles]))
         if cardset.si.nationalities:
-            nationalities = '\n'.join([CSI.NATIONALITY[i]
-                                       for i in cardset.si.nationalities])
+            nationalities = '\n'.join(sorted([CSI.NATIONALITY[i]
+                                              for i in
+                                              cardset.si.nationalities]))
         if cardset.year:
             year = str(cardset.year)
         row = 0
         for n, t in (
-            # ('Version:', str(cardset.version)),
             (_('Type:'),          CSI.TYPE[cardset.type]),
             (_('Styles:'),        styles),
             (_('Nationality:'),   nationalities),
             (_('Year:'),          year),
-            # (_('Number of cards:'), str(cardset.ncards)),
+            (_('Num. cards:'),    str(cardset.ncards)),
             (_('Size:'), '%d x %d' % (cardset.CARDW, cardset.CARDH)),
                 ):
             if t is not None:

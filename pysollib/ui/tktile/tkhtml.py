@@ -71,8 +71,8 @@ class tkHTMLWriter(pysollib.formatter.NullWriter):
         }
 
         self.text.config(cursor=self.viewer.defcursor, font=font)
-        for f in self.fontmap.keys():
-            self.text.tag_config(f, font=self.fontmap[f])
+        for f, cur_font in self.fontmap.items():
+            self.text.tag_config(f, font=cur_font)
 
         self.anchor = None
         self.anchor_mark = None
@@ -299,9 +299,8 @@ class Base_HTMLViewer:
             if sys.version_info > (3,):
                 import codecs
                 return codecs.open(url, encoding='utf-8')
-            else:
-                with open(url, "rb") as fh:
-                    return fh
+            with open(url, "rb") as fh:
+                return fh
         return my_open(url), url
 
     def display(self, url, add=1, relpath=1, xview=0, yview=0):
@@ -348,11 +347,6 @@ to open the following URL:
             self.errorDialog(_("Unable to service request:\n") + url +
                              "\n\n" + str(ex))
             return
-        except Exception:
-            if file:
-                file.close()
-            self.errorDialog(_("Unable to service request:\n") + url)
-            return
 
         self.url = url
         if self.home is None:
@@ -393,6 +387,7 @@ to open the following URL:
         self.parent.wm_iconname(parser.title)
         self.defcursor, self.handcursor = old_c1, old_c2
         self.text.config(cursor=self.defcursor)
+        self.parent.after(500, lambda: self.app.speech.speakHTML(data))
         # self.frame.config(cursor=self.defcursor)
 
     def addHistory(self, url, xview=0, yview=0):
@@ -432,6 +427,9 @@ to open the following URL:
         if self.home and self.home != self.url:
             self.updateHistoryXYView()
             self.display(self.home, relpath=0)
+
+    def browser(self, *event):
+        openURL('file://' + self.url)
 
     def errorDialog(self, msg):
         self._calc_MfxMessageDialog()(

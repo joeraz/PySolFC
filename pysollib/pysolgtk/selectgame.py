@@ -200,7 +200,7 @@ class SelectGameDialogWithPreview(MfxDialog):
         # return list of tuples (gameid, gamename)
         if selecter is None:
             return [(gi.id, gi.name) for gi in all_games]
-        elif selecter == 'alt':
+        if selecter == 'alt':
             return all_games
         return [(gi.id, gi.name) for gi in all_games if selecter(gi)]
 
@@ -319,7 +319,6 @@ class SelectGameDialogWithPreview(MfxDialog):
         #               None, _("Contrib Game"), all_games)
 
         SelectGameDialogWithPreview.game_store = store
-        return
 
     def initKw(self, kw):
         kwdefault(kw,
@@ -402,6 +401,7 @@ class SelectGameDialogWithPreview(MfxDialog):
                 menubar=None,
                 miscrandom=self.app.miscrandom,
                 opt=self.app.opt.copy(),
+                speech=self.app.speech,
                 startup_opt=self.app.startup_opt,
                 stats=self.app.stats.new(),
                 top=None,

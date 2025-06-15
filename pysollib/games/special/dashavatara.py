@@ -82,9 +82,8 @@ class Journey_Foundation(AbstractFoundationStack):
         if stack_dir == 0:
             card_dir = (cards[0].rank - self.cards[-1].rank) % self.cap.mod
             return card_dir in (1, 11)
-        else:
-            return (self.cards[-1].rank + stack_dir) % \
-                    self.cap.mod == cards[0].rank
+        return (self.cards[-1].rank + stack_dir) % \
+            self.cap.mod == cards[0].rank
 
 
 class AppachansWaterfall_Foundation(AbstractFoundationStack):
@@ -122,7 +121,7 @@ class Dashavatara_OpenStack(OpenStack):
     def currentForce(self, card):
         force = self._getForce(card)
         hour = time.localtime(time.time())[3]
-        if not (hour >= 7 and hour <= 19):
+        if not (7 <= hour <= 19):
             force = not force
         return force
 
@@ -181,7 +180,7 @@ class Dashavatara_AC_RowStack(Dashavatara_OpenStack):
                 or not self.isAlternateColorSequence(cards):
             return 0
         stackcards = self.cards
-        if not len(stackcards):
+        if not stackcards:
             return cards[0].rank == 11 or self.cap.base_rank == ANY_RANK
         return self.isAlternateColorSequence([stackcards[-1], cards[0]])
 
@@ -193,7 +192,7 @@ class Dashavatara_AF_RowStack(Dashavatara_OpenStack):
                 or not self.isAlternateForceSequence(cards):
             return 0
         stackcards = self.cards
-        if not len(stackcards):
+        if not stackcards:
             return cards[0].rank == 11 or self.cap.base_rank == ANY_RANK
         return self.isAlternateForceSequence([stackcards[-1], cards[0]])
 
@@ -205,7 +204,7 @@ class Dashavatara_RK_RowStack(Dashavatara_OpenStack):
                 or not self.isRankSequence(cards):
             return 0
         stackcards = self.cards
-        if not len(stackcards):
+        if not stackcards:
             return cards[0].rank == 11 or self.cap.base_rank == ANY_RANK
         return self.isRankSequence([stackcards[-1], cards[0]])
 
@@ -217,7 +216,7 @@ class Dashavatara_SS_RowStack(Dashavatara_OpenStack):
                 or not self.isSuitSequence(cards):
             return 0
         stackcards = self.cards
-        if not len(stackcards):
+        if not stackcards:
             return cards[0].rank == 11 or self.cap.base_rank == ANY_RANK
         return self.isSuitSequence([stackcards[-1], cards[0]])
 
@@ -369,6 +368,13 @@ class AbstractDashavataraGame(Game):
         return (card1.suit == card2.suit and
                 (card1.rank + 1 == card2.rank or card1.rank - 1 == card2.rank))
 
+    def parseCard(self, card):
+        if not card.face_up:
+            return _("Face-down")
+        suit = self.SUITS[card.suit]
+        rank = self.RANKS[card.rank]
+        return rank + " - " + suit
+
 
 class Journey_Hint(DefaultHint):
     # FIXME: demo is not too clever in this game
@@ -407,10 +413,8 @@ class DashavataraCircles(AbstractDashavataraGame):
         for i in range(30):
             # FIXME:
             _x, _y = x+l.XS*x0[i], y+l.YS*y0[i]+l.YM*y0[i]*2
-            if _x < 0:
-                _x = 0
-            if _y < 0:
-                _y = 0
+            _x = max(_x, 0)
+            _y = max(_y, 0)
             s.rows.append(Circles_RowStack(_x, _y, self, base_rank=ANY_RANK))
 
         # Create reserve stacks
@@ -1189,7 +1193,7 @@ class Dashavatara_Hint(AbstractHint):
 # * Dashavatara
 # ************************************************************************
 
-class Dashavatara(Game):
+class Dashavatara(AbstractDashavataraGame):
     Hint_Class = Dashavatara_Hint
 
     #
@@ -1266,10 +1270,12 @@ class Dashavatara(Game):
 #  *
 #  ***********************************************************************/
 
-def r(id, gameclass, name, game_type, decks, redeals, skill_level):
+def r(id, gameclass, name, game_type, decks, redeals, skill_level,
+      altnames=()):
     game_type = game_type | GI.GT_DASHAVATARA_GANJIFA
     gi = GameInfo(id, gameclass, name, game_type, decks, redeals, skill_level,
-                  suits=list(range(10)), ranks=list(range(12)))
+                  suits=list(range(10)), ranks=list(range(12)),
+                  altnames=altnames)
     registerGame(gi)
     return gi
 

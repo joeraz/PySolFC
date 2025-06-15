@@ -396,7 +396,7 @@ class PysolToolbarTk:
                 # right
                 pack_func(row=1, column=2, sticky='ns')
             # set orient
-            orient = side in (1, 2) and 'horizontal' or 'vertical'
+            orient = 'horizontal' if side in (1, 2) else 'vertical'
             self._setOrient(orient)
         self.side = side
         return 1
@@ -420,9 +420,9 @@ class PysolToolbarTk:
             self.frame.update_idletasks()
 
     def updateText(self, **kw):
-        for name in kw.keys():
+        for name, value in kw.items():
             label = getattr(self, name + "_label")
-            label["text"] = kw[name]
+            label["text"] = value
 
     def updateImages(self, dir, size):
         if dir == self.dir and size == self.size:

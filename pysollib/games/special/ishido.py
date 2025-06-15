@@ -99,6 +99,14 @@ class Ishido(Game):
     STRICT_FOUR_WAYS = True
     SCORING = False
 
+    COLS = 12
+    ROWS = 8
+
+    COLORS = (_("Blue"), _("Red"), _("Yellow"), _("Green"),
+              _("Purple"), _("Orange"))
+    SHAPES = (_("Square"), _("Circle"), _("Triangle"), _("Diamond"),
+              _("Pentagon"), _("Star"))
+
     #
     # game layout
     #
@@ -115,13 +123,13 @@ class Ishido(Game):
 
         w2 = max(2 * l.XS, x)
         # set window
-        w, h = w2 + l.XM * 2 + l.CW * 12, l.YM * 2 + l.CH * 8
+        w, h = w2 + l.XM * 2 + l.CW * self.COLS, l.YM * 2 + l.CH * self.ROWS
         self.setSize(w, h)
 
         # Create rows
-        for j in range(8):
+        for j in range(self.ROWS):
             x, y = w2 + l.XM, l.YM + l.CH * j
-            for i in range(12):
+            for i in range(self.COLS):
                 s.rows.append(self.RowStack_Class(x, y, self))
                 x = x + l.CW
 
@@ -243,6 +251,18 @@ class Ishido(Game):
         t = _("Points: %d") % self.score
         self.texts.score.config(text=t)
 
+    def parseGameInfo(self):
+        if not self.SCORING:
+            return ''
+        return _("Points: %d") % self.getGameScore()
+
+    def parseStackInfo(self, stack):
+        if stack not in self.s.rows:
+            return ""
+        row = (stack.id // self.COLS) + 1
+        column = (stack.id % self.COLS) + 1
+        return _("Row: %d, Column: %d") % (row, column)
+
     def getGameScore(self):
         return self.score
 
@@ -269,19 +289,26 @@ class Ishido(Game):
 
     def getAdjacent(self, playSpace):
         adjacentRows = []
-        if playSpace % 12 != 11:
+        if playSpace % self.COLS != self.COLS - 1:
             adjacentRows.append(self.s.rows[playSpace + 1])
 
-        if playSpace % 12 != 0:
+        if playSpace % self.COLS != 0:
             adjacentRows.append(self.s.rows[playSpace - 1])
 
-        if playSpace + 12 < 96:
-            adjacentRows.append(self.s.rows[playSpace + 12])
+        if playSpace + self.COLS < (self.COLS * self.ROWS):
+            adjacentRows.append(self.s.rows[playSpace + self.COLS])
 
-        if playSpace - 12 > -1:
-            adjacentRows.append(self.s.rows[playSpace - 12])
+        if playSpace - self.COLS > -1:
+            adjacentRows.append(self.s.rows[playSpace - self.COLS])
 
         return adjacentRows
+
+    def parseCard(self, card):
+        if not card.face_up:
+            return _("Face-down")
+        color = self.COLORS[card.suit]
+        shape = self.SHAPES[card.rank]
+        return color + " - " + shape
 
 
 class IshidoRelaxed(Ishido):
@@ -301,10 +328,46 @@ class IshidoScored(Ishido):
     SCORING = True
 
 
+class LittleIshido(Ishido):
+    ROWS = 6
+    COLS = 8
+
+    def startGame(self):
+        self.score = 0
+        self.fourways = 0
+        self.moveMove(1, self.s.talon, self.s.rows[0], frames=0)
+        self.s.rows[0].flipMove()
+        self.moveMove(1, self.s.talon, self.s.rows[7], frames=0)
+        self.s.rows[7].flipMove()
+        self.moveMove(1, self.s.talon, self.s.rows[40], frames=0)
+        self.s.rows[40].flipMove()
+        self.moveMove(1, self.s.talon, self.s.rows[47], frames=0)
+        self.s.rows[47].flipMove()
+        self.s.talon.fillStack()
+
+    def _shuffleHook(self, cards):
+        # prepare first cards
+        symbols = []
+        colors = []
+        topcards = []
+        for c in cards[:]:
+            if c.suit not in colors and c.rank not in symbols:
+                topcards.append(c)
+                cards.remove(c)
+                symbols.append(c.rank)
+                colors.append(c.suit)
+                if len(colors) >= 4 or len(symbols) >= 4:
+                    break
+        return cards + topcards
+
+class LittleIshidoRelaxed(LittleIshido):
+    STRICT_FOUR_WAYS = False
+
+
 def r(id, gameclass, name, decks, redeals, skill_level,
-        game_type=GI.GT_ISHIDO):
+        game_type=GI.GT_ISHIDO, colors=6):
     gi = GameInfo(id, gameclass, name, game_type, decks, redeals, skill_level,
-                  ranks=list(range(6)), suits=list(range(6)),
+                  ranks=list(range(colors)), suits=list(range(colors)),
                   category=GI.GC_ISHIDO)
     registerGame(gi)
     return gi
@@ -316,3 +379,6 @@ r(18002, FreeIshido, 'Free Ishido', 2, 0, GI.SL_MOSTLY_SKILL)
 r(18003, FreeIshidoRelaxed, 'Free Ishido Relaxed', 2, 0, GI.SL_MOSTLY_SKILL)
 r(18004, IshidoScored, 'Ishido Scored', 2, 0, GI.SL_MOSTLY_SKILL,
   game_type=GI.GT_ISHIDO | GI.GT_SCORE)
+r(18005, LittleIshido, 'Little Ishido', 2, 0, GI.SL_MOSTLY_SKILL, colors=4)
+r(18006, LittleIshidoRelaxed, 'Little Ishido Relaxed', 2, 0,
+  GI.SL_MOSTLY_SKILL, colors=4)

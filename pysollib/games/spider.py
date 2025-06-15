@@ -348,15 +348,16 @@ class Scorpion_RowStack(Yukon_SS_RowStack, Spider_RowStack):
 
 
 class Scorpion(RelaxedSpider):
-
     Hint_Class = YukonType_Hint
     RowStack_Class = StackWrapper(Scorpion_RowStack, base_rank=KING)
+
+    FACEDOWNS = (4, 4, 4, 0, 0, 0)
 
     def createGame(self):
         RelaxedSpider.createGame(self, rows=7, playcards=20)
 
     def startGame(self):
-        for i in (4, 4, 4, 0, 0, 0):
+        for i in self.FACEDOWNS:
             self.s.talon.dealRow(rows=self.s.rows[:i], flip=0, frames=0)
             self.s.talon.dealRow(rows=self.s.rows[i:], flip=1, frames=0)
         self._startAndDealRow()
@@ -379,46 +380,46 @@ class ScorpionTail(Scorpion):
     shallHighlightMatch = Game._shallHighlightMatch_AC
 
 
+# ************************************************************************
+# * Double Scorpion
+# * Triple Scorpion
+# ************************************************************************
+
 class DoubleScorpion(Scorpion):
-    Talon_Class = InitialDealTalonStack
+    FACEDOWNS = (5, 5, 5, 5, 0, 0, 0, 0, 0)
 
     def createGame(self):
         RelaxedSpider.createGame(self, rows=10, playcards=26, texts=0)
-
-    def startGame(self):
-        for i in (5, 5, 5, 5, 0, 0, 0, 0, 0):
-            self.s.talon.dealRow(rows=self.s.rows[:i], flip=0, frames=0)
-            self.s.talon.dealRow(rows=self.s.rows[i:], flip=1, frames=0)
-        self.startDealSample()
-        self.s.talon.dealRow()
-        self.s.talon.dealRowAvail()
 
 
 class TripleScorpion(Scorpion):
     Talon_Class = InitialDealTalonStack
 
+    FACEDOWNS = (5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0)
+
     def createGame(self):
         RelaxedSpider.createGame(self, rows=13, playcards=30, texts=0)
 
-    def startGame(self):
-        for i in (5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0):
-            self.s.talon.dealRow(rows=self.s.rows[:i], flip=0, frames=0)
-            self.s.talon.dealRow(rows=self.s.rows[i:], flip=1, frames=0)
-        self._startAndDealRow()
+
+# ************************************************************************
+# * Scorpion II
+# ************************************************************************
+
+class ScorpionII(Scorpion):
+    FACEDOWNS = (3, 3, 3, 0, 0, 0)
 
 
 # ************************************************************************
 # * Wasp
+# * Wasp II
 # ************************************************************************
 
 class Wasp(Scorpion):
     RowStack_Class = Scorpion_RowStack      # anything on an empty space
 
-    def startGame(self):
-        for i in (3, 3, 3, 0, 0, 0):
-            self.s.talon.dealRow(rows=self.s.rows[:i], flip=0, frames=0)
-            self.s.talon.dealRow(rows=self.s.rows[i:], flip=1, frames=0)
-        self._startAndDealRow()
+
+class WaspII(ScorpionII):
+    RowStack_Class = Scorpion_RowStack
 
 
 # ************************************************************************
@@ -1125,19 +1126,6 @@ class Incompatibility(Spidike):
 
 
 # ************************************************************************
-# * Scorpion II
-# ************************************************************************
-
-class ScorpionII(Scorpion):
-
-    def startGame(self):
-        for i in (3, 3, 3, 0, 0, 0):
-            self.s.talon.dealRow(rows=self.s.rows[:i], flip=0, frames=0)
-            self.s.talon.dealRow(rows=self.s.rows[i:], flip=1, frames=0)
-        self._startAndDealRow()
-
-
-# ************************************************************************
 # * Tarantula
 # ************************************************************************
 
@@ -1149,7 +1137,7 @@ class Tarantula(Spider):
             if from_stack.cards[-1].suit == to_stack.cards[-1].suit:
                 # same suit
                 return 3
-            elif from_stack.cards[-1].color == to_stack.cards[-1].color:
+            if from_stack.cards[-1].color == to_stack.cards[-1].color:
                 # same color
                 return 2
             return 1
@@ -1158,6 +1146,7 @@ class Tarantula(Spider):
 
 # ************************************************************************
 # * Fechter's Game
+# * Microbe
 # ************************************************************************
 
 class FechtersGame_Talon(TalonStack):
@@ -1180,14 +1169,7 @@ class FechtersGame_Talon(TalonStack):
 
 
 class FechtersGame_RowStack(AC_RowStack):
-    def canDropCards(self, stacks):
-        if len(self.cards) < 13:
-            return (None, 0)
-        cards = self.cards[-13:]
-        for s in stacks:
-            if s is not self and s.acceptsCards(self, cards):
-                return (s, 13)
-        return (None, 0)
+    canDropCards = BasicRowStack.spiderCanDropCards
 
 
 class FechtersGame(RelaxedSpider):
@@ -1206,6 +1188,17 @@ class FechtersGame(RelaxedSpider):
         self._startAndDealRow()
 
     shallHighlightMatch = Game._shallHighlightMatch_AC
+
+
+class Microbe(FechtersGame):
+    Talon_Class = DealRowTalonStack
+    RowStack_Class = StackWrapper(FechtersGame_RowStack, base_rank=ANY_RANK)
+
+    def createGame(self):
+        RelaxedSpider.createGame(self, rows=11)
+
+    def shuffle(self):
+        self.shuffleSeparateDecks()
 
 
 # ************************************************************************
@@ -1289,7 +1282,7 @@ class TheJollyRoger_RowStack(BasicRowStack):
     def canMoveCards(self, cards):
         if cards[0].rank == ACE:
             return isSameColorSequence(cards, dir=0)
-        elif cards[-1].rank == ACE:
+        if cards[-1].rank == ACE:
             return False                # 5-3-ace
         return isSameSuitSequence(cards, dir=-2)
 
@@ -1430,8 +1423,7 @@ class ScorpionTowers_RowStack(SS_RowStack):
                     basekings += 1
             if basekings >= 4:
                 return 1
-            else:
-                return cards[0].rank == KING
+            return cards[0].rank == KING
         return SS_RowStack.acceptsCards(self, from_stack, cards)
 
 
@@ -1663,3 +1655,8 @@ registerGame(GameInfo(870, FairMaids, "Fair Maids",
                       GI.GT_SPIDER, 1, 0, GI.SL_BALANCED))
 registerGame(GameInfo(917, Astrocyte, "Astrocyte",
                       GI.GT_SPIDER, 2, 0, GI.SL_MOSTLY_SKILL))
+registerGame(GameInfo(971, Microbe, "Microbe",
+                      GI.GT_SPIDER | GI.GT_SEPARATE_DECKS, 2, 0,
+                      GI.SL_MOSTLY_SKILL))
+registerGame(GameInfo(976, WaspII, "Wasp II",
+                      GI.GT_SPIDER, 1, 0, GI.SL_MOSTLY_SKILL))

@@ -75,7 +75,7 @@ class Klondike(Game):
         # create layout
         lay, s = Layout(self), self.s
         kwdefault(layout, rows=rows, waste=1, texts=1, playcards=16)
-        self.Layout_Method.__get__(lay, lay.__class__)(**layout)
+        self.Layout_Method(lay, **layout)
         # self.__class__.Layout_Method(lay, **layout)
         self.setSize(lay.size[0], lay.size[1])
         # create stacks
@@ -181,7 +181,7 @@ class NineAcross_RowStack(AC_RowStack):
         if not self.cards:
             if self.game.base_rank == ANY_RANK:
                 return False
-            elif self.game.base_rank == ACE:
+            if self.game.base_rank == ACE:
                 if cards[0].rank != KING:
                     return False
             elif cards[0].rank != self.game.base_rank - 1:
@@ -365,15 +365,18 @@ class Easthaven(Eastcliff):
     def createGame(self):
         Klondike.createGame(self, max_rounds=1, waste=0)
 
-
-class DoubleEasthaven(Easthaven):
-    def createGame(self):
-        Klondike.createGame(self, rows=8, max_rounds=1, waste=0, playcards=20)
-
-
-class TripleEasthaven(Easthaven):
-    def createGame(self):
-        Klondike.createGame(self, rows=12, max_rounds=1, waste=0, playcards=26)
+# Multi-deck Easthaven is just Gypsy.
+#
+# class DoubleEasthaven(Easthaven):
+#     def createGame(self):
+#         Klondike.createGame(self, rows=8, max_rounds=1, waste=0,
+#                             playcards=20)
+#
+#
+# class TripleEasthaven(Easthaven):
+#     def createGame(self):
+#         Klondike.createGame(self, rows=12, max_rounds=1, waste=0,
+#                             playcards=26)
 
 
 # ************************************************************************
@@ -1640,7 +1643,8 @@ registerGame(GameInfo(66, Eastcliff, "Eastcliff",
 registerGame(GameInfo(224, Easthaven, "Easthaven",
                       GI.GT_GYPSY, 1, 0, GI.SL_MOSTLY_LUCK))
 registerGame(GameInfo(33, Westcliff, "Westcliff",
-                      GI.GT_KLONDIKE, 1, 0, GI.SL_MOSTLY_LUCK))
+                      GI.GT_KLONDIKE | GI.GT_CHILDREN, 1, 0,
+                      GI.SL_MOSTLY_LUCK))
 registerGame(GameInfo(225, Westhaven, "Westhaven",
                       GI.GT_GYPSY, 1, 0, GI.SL_BALANCED))
 registerGame(GameInfo(107, PasSeul, "Pas Seul",
@@ -1708,10 +1712,10 @@ registerGame(GameInfo(420, DoubleDot, "Double Dot",
                       GI.GT_1DECK_TYPE, 1, 0, GI.SL_BALANCED))
 registerGame(GameInfo(434, SevenDevils, "Seven Devils",
                       GI.GT_RAGLAN, 2, 0, GI.SL_MOSTLY_LUCK))
-registerGame(GameInfo(452, DoubleEasthaven, "Double Easthaven",
-                      GI.GT_GYPSY, 2, 0, GI.SL_MOSTLY_SKILL))
-registerGame(GameInfo(453, TripleEasthaven, "Triple Easthaven",
-                      GI.GT_GYPSY, 3, 0, GI.SL_MOSTLY_SKILL))
+# registerGame(GameInfo(452, DoubleEasthaven, "Double Easthaven",
+#                       GI.GT_GYPSY, 2, 0, GI.SL_MOSTLY_SKILL))
+# registerGame(GameInfo(453, TripleEasthaven, "Triple Easthaven",
+#                       GI.GT_GYPSY, 3, 0, GI.SL_MOSTLY_SKILL))
 registerGame(GameInfo(470, MovingLeft, "Moving Left",
                       GI.GT_KLONDIKE, 2, 0, GI.SL_MOSTLY_SKILL))
 registerGame(GameInfo(471, Souter, "Souter",

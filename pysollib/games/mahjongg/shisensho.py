@@ -89,6 +89,9 @@ class Shisen_Foundation(AbstractFoundationStack):
     def initBindings(self):
         pass
 
+    def canSelect(self):
+        return False
+
 
 class Shisen_RowStack(Mahjongg_RowStack):
     allowAdjacent = True
@@ -121,15 +124,15 @@ class Shisen_RowStack(Mahjongg_RowStack):
                     or not game_cols[nx-1][ny-1].cards:
                 if direct_chng_cnt == 0:
                     return 1
-                elif direct_chng_cnt == 1:
+                if direct_chng_cnt == 1:
                     if direct != d:
                         if d == 1 and dy > 0:
                             return 1
-                        elif d == 2 and dy < 0:
+                        if d == 2 and dy < 0:
                             return 1
-                        elif d == 3 and dx > 0:
+                        if d == 3 and dx > 0:
                             return 1
-                        elif d == 4 and dx < 0:
+                        if d == 4 and dx < 0:
                             return 1
                     else:
                         return 1
@@ -137,16 +140,16 @@ class Shisen_RowStack(Mahjongg_RowStack):
                     if direct != d:
                         if d in (1, 2) and x == x2:
                             return 1
-                        elif y == y2:
+                        if y == y2:
                             return 1
                     else:
                         if d == 1 and y < y2:
                             return 1
-                        elif d == 2 and y > y2:
+                        if d == 2 and y > y2:
                             return 1
-                        elif d == 3 and x < x2:
+                        if d == 3 and x < x2:
                             return 1
-                        elif d == 4 and x > x2:
+                        if d == 4 and x > x2:
                             return 1
                 elif direct_chng_cnt == 3:
                     if direct == d:
@@ -295,6 +298,9 @@ class Shisen_RowStack(Mahjongg_RowStack):
             arrow.delete()
         game.canvas.update_idletasks()
 
+    def canSelect(self):
+        return True
+
 
 class AbstractShisenGame(AbstractMahjonggGame):
     Hint_Class = NotShisen_Hint  # Shisen_Hint
@@ -395,6 +401,10 @@ class AbstractShisenGame(AbstractMahjonggGame):
         if self.preview > 1 or self.texts.info is None:
             return
 
+        t = self.getText()
+        self.texts.info.config(text=t)
+
+    def getText(self):
         if self.app.opt.shisen_show_matching:
             # find matching tiles
             stacks = self.s.rows
@@ -426,7 +436,7 @@ class AbstractShisenGame(AbstractMahjonggGame):
                        self.NCARDS - t) % (self.NCARDS - t)
 
         t = r1 + r2 + f
-        self.texts.info.config(text=t)
+        return t
 
     def drawHintArrow(self, from_stack, to_stack, ncards, sleep):
         from_stack.drawArrow(to_stack, sleep)
@@ -436,6 +446,13 @@ class AbstractShisenGame(AbstractMahjonggGame):
 
     def canShuffle(self):
         return False
+
+    def parseStackInfo(self, stack):
+        if stack not in self.s.rows:
+            return ""
+        row = (stack.id % self.L[1]) + 1
+        column = (self.L[0] - 1 - (stack.id // self.L[1])) + 1
+        return _("Row: %d, Column: %d") % (row, column)
 
 
 class Shisen_18x8(AbstractShisenGame):

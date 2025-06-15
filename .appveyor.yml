@@ -2,16 +2,16 @@
 image: Visual Studio 2022
 environment:
     matrix:
-        - PYTHON: "C:\\Python312"
+        - PYTHON: "C:\\Python313"
 # Shamelessly taken from https://github.com/plicease/Dist-Zilla-PluginBundle-Author-Plicease/blob/master/.appveyor.yml
 # Thanks!
 install:
     # - choco install strawberryperl
     - copy %PYTHON%\python.exe %PYTHON%\python3.exe
     - SET PATH=%PYTHON%;%PYTHON%\Scripts;C:\strawberry\c\bin;C:\strawberry\perl\site\bin;C:\strawberry\perl\bin;%PATH%
-    - python3 -mpip install Pillow attrs configobj flake8 flake8-import-order
-        pycotap pygame pyinstaller pysol-cards setuptools six
-        ttkthemes
+    - python3 -mpip install Pillow attrs configobj flake8 flake8-import-order==0.18.2
+        pycotap pygame pyinstaller pysol-cards setuptools
+        ttkthemes accessible-output2
     - perl -v
     - copy C:\msys64\mingw64\bin\mingw32-make.exe C:\msys64\mingw64\bin\make.exe
     - SET PERL5LIB=C:/_P5/lib/perl5
@@ -36,9 +36,9 @@ test_script:
     #- gmake mo
     - pyinstaller pysol.py --windowed --icon=data\pysol.ico
     - python3 setup.py install_data -d dist\pysol
-    - appveyor DownloadFile https://sourceforge.net/projects/pysolfc/files/PySolFC-Cardsets/PySolFC-Cardsets-3.0/PySolFC-Cardsets-3.0.tar.bz2/download -FileName cardsets.tar.bz2
+    - appveyor DownloadFile https://sourceforge.net/projects/pysolfc/files/PySolFC-Cardsets/PySolFC-Cardsets-3.0/PySolFC-Cardsets-3.1.tar.bz2/download -FileName cardsets.tar.bz2
     - 7z x cardsets.tar.bz2 -so | 7z x -si -ttar
-    - mv PySolFC-Cardsets-3.0/cardset-* dist/pysol/data
+    - mv PySolFC-Cardsets-3.1/cardset-* dist/pysol/data
     - appveyor DownloadFile https://sourceforge.net/projects/pysolfc/files/PySol-Music/PySol-Music-4.50/pysol-music-4.50.tar.xz/download -FileName music.tar.xz
     - 7z x music.tar.xz -so | 7z x -si -ttar
     - move pysol-music-4.50\data\music dist\pysol\data\music

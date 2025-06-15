@@ -25,6 +25,7 @@ from pysollib.game import Game
 from pysollib.gamedb import GI, GameInfo, registerGame
 from pysollib.hint import AbstractHint
 from pysollib.layout import Layout
+from pysollib.mygettext import _
 from pysollib.stack import \
         AbstractFoundationStack, \
         InitialDealTalonStack, \
@@ -74,7 +75,7 @@ class Pegged_RowStack(ReserveStack):
         return True
 
     def moveMove(self, ncards, to_stack, frames=-1, shadow=-1):
-        if type(to_stack) is Pegged_Foundation:
+        if isinstance(to_stack, Pegged_Foundation):
             return ReserveStack.moveMove(self, ncards, to_stack, frames=frames,
                                          shadow=shadow)
 
@@ -143,8 +144,7 @@ class Pegged(Game):
         self.map = {}
 
         # create stacks
-        for i in range(len(self.ROWS)):
-            r = self.ROWS[i]
+        for i, r in enumerate(self.ROWS):
             for j in range(r):
                 d = m - r + 2 * j
                 x, y = l.XM + d * l.XS // 2, l.YM + i * l.YS
@@ -239,6 +239,9 @@ class Pegged(Game):
                     if m and m.cards:
                         rows.append(r)
         return ((rows, 1),)
+
+    def parseCard(self, card):
+        return _("Card")
 
 
 class PeggedCross1(Pegged):

@@ -35,7 +35,8 @@ from pysollib.app_stat_result import GameStatResult
 from pysollib.app_statistics import Statistics
 from pysollib.cardsetparser import read_cardset_config
 from pysollib.gamedb import GAME_DB, GI, loadGame
-from pysollib.help import destroy_help_html, help_about, raise_help_html
+from pysollib.help import (destroy_help_html, help_about, raise_help_html,
+                           unraise_help_html)
 from pysollib.images import Images, SubsampledImages
 from pysollib.mfxutil import Struct, destruct
 from pysollib.mfxutil import USE_PIL
@@ -58,6 +59,9 @@ from pysollib.pysoltk import loadImage, wm_withdraw
 from pysollib.pysoltk import raise_find_card_dialog
 from pysollib.pysoltk import raise_full_picture_dialog
 from pysollib.pysoltk import raise_solver_dialog
+from pysollib.pysoltk import unraise_find_card_dialog
+from pysollib.pysoltk import unraise_full_picture_dialog
+from pysollib.pysoltk import unraise_solver_dialog
 from pysollib.resource import CSI, CardsetManager
 from pysollib.resource import Music, MusicManager
 from pysollib.resource import Sample, SampleManager
@@ -65,6 +69,7 @@ from pysollib.resource import Tile, TileManager
 from pysollib.settings import DEBUG
 from pysollib.settings import PACKAGE, VERSION_TUPLE  # , WIN_SYSTEM
 from pysollib.settings import TOOLKIT
+from pysollib.speech import Speech
 from pysollib.util import IMAGE_EXTENSIONS
 from pysollib.winsystems import TkSettings
 if TOOLKIT == 'tk':
@@ -93,6 +98,7 @@ class Application:
     def __init__(self):
         self.gdb = GAME_DB
         self.opt = Options()
+        self.speech = Speech()
         self.startup_opt = self.opt.copy()
         self.stats = Statistics()
         self.splashscreen = 1
@@ -524,6 +530,12 @@ class Application:
         raise_full_picture_dialog(self.game)
         raise_solver_dialog(self.game)
         raise_help_html(self.game)
+
+    def unraiseAll(self):
+        unraise_find_card_dialog()
+        unraise_full_picture_dialog()
+        unraise_solver_dialog()
+        unraise_help_html()
 
     def loadImages1(self):
         # load dialog images
@@ -961,16 +973,24 @@ class Application:
                 'correct_type': t[0]}, strings=(_("&OK"),), default=0)
 
     def selectCardset(self, title, key):
+        wasPaused = False
+        if not self.game.pause:
+            self.game.doPause()
+            wasPaused = True
         d = SelectCardsetDialogWithPreview(
             self.top, title=title, app=self,
             manager=self.cardset_manager, key=key)
+        if self.game.pause:
+            if wasPaused:
+                self.game.doPause()
         cs = self.cardset_manager.get(d.key)
         if d.status != 0 or d.button != 0 or d.key < 0 or cs is None:
             return None
         changed = False
         if USE_PIL:
             if (self.opt.scale_x, self.opt.scale_y,
-                self.opt.auto_scale, self.opt.spread_stacks,
+                self.opt.auto_scale, self.opt.preview_scale,
+                self.opt.spread_stacks,
                 self.opt.preserve_aspect_ratio) != \
                 d.scale_values or \
                     (cs.CARD_XOFFSET, cs.CARD_YOFFSET) != d.cardset_values:
@@ -981,6 +1001,7 @@ class Application:
             (self.opt.scale_x,
              self.opt.scale_y,
              self.opt.auto_scale,
+             self.opt.preview_scale,
              self.opt.spread_stacks,
              self.opt.preserve_aspect_ratio) = d.scale_values
             if not self.opt.auto_scale:
@@ -1330,8 +1351,7 @@ class Application:
             names = list(map(os.path.normcase, names))
             names.sort()
             return names
-        else:
-            return []
+        return []
 
     #
     # init samples / music

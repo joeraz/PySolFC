@@ -115,10 +115,12 @@ class Mahjongg_Foundation(OpenStack):
                 n = i*9+j
                 if fnds[n].cards:
                     fnds[n].group.tkraise()
-        return
 
     def getHelp(self):
         return ''
+
+    def canSelect(self):
+        return False
 
 
 # ************************************************************************
@@ -250,6 +252,15 @@ class Mahjongg_RowStack(OpenStack):
         # bind(group, "<Enter>", self._Stack__enterEventHandler)
         # bind(group, "<Leave>", self._Stack__leaveEventHandler)
 
+    def keyboardAction(self, card, event, type=1):
+        self.keyboard_movement = True
+        self.keyboard_card = card
+        if type == 1:
+            self.__clickEventHandler(event)
+        else:
+            self.__rightclickEventHandler(event)
+        self.keyboard_card = None
+
     def __defaultClickEventHandler(self, event, handler):
         self.game.event_handled = True  # for Game.undoHandler
         if self.game.demo:
@@ -298,6 +309,7 @@ class Mahjongg_RowStack(OpenStack):
                 return 1
         drag.stack = self
         self.game.playSample("startdrag")
+        self.game.app.speech.speak(_("Selected"))
         # create the shade image (see stack.py, _updateShade)
         if drag.shade_img:
             # drag.shade_img.dtag(drag.shade_stack.group)
@@ -319,6 +331,7 @@ class Mahjongg_RowStack(OpenStack):
     def cancelDrag(self, event=None):
         if event is None:
             self._stopDrag()
+            self.game.app.speech.speak(_("Unselected"))
 
     def _findCard(self, event):
         # we need to override this because the shade may be hiding
@@ -328,12 +341,23 @@ class Mahjongg_RowStack(OpenStack):
     def getBottomImage(self):
         return None
 
+    def canSelect(self):
+        return len(self.cards) > 0
+
 
 # ************************************************************************
 # *
 # ************************************************************************
 
 class AbstractMahjonggGame(Game):
+    RANKS = ("1", "2", "3", "4", "5", "6", "7", "8", "9", _("Dragon"))
+    SUITS = (_("Strings"), _("Sticks"), _("Coins"))
+    DRAGONS = (_("Green"), _("White"), _("Red"))
+    TRUMPS = (_("North Wind"), _("South Wind"), _("East Wind"),
+              _("West Wind"), _("Winter"), _("Fall"), _("Spring"),
+              _("Summer"), _("Bamboo"), _("Orchid"), _("Plum"),
+              _("Chrysanthemum"))
+
     Hint_Class = Mahjongg_Hint
     RowStack_Class = Mahjongg_RowStack
 
@@ -367,6 +391,203 @@ class AbstractMahjonggGame(Game):
         # tiles = tuple(tiles)
         return tiles, max_tl, max_tx, max_ty
 
+    def parseCard(self, card):
+        if not card.face_up:
+            return _("Face-down")
+        if card.suit > 2:
+            return self.TRUMPS[card.rank]
+        if card.rank > 8:
+            return self.DRAGONS[card.suit] + " " + self.RANKS[card.rank]
+        suit = self.SUITS[card.suit]
+        rank = self.RANKS[card.rank]
+        return rank + " - " + suit
+
+    def getStackSpeech(self, stack, cardindex):
+        if stack not in self.s.rows:
+            return Game.getStackSpeech(self, stack, cardindex)
+        if len(stack.cards) == 0:
+            return self.parseEmptyStack(stack)
+        if hasattr(stack, 'blockmap') and len(stack.blockmap.above) > 0:
+            mainCard = _("Covered Tile")
+        else:
+            mainCard = self.parseCard(stack.cards[cardindex])
+        coverCards = ()
+        blockedByCovered = False
+        if (not hasattr(stack, 'blockmap') or
+                not len(stack.blockmap.left) > 0 or
+                not len(stack.blockmap.right) > 0):
+            return mainCard
+        for r in stack.blockmap.above:
+            if r.cards:
+                if len(r.blockmap.above) > 0:
+                    blockedByCovered = True
+                else:
+                    coverCards += (r,)
+        if len(coverCards) > 0 or blockedByCovered:
+            mainCard += " - " + _("Covered by")
+            if blockedByCovered:
+                mainCard += " - " + _("Covered Tiles")
+            for c in coverCards:
+                mainCard += " - " + self.parseCard(c.cards[0])
+        coverCards = ()
+        blockedByCovered = False
+        for r in stack.blockmap.left:
+            if r.cards:
+                if len(r.blockmap.above) > 0:
+                    blockedByCovered = True
+                else:
+                    coverCards += (r,)
+        if len(coverCards) > 0 or blockedByCovered:
+            mainCard += " - " + _("Blocked on left by")
+            if blockedByCovered:
+                mainCard += " - " + _("Covered Tiles")
+            for c in coverCards:
+                mainCard += " - " + self.parseCard(c.cards[0])
+        coverCards = ()
+        blockedByCovered = False
+        for r in stack.blockmap.right:
+            if r.cards:
+                if len(r.blockmap.above) > 0:
+                    blockedByCovered = True
+                else:
+                    coverCards += (r,)
+        if len(coverCards) > 0 or blockedByCovered:
+            mainCard += " - " + _("Blocked on right by")
+            if blockedByCovered:
+                mainCard += " - " + _("Covered Tiles")
+            for c in coverCards:
+                mainCard += " - " + self.parseCard(c.cards[0])
+        return mainCard
+
+    def keyboardSelectLayer(self, direction):
+        oldstack = self.keyboard_selected_stack
+        stack = oldstack
+        if direction == 1:
+            layercheck = oldstack.blockmap.above
+        else:
+            layercheck = oldstack.blockmap.below
+        for checkstack in layercheck:
+            if checkstack.canSelect():
+                stack = checkstack
+        if oldstack != stack:
+            self.keyboard_selected_stack = stack
+            self.keyboard_select_count = 1
+            self._updateKeyboardSelector()
+            if len(stack.cards) > 0:
+                self.app.speech.speak(self.getStackSpeech(stack, -1))
+            else:
+                self.app.speech.speak(self.getStackSpeech(stack, 0))
+        else:
+            self.playSample("edge", priority=200)
+
+    def _getKeyboardSelectStack(self, direction):
+        if self.keyboard_selected_stack is None:
+            for s in self.allstacks:
+                if s.canSelect():
+                    self.keyboard_selected_stack = s
+                    break
+            return
+
+        currentstack = None
+        currentstacky = None
+        currentstackx = None
+        cw, ch = self.app.images.getSize()
+        cs = self.app.images.cs
+
+        scaleh = ch / cs.CARDH
+        scalew = cw / cs.CARDW
+
+        offsetw = cs.SHADOW_XOFFSET * scalew
+        offseth = cs.SHADOW_YOFFSET * scaleh
+
+        for stack in self.allstacks:
+            if (stack in self.s.internals or
+                    stack == self.keyboard_selected_stack or
+                    not stack.canSelect()):
+                continue
+            cs = self.app.images.cs
+            cw2, ch2 = cw, ch
+
+            if (hasattr(self.keyboard_selected_stack, 'blockmap')
+                    and self.keyboard_selected_stack.blockmap.level
+                    != stack.blockmap.level):
+                continue
+
+            if cs.version == 6 or cs.mahjongg3d:
+                cw2 -= offsetw
+                ch2 -= offseth
+            cw2 -= 2
+            ch2 -= 2
+
+            # The x and y are multiplied, to create some distance and prevent
+            # the stacks from overlapping.  There is probably a better
+            # solution.
+            multiplier = 1 + max(scalew, scaleh)
+            sy = stack.y * multiplier
+            sx = stack.x * multiplier
+            ky = self.keyboard_selected_stack.y * multiplier
+            kx = self.keyboard_selected_stack.x * multiplier
+
+            if direction == 0:  # up
+                if ((sy >= ky) or
+                        (sx < kx - cw2 or
+                         sx > kx + cw2) or
+                        (currentstack is not None and
+                         sy < currentstacky)):
+                    continue
+            elif direction == 1:  # down
+                if ((sy <= ky) or
+                        (sx < kx - cw2 or
+                         sx > kx + cw2) or
+                        (currentstack is not None and
+                         sy > currentstacky)):
+                    continue
+            elif direction == 2:  # left
+                if ((sx >= kx) or
+                        (sy < ky - ch2 or
+                         sy > ky + ch2) or
+                        (currentstack is not None and
+                         sx < currentstackx)):
+                    continue
+            elif direction == 3:  # right
+                if ((sx <= kx) or
+                        (sy < ky - ch2 or
+                         sy > ky + ch2) or
+                        (currentstack is not None and
+                         sx > currentstackx)):
+                    continue
+            currentstack = stack
+            currentstackx = sx
+            currentstacky = sy
+        if currentstack is not None:
+            self.keyboard_selected_stack = currentstack
+
+    def keyboardSelectNextType(self, dir=1):
+        oldstack = self.keyboard_selected_stack
+        rows = self.s.rows
+
+        try:
+            index = rows.index(oldstack)
+        except ValueError:
+            if dir > 0:
+                index = -1
+            else:
+                index = 0
+
+        for n in range(1, len(rows) + 1):
+            try_index = (index + (dir * n)) % len(rows)
+            if not rows[try_index].basicIsBlocked():
+                self.keyboard_selected_stack = rows[try_index]
+                break
+
+        stack = self.keyboard_selected_stack
+
+        self._updateKeyboardSelector()
+        if len(stack.cards) > 0:
+            self.app.speech.speak(self.getStackSpeech(stack, -1))
+        else:
+            self.app.speech.speak(self.getStackSpeech(stack, 0))
+
     #
     # game layout
     #
@@ -386,7 +607,8 @@ class AbstractMahjonggGame(Game):
             dy = -l.YOFFSET
             d_x = cs.SHADOW_XOFFSET
             d_y = cs.SHADOW_YOFFSET
-            if self.preview:
+            if self.preview and (not self.app.opt.auto_scale or
+                                 not self.app.opt.preview_scale):
                 size_cap, r = 100, 2
                 if l.CW // r > size_cap or l.CH // r > size_cap:
                     r = max(l.CW, l.CH) // size_cap
@@ -407,7 +629,7 @@ class AbstractMahjonggGame(Game):
 
         # width of self.texts.info
         # ti_width = Font(self.canvas, font).measure(_('Remaining'))
-        ti_width = 80
+        ti_width = max(80, l.CW)
 
         # set window size
         dxx, dyy = abs(dx) * (max_tl+1), abs(dy) * (max_tl+1)
@@ -490,10 +712,10 @@ class AbstractMahjonggGame(Game):
             assert tilemap.get((level, tx, ty+1)) is stack
             assert tilemap.get((level, tx+1, ty+1)) is stack
             #
-            above = tuple([_f for _f in above.keys() if _f])
-            below = tuple([_f for _f in below.keys() if _f])
-            left = tuple([_f for _f in left.keys() if _f])
-            right = tuple([_f for _f in right.keys() if _f])
+            above = tuple(_f for _f in above.keys() if _f)
+            below = tuple(_f for _f in below.keys() if _f)
+            left = tuple(_f for _f in left.keys() if _f)
+            right = tuple(_f for _f in right.keys() if _f)
             # up = tuple(filter(None, up.keys()))
             # bottom = tuple(filter(None, bottom.keys()))
 
@@ -507,6 +729,7 @@ class AbstractMahjonggGame(Game):
                 # bottom=bottom,
                 all_left=None,
                 all_right=None,
+                level=level
             )
 
         def get_all_left(s):
@@ -857,7 +1080,7 @@ a solvable configuration.'''),
         assert len(self.s.talon.cards) == 0
 
     def isGameWon(self):
-        return sum([len(f.cards) for f in self.s.foundations]) == self.NCARDS
+        return sum(len(f.cards) for f in self.s.foundations) == self.NCARDS
 
     def shallHighlightMatch(self, stack1, card1, stack2, card2):
         if stack1.basicIsBlocked() or stack2.basicIsBlocked():
@@ -870,7 +1093,10 @@ a solvable configuration.'''),
     def updateText(self):
         if self.preview > 1 or self.texts.info is None:
             return
+        t = self.getText()
+        self.texts.info.config(text=t)
 
+    def getText(self):
         # find matching tiles
         stacks = []
         for r in self.s.rows:
@@ -894,7 +1120,7 @@ a solvable configuration.'''),
             f = ungettext('%d Free\nMatching\nPair',
                           '%d Free\nMatching\nPairs',
                           f) % f
-        t = sum([len(ii.cards) for ii in self.s.foundations])
+        t = sum(len(ii.cards) for ii in self.s.foundations)
         r1 = ungettext('%d\nTile\nRemoved\n\n',
                        '%d\nTiles\nRemoved\n\n',
                        t) % t
@@ -903,7 +1129,15 @@ a solvable configuration.'''),
                        self.NCARDS - t) % (self.NCARDS - t)
 
         t = r1 + r2 + f
-        self.texts.info.config(text=t)
+        return t
+
+    def parseStackInfo(self, stack):
+        if not hasattr(stack, 'blockmap'):
+            return ""
+        return _("Layer: %d") % (stack.blockmap.level + 1)
+
+    def parseGameInfo(self):
+        return self.getText()
 
     #
     # Mahjongg special overrides
@@ -949,9 +1183,8 @@ a solvable configuration.'''),
                 r.delete()
             self.canvas.update_idletasks()
             return EVENT_HANDLED
-        else:
-            # remove items later (find_card_dialog)
-            return items
+        # remove items later (find_card_dialog)
+        return items
 
     def getCardFaceImage(self, deck, suit, rank):
         if suit == 3:

@@ -68,9 +68,8 @@ class Braid_Foundation(AbstractFoundationStack):
         if stack_dir == 0:
             card_dir = self.getRankDir(cards=(self.cards[-1], cards[0]))
             return card_dir in (1, -1)
-        else:
-            return ((self.cards[-1].rank + stack_dir) %
-                    self.cap.mod == cards[0].rank)
+        return ((self.cards[-1].rank + stack_dir) %
+                self.cap.mod == cards[0].rank)
 
 
 class Braid_BraidStack(OpenStack):
@@ -646,7 +645,8 @@ registerGame(GameInfo(376, Backbone, "Backbone",
 registerGame(GameInfo(377, BackbonePlus, "Backbone +",
                       GI.GT_NAPOLEON, 2, 0, GI.SL_BALANCED))
 registerGame(GameInfo(510, BigBraid, "Big Braid",
-                      GI.GT_NAPOLEON | GI.GT_ORIGINAL, 3, 2, GI.SL_BALANCED))
+                      GI.GT_NAPOLEON | GI.GT_ORIGINAL, 3, 2, GI.SL_BALANCED,
+                      altnames=("Der grose Zopf",)))
 registerGame(GameInfo(694, Casket, "Casket",
                       GI.GT_2DECK_TYPE, 2, 0, GI.SL_BALANCED))
 registerGame(GameInfo(717, Well, "Well",

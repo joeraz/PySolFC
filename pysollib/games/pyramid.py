@@ -25,6 +25,7 @@ from pysollib.game import Game
 from pysollib.gamedb import GI, GameInfo, registerGame
 from pysollib.hint import DefaultHint
 from pysollib.layout import Layout
+from pysollib.mygettext import _
 from pysollib.pysoltk import MfxCanvasText
 from pysollib.stack import \
         AbstractFoundationStack, \
@@ -172,6 +173,9 @@ class Pyramid_RowStack(Pyramid_StackMethods, OpenStack):
         OpenStack.copyModel(self, clone)
         clone.blockmap = self.blockmap
 
+    def canSelect(self):
+        return len(self.cards) > 0 and self.cards[-1].face_up
+
 
 # ************************************************************************
 # * Pyramid
@@ -299,6 +303,22 @@ class Pyramid(Game):
     def shallHighlightMatch(self, stack1, card1, stack2, card2):
         return card1.rank + card2.rank == 11
 
+    def getStackSpeech(self, stack, cardindex):
+        if stack not in self.s.rows:
+            return Game.getStackSpeech(self, stack, cardindex)
+        if len(stack.cards) == 0:
+            return self.parseEmptyStack(stack)
+        mainCard = self.parseCard(stack.cards[cardindex])
+        coverCards = ()
+        for r in stack.blockmap:
+            if r.cards:
+                coverCards += (r,)
+        if len(coverCards) > 0:
+            mainCard += " - " + _("Covered by")
+            for c in coverCards:
+                mainCard += " - " + self.parseCard(c.cards[0])
+        return mainCard
+
 
 # ************************************************************************
 # * Relaxed Pyramid
@@ -383,51 +403,18 @@ class PyramidDozen(Giza):
 
 
 # ************************************************************************
-# * Thirteen
-# * FIXME: UNFINISHED
-# * (this doesn't work yet as 2 cards of the Waste should be playable)
+# * Pyramid Thirteen
 # ************************************************************************
 
+# Previous comments suggest there would need to be two waste piles.  This
+# is not true.  Based on AisleRiot's rules, the two waste cards can only
+# be played with each other, which is the same as how PySol's traditional
+# version works.  So the remaining AisleRiot differences are captured
+# in "Pyramid Thirteen", renamed from "Thirteen" to avoid confusion with
+# "Thirteens"
+
 class Thirteen(Pyramid):
-
-    #
-    # game layout
-    #
-
-    def createGame(self):
-        # create layout
-        layout, s = Layout(self), self.s
-
-        # set window
-        self.setSize(7*layout.XS+layout.XM, 5*layout.YS+layout.YM)
-
-        # create stacks
-        for i in range(7):
-            x = layout.XM + (6-i) * layout.XS // 2
-            y = layout.YM + layout.YS + i * layout.YS // 2
-            for j in range(i+1):
-                s.rows.append(Pyramid_RowStack(x, y, self))
-                x = x + layout.XS
-        x, y = layout.XM, layout.YM
-        s.talon = WasteTalonStack(x, y, self, max_rounds=1)
-        layout.createText(s.talon, "s")
-        x = x + layout.XS
-        s.waste = Pyramid_Waste(x, y, self, max_accept=1)
-        layout.createText(s.waste, "s")
-        s.waste.CARD_XOFFSET = 14
-        x, y = self.width - layout.XS, layout.YM
-        s.foundations.append(Pyramid_Foundation(x, y, self,
-                             suit=ANY_SUIT, dir=0, base_rank=ANY_RANK,
-                             max_move=0, max_cards=52))
-
-        # define stack-groups
-        self.sg.talonstacks = [s.talon] + [s.waste]
-        self.sg.openstacks = s.rows + self.sg.talonstacks
-        self.sg.dropstacks = s.rows + self.sg.talonstacks
-
-    #
-    # game overrides
-    #
+    Talon_Class = StackWrapper(Pyramid_Talon, max_rounds=1, max_accept=1)
 
     def startGame(self):
         self.startDealSample()
@@ -487,6 +474,9 @@ class Thirteens(Pyramid):
                 self.s.talon.flipMove()
                 self.s.talon.moveMove(1, stack)
                 self.leaveState(old_state)
+
+    def getStackSpeech(self, stack, cardindex):
+        return Game.getStackSpeech(self, stack, cardindex)
 
 # ************************************************************************
 # * Elevens
@@ -615,9 +605,12 @@ class Elevens(Pyramid):
                 s.moveMove(1, self.s.foundations[0], frames=4)
         self.leaveState(old_state)
 
+    def getStackSpeech(self, stack, cardindex):
+        return Game.getStackSpeech(self, stack, cardindex)
+
     def shallHighlightMatch(self, stack1, card1, stack2, card2):
-        # FIXME
-        return False
+        return (card1.rank + card2.rank == 9 or
+                (9 < card1.rank != card2.rank > 9))
 
 
 class ElevensToo(Elevens):
@@ -666,6 +659,11 @@ class SuitElevens(Elevens):
     def createGame(self):
         Elevens.createGame(self, rows=3, cols=5)
 
+    def shallHighlightMatch(self, stack1, card1, stack2, card2):
+        return (Elevens.shallHighlightMatch(self, stack1, card1,
+                                            stack2, card2)
+                and card1.suit == card2.suit)
+
 
 # ************************************************************************
 # * Tens
@@ -697,6 +695,10 @@ class Tens(ElevensToo):
 
     def createGame(self):
         Elevens.createGame(self, rows=2, cols=7, maxpiles=13, reserves=4)
+
+    def shallHighlightMatch(self, stack1, card1, stack2, card2):
+        return (card1.rank + card2.rank == 8 or
+                (8 < card1.rank == card2.rank > 8))
 
 
 class Nines_RowStack(Elevens_RowStack):
@@ -741,6 +743,10 @@ class Nines(Tens):
 
     def createGame(self):
         Elevens.createGame(self, rows=3, cols=3, reserves=4)
+
+    def shallHighlightMatch(self, stack1, card1, stack2, card2):
+        return (card1.rank + card2.rank == 7 or
+                (8 < card1.rank != card2.rank > 8))
 
 
 # ************************************************************************
@@ -838,7 +844,7 @@ class Fifteens_Reserve(ReserveStack):
                 if r in ranks:
                     break
             else:
-                n = sum([i+1 for i in ranks])
+                n = sum(i+1 for i in ranks)
                 t = str(n)
         self.texts.misc.config(text=t)
 
@@ -876,10 +882,13 @@ class Fifteens(Elevens):
                 if reserve_ranks == [9, JACK, QUEEN, KING]:
                     self._dropReserve()
             else:
-                reserve_sum = sum([c.rank+1 for c in reserve.cards])
+                reserve_sum = sum(c.rank+1 for c in reserve.cards)
                 if reserve_sum == 15:
                     self._dropReserve()
         self.leaveState(old_state)
+
+    def shallHighlightMatch(self, stack1, card1, stack2, card2):
+        return card1.rank + card2.rank == 13
 
 
 # ************************************************************************
@@ -900,7 +909,7 @@ class Eighteens_RowStack(Elevens_RowStack):
             self.playMoveMove(1, game.s.foundations[0], sound=False)
             self.fillStack()
             return True
-        elif self.game.s.reserves[0].acceptsCards(self, self.cards):
+        if self.game.s.reserves[0].acceptsCards(self, self.cards):
             return self.playMoveMove(1, self.game.s.reserves[0])
 
         return False
@@ -973,6 +982,9 @@ class Eighteens(Fifteens):
                 self._dropReserve()
         self.leaveState(old_state)
 
+    def shallHighlightMatch(self, stack1, card1, stack2, card2):
+        return False  # How?
+
 
 # ************************************************************************
 # * Neptune
@@ -1001,6 +1013,10 @@ class Neptune(Thirteens):
 
     def isGameWon(self):
         return len(self.s.talon.cards) == 0
+
+    def shallHighlightMatch(self, stack1, card1, stack2, card2):
+        return (card1.rank == card2.rank - 1 or
+                card1.rank == card2.rank + 1)
 
 
 # ************************************************************************
@@ -1093,6 +1109,9 @@ class EightCards(Thirteens):
     def getState(self):
         # save vars (for undo/redo)
         return [self.draws]
+
+    def shallHighlightMatch(self, stack1, card1, stack2, card2):
+        return card1.rank + card2.rank == 9
 
 
 # ************************************************************************
@@ -1421,6 +1440,10 @@ class ElevenTriangle(Apophis):
 
     INVERT = True
     MAX_ROUNDS = 1
+
+    def shallHighlightMatch(self, stack1, card1, stack2, card2):
+        return (card1.rank + card2.rank == 9 or
+                (9 < card1.rank == card2.rank > 9))
 
 
 # ************************************************************************
@@ -1791,6 +1814,8 @@ class Hurricane_Reserve(Hurricane_StackMethods, OpenStack):
 
 class Hurricane(Pyramid):
     Hint_Class = Hurricane_Hint
+    RowStack_Class = Hurricane_RowStack
+    Reserve_Class = Hurricane_Reserve
 
     def createGame(self):
         # create layout
@@ -1808,7 +1833,7 @@ class Hurricane(Pyramid):
                         (0, 2), (1, 2), (2, 2), (3, 2),
                         ):
             x, y = layout.XM + 1.5*layout.XS + ww*xx, layout.YM + layout.YS*yy
-            stack = Hurricane_Reserve(x, y, self, max_accept=1)
+            stack = self.Reserve_Class(x, y, self, max_accept=1)
             stack.CARD_XOFFSET, stack.CARD_YOFFSET = layout.XOFFSET, 0
             s.reserves.append(stack)
 
@@ -1816,7 +1841,7 @@ class Hurricane(Pyramid):
         x = layout.XM + 1.5*layout.XS + layout.XS+2*layout.XOFFSET + d//2
         y = layout.YM+layout.YS
         for i in range(3):
-            stack = Hurricane_RowStack(x, y, self, max_accept=1)
+            stack = self.RowStack_Class(x, y, self, max_accept=1)
             s.rows.append(stack)
             x += layout.XS
 
@@ -1846,6 +1871,45 @@ class Hurricane(Pyramid):
             self.s.talon.moveMove(1, stack)
             self.leaveState(old_state)
 
+    def shallHighlightMatch(self, stack1, card1, stack2, card2):
+        return card1.rank + card2.rank == 12
+
+
+# ************************************************************************
+# * Ides of March
+# ************************************************************************
+
+class IdesOfMarch_StackMethods(Pyramid_StackMethods):
+
+    def acceptsCards(self, from_stack, cards):
+        if from_stack is self:
+            return False
+        if len(cards) != 1:
+            return False
+        if not self.cards:
+            return False
+        c1 = self.cards[-1]
+        c2 = cards[0]
+        return (c1.face_up and c2.face_up and
+                (c1.rank + c2.rank == 13 or c1.rank + c2.rank == 0))
+
+
+class IdesOfMarch_RowStack(IdesOfMarch_StackMethods, BasicRowStack):
+    pass
+
+
+class IdesOfMarch_Reserve(IdesOfMarch_StackMethods, OpenStack):
+    pass
+
+
+class IdesOfMarch(Hurricane):
+    RowStack_Class = IdesOfMarch_RowStack
+    Reserve_Class = IdesOfMarch_Reserve
+
+    def shallHighlightMatch(self, stack1, card1, stack2, card2):
+        return (card1.rank + card2.rank == 13 or
+                card1.rank + card2.rank == 0)
+
 
 # register the game
 registerGame(GameInfo(38, Pyramid, "Pyramid",
@@ -1854,8 +1918,8 @@ registerGame(GameInfo(193, RelaxedPyramid, "Relaxed Pyramid",
                       GI.GT_PAIRING_TYPE | GI.GT_RELAXED, 1, 2,
                       GI.SL_MOSTLY_LUCK,
                       altnames=("Pyramid's Stones", "Pyramid Clear")))
-# registerGame(GameInfo(44, Thirteen, "Thirteen",
-#                       GI.GT_PAIRING_TYPE, 1, 0))
+registerGame(GameInfo(44, Thirteen, "Pyramid Thirteen",
+                      GI.GT_PAIRING_TYPE, 1, 0, GI.SL_MOSTLY_LUCK))
 registerGame(GameInfo(592, Giza, "Giza",
                       GI.GT_PAIRING_TYPE | GI.GT_OPEN, 1, 0, GI.SL_BALANCED))
 registerGame(GameInfo(593, Thirteens, "Thirteens",
@@ -1874,7 +1938,8 @@ registerGame(GameInfo(619, TripleAlliance, "Triple Alliance",
                       GI.GT_PAIRING_TYPE | GI.GT_OPEN, 1, 0,
                       GI.SL_MOSTLY_SKILL, altnames=('Triplets',)))
 registerGame(GameInfo(655, Pharaohs, "Pharaohs",
-                      GI.GT_PAIRING_TYPE | GI.GT_OPEN, 1, 0, GI.SL_BALANCED))
+                      GI.GT_PAIRING_TYPE | GI.GT_OPEN, 1, 0, GI.SL_BALANCED,
+                      altnames=("Three Pharaohs",)))
 registerGame(GameInfo(657, Baroness, "Baroness",
                       GI.GT_PAIRING_TYPE, 1, 0, GI.SL_BALANCED,
                       altnames=('Five Piles',)))
@@ -1895,7 +1960,7 @@ registerGame(GameInfo(699, DoublePyramid, "Double Pyramid",
                       GI.GT_PAIRING_TYPE, 2, 2, GI.SL_MOSTLY_LUCK))
 registerGame(GameInfo(700, Triangle, "Triangle",
                       GI.GT_PAIRING_TYPE, 1, 2, GI.SL_MOSTLY_LUCK,
-                      altnames=('Yield',)))
+                      altnames=('Yield', 'Funnel')))
 registerGame(GameInfo(701, UpAndDown, "Up and Down",
                       GI.GT_PAIRING_TYPE | GI.GT_ORIGINAL, 2, 2,
                       GI.SL_MOSTLY_LUCK))
@@ -1927,3 +1992,6 @@ registerGame(GameInfo(961, Nines, "Nines",
                       GI.GT_PAIRING_TYPE, 1, 0, GI.SL_LUCK))
 registerGame(GameInfo(969, ElevenTriangle, "Eleven Triangle",
                       GI.GT_PAIRING_TYPE, 1, 0, GI.SL_MOSTLY_LUCK))
+registerGame(GameInfo(974, IdesOfMarch, "Ides of March",
+                      GI.GT_PAIRING_TYPE, 1, 0, GI.SL_MOSTLY_LUCK,
+                      altnames=("XV",)))

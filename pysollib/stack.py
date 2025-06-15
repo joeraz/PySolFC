@@ -259,6 +259,8 @@ class Stack:
         view.max_shadow_cards = -1
         view.current_cursor = ''
         view.cursor_changed = False
+        view.keyboard_movement = False
+        view.keyboard_card = None
 
     def destruct(self):
         # help breaking circular references
@@ -310,11 +312,11 @@ class Stack:
         if isinstance(ox, (int, float)):
             self.CARD_XOFFSET = (ox,)
         else:
-            self.CARD_XOFFSET = tuple([int(round(x)) for x in ox])
+            self.CARD_XOFFSET = tuple(int(round(x)) for x in ox)
         if isinstance(oy, (int, float)):
             self.CARD_YOFFSET = (oy,)
         else:
-            self.CARD_YOFFSET = tuple([int(round(y)) for y in oy])
+            self.CARD_YOFFSET = tuple(int(round(y)) for y in oy)
 
         # preserve offsets
         # for resize()
@@ -480,6 +482,8 @@ class Stack:
     # find card
     def _findCard(self, event):
         model, view = self, self
+        if self.keyboard_card is not None:
+            return self.keyboard_card
         if event is not None and model.cards:
             # ask the canvas
             return view.canvas.findCard(self, event)
@@ -493,8 +497,7 @@ class Stack:
         images = self.game.app.images
         cw, ch = images.getSize()
         index = -1
-        for i in range(len(cards)):
-            c = cards[i]
+        for i, c in enumerate(cards):
             r = (c.x, c.y, c.x + cw, c.y + ch)
             if r[0] <= x < r[2] and r[1] <= y < r[3]:
                 index = i
@@ -589,6 +592,10 @@ class Stack:
     def canDropCards(self, stacks):
         # Can we drop the top cards onto one of the foundation stacks ?
         return (None, 0)    # return the stack and the number of cards
+
+    def canSelect(self):
+        # Can the stack be selected (for keyboard movement)
+        return True
 
     #
     # State {model}
@@ -839,7 +846,7 @@ class Stack:
                 # print 'compact:', dy
                 self.CARD_YOFFSET = (dy,)
             return True
-        elif stack_height < height:
+        if stack_height < height:
             # expande stack
             if self.CARD_YOFFSET == self.INIT_CARD_YOFFSET:
                 return False
@@ -904,14 +911,15 @@ class Stack:
         if self.images.redeal:
             move(self.images.redeal)
         # texts
-        if self.texts.ncards:
-            move(self.texts.ncards)
-        if self.texts.rounds:
-            move(self.texts.rounds)
-        if self.texts.redeal:
-            move(self.texts.redeal)
-        if self.texts.misc:
-            move(self.texts.misc)
+        if not self.game.preview:
+            if self.texts.ncards:
+                move(self.texts.ncards)
+            if self.texts.rounds:
+                move(self.texts.rounds)
+            if self.texts.redeal:
+                move(self.texts.redeal)
+            if self.texts.misc:
+                move(self.texts.misc)
 
     def basicShallHighlightSameRank(self, card):
         # by default all open stacks are available for highlighting
@@ -1022,10 +1030,9 @@ class Stack:
         if not self.cards[i].face_up:
             if not self.game.app.opt.peek_facedown:
                 return 0
-            else:
-                self.game.stats.peeks += 1
-                self.cards[i].showFace()
-                peeked = True
+            self.game.stats.peeks += 1
+            self.cards[i].showFace()
+            peeked = True
         elif positions <= 0:
             return 0
         # print self.cards[i]
@@ -1088,15 +1095,19 @@ class Stack:
     def shiftrightclickHandler(self, event):
         return 0
 
-    def releaseHandler(self, event, drag, sound=True):
+    def releaseHandler(self, event, drag, sound=True, invalid=False):
         # default action: move cards back to their origin position
         if drag.cards:
             if sound:
                 self.game.playSample("nomove")
-            if self.game.app.opt.mouse_type == 'point-n-click':
+            if (self.game.app.opt.mouse_type == 'point-n-click'
+                    or self.keyboard_movement):
                 drag.stack.moveCardsBackHandler(event, drag)
+                if not invalid:
+                    self.game.app.speech.speak(_("Unselected"))
             else:
                 self.moveCardsBackHandler(event, drag)
+            self.keyboard_movement = False
 
     def moveCardsBackHandler(self, event, drag):
         if self.game.app.opt.animations:
@@ -1124,6 +1135,11 @@ class Stack:
 
     def __defaultClickEventHandler(self, event, handler,
                                    start_drag=0, cancel_drag=1):
+        if (not self.keyboard_movement and
+                self.game.keyboard_selector is not None):
+            for r in self.game.keyboard_selector:
+                r.delete()
+            self.game.keyboard_selector = None
         self.game.event_handled = True  # for Game.undoHandler
         if self.game.demo:
             self.game.stopDemo(event)
@@ -1148,8 +1164,18 @@ class Stack:
         def _motionEventHandler(self, event):
             return self.__motionEventHandler(event)
 
+    def keyboardAction(self, card, event, type=1):
+        self.keyboard_movement = True
+        self.keyboard_card = card
+        if type == 1:
+            self.__clickEventHandler(event)
+        else:
+            self.__rightclickEventHandler(event)
+        self.keyboard_card = None
+
     def __clickEventHandler(self, event):
-        if self.game.app.opt.mouse_type == 'drag-n-drop':
+        if (self.game.app.opt.mouse_type == 'drag-n-drop'
+                and not self.keyboard_movement):
             cancel_drag = 1
             start_drag = 1
             handler = self.clickHandler
@@ -1193,7 +1219,8 @@ class Stack:
             self.game.stopDemo(event)
         if self.game.busy:
             return EVENT_HANDLED
-        if self.game.app.opt.mouse_type == 'point-n-click':
+        if (self.game.app.opt.mouse_type == 'point-n-click'
+                or self.keyboard_movement):
             return EVENT_HANDLED
         self.keepDrag(event)
         #  if self.game.app.opt.mouse_type == 'drag-n-drop' \
@@ -1215,7 +1242,8 @@ class Stack:
         self.game.interruptSleep()
         if self.game.busy:
             return EVENT_HANDLED
-        if self.game.app.opt.mouse_type == 'drag-n-drop':
+        if (self.game.app.opt.mouse_type == 'drag-n-drop'
+                and not self.keyboard_movement):
 
             if TOOLKIT == 'kivy':
                 drag = self.game.drag
@@ -1230,7 +1258,8 @@ class Stack:
 
     def __enterEventHandler(self, event):
         if self.game.drag.stack:
-            if self.game.app.opt.mouse_type == 'point-n-click':
+            if (self.game.app.opt.mouse_type == 'point-n-click'
+                    or self.keyboard_movement):
                 if self.acceptsCards(self.game.drag.stack,
                                      self.game.drag.cards):
                     self.canvas.config(cursor=CURSOR_DOWN_ARROW)
@@ -1248,7 +1277,8 @@ class Stack:
     def __leaveEventHandler(self, event):
         if not self.game.drag.stack:
             after_idle(self.canvas, self.game.showHelp)
-        if self.game.app.opt.mouse_type == 'drag-n-drop':
+        if (self.game.app.opt.mouse_type == 'drag-n-drop'
+                and not self.keyboard_movement):
             return EVENT_HANDLED
         if self.cursor_changed:
             self.canvas.config(cursor='')
@@ -1263,11 +1293,9 @@ class Stack:
                 drag_stack.cancelDrag(event)
                 after_idle(self.canvas, self.game.showHelp)
                 return EVENT_HANDLED
-            else:
-                # continue drag
-                return self.__motionEventHandler(event)
-        else:
-            return EVENT_PROPAGATE
+            # continue drag
+            return self.__motionEventHandler(event)
+        return EVENT_PROPAGATE
 
     #
     # Drag internals {controller -> model -> view}
@@ -1300,8 +1328,10 @@ class Stack:
         drag.noshade_stacks = [self]
         drag.cards = self.getDragCards(i)
         drag.index = i
-        if self.game.app.opt.mouse_type == 'point-n-click':
+        if (self.game.app.opt.mouse_type == 'point-n-click'
+                or self.keyboard_movement):
             self._markCards(drag)
+            self.game.app.speech.speak(_("Selected"))
             return
         # if TOOLKIT == 'gtk':
         #     drag.stack.group.tkraise()
@@ -1315,10 +1345,8 @@ class Stack:
             # return cards under mouse
             dx = event.x - (x_offset+cw+sx) - game.canvas.xmargin
             dy = event.y - (y_offset+ch+sy) - game.canvas.ymargin
-            if dx < 0:
-                dx = 0
-            if dy < 0:
-                dy = 0
+            dx = max(dx, 0)
+            dy = max(dy, 0)
         for s in drag.shadows:
             if dx > 0 or dy > 0:
                 s.move(dx, dy)
@@ -1581,29 +1609,35 @@ class Stack:
         if self.game.app.opt.dragcursor:
             self.canvas.config(cursor='')
         drag = self.game.drag.copy()
-        if self.game.app.opt.mouse_type == 'point-n-click':
+        if (self.game.app.opt.mouse_type == 'point-n-click'
+                or self.keyboard_movement):
             drag.stack._stopDrag()
         else:
             self._stopDrag()
         if drag.cards:
-            if self.game.app.opt.mouse_type == 'point-n-click':
+            if (self.game.app.opt.mouse_type == 'point-n-click'
+                    or self.keyboard_movement):
                 self.releaseHandler(event, drag)
             else:
                 assert drag.stack is self
                 self.releaseHandler(event, drag)
+        self.keyboard_movement = False
 
     # cancel a drag operation
     def cancelDrag(self, event=None):
         if self.game.app.opt.dragcursor:
             self.canvas.config(cursor='')
         drag = self.game.drag.copy()
-        if self.game.app.opt.mouse_type == 'point-n-click':
+        if (self.game.app.opt.mouse_type == 'point-n-click'
+                or self.keyboard_movement):
             drag.stack._stopDrag()
+            self.game.app.speech.speak(_("Unselected"))
         else:
             self._stopDrag()
         if drag.cards:
             assert drag.stack is self
             self.moveCardsBackHandler(event, drag)
+        self.keyboard_movement = False
 
     def getHelp(self):
         return str(self)  # debug
@@ -1641,8 +1675,7 @@ class Stack:
         n = len(self.cards)
         if n == 0:
             return _('No cards')
-        else:
-            return ungettext('%d card', '%d cards', n) % n
+        return ungettext('%d card', '%d cards', n) % n
 
 
 # ************************************************************************
@@ -2033,6 +2066,9 @@ class InitialDealTalonStack(TalonStack):
     # no bottom
     getBottomImage = Stack._getNoneBottomImage
 
+    def canSelect(self):
+        return False
+
 
 class RedealTalonStack(TalonStack, RedealCards_StackMethods):
     def canDealCards(self):
@@ -2049,10 +2085,10 @@ class DealRowRedealTalonStack(TalonStack, RedealCards_StackMethods):
     def canDealCards(self, rows=None):
         if rows is None:
             rows = self.game.s.rows
-        r_cards = sum([len(r.cards) for r in rows])
+        r_cards = sum(len(r.cards) for r in rows)
         if self.cards:
             return True
-        elif r_cards and self.round != self.max_rounds:
+        if r_cards and self.round != self.max_rounds:
             return True
         return False
 
@@ -2216,7 +2252,8 @@ class OpenStack(Stack):
         return 0
 
     def dragMove(self, drag, stack, sound=True):
-        if self.game.app.opt.mouse_type == 'point-n-click':
+        if (self.game.app.opt.mouse_type == 'point-n-click'
+                or self.keyboard_movement):
             self.playMoveMove(len(drag.cards), stack, sound=sound)
         else:
             # self.playMoveMove(len(drag.cards), stack, frames=0, sound=sound)
@@ -2233,7 +2270,8 @@ class OpenStack(Stack):
                 return
             # print dx, dy
         # get destination stack
-        if self.game.app.opt.mouse_type == 'point-n-click':
+        if (self.game.app.opt.mouse_type == 'point-n-click'
+                or self.keyboard_movement):
             from_stack = drag.stack
             to_stack = self
         else:
@@ -2242,8 +2280,10 @@ class OpenStack(Stack):
         # move cards
         if (not to_stack or from_stack is to_stack or
                 not to_stack.acceptsCards(from_stack, cards)):
+            self.game.app.speech.speak("Invalid move")
             # move cards back to their origin stack
-            Stack.releaseHandler(self, event, drag, sound=sound)
+            Stack.releaseHandler(self, event, drag, sound=sound,
+                                 invalid=True)
         else:
             # this code actually moves the cards to the new stack
             # self.playMoveMove(len(cards), stack, frames=0, sound=sound)
@@ -2383,10 +2423,9 @@ class SS_FoundationStack(AbstractFoundationStack):
     def getHelp(self):
         if self.cap.dir > 0:
             return _('Foundation. Build up by suit.')
-        elif self.cap.dir < 0:
+        if self.cap.dir < 0:
             return _('Foundation. Build down by suit.')
-        else:
-            return _('Foundation. Build by same rank.')
+        return _('Foundation. Build by same rank.')
 
 
 # A Rank_FoundationStack builds up in rank and ignores color and suit.
@@ -2397,10 +2436,9 @@ class RK_FoundationStack(SS_FoundationStack):
     def getHelp(self):
         if self.cap.dir > 0:
             return _('Foundation. Build up regardless of suit.')
-        elif self.cap.dir < 0:
+        if self.cap.dir < 0:
             return _('Foundation. Build down regardless of suit.')
-        else:
-            return _('Foundation. Build by same rank.')
+        return _('Foundation. Build by same rank.')
 
 
 # A AlternateColor_FoundationStack builds up in rank and alternate color.
@@ -2422,10 +2460,9 @@ class AC_FoundationStack(SS_FoundationStack):
     def getHelp(self):
         if self.cap.dir > 0:
             return _('Foundation. Build up by alternate color.')
-        elif self.cap.dir < 0:
+        if self.cap.dir < 0:
             return _('Foundation. Build down by alternate color.')
-        else:
-            return _('Foundation. Build by same rank.')
+        return _('Foundation. Build by same rank.')
 
 
 # A SameColor_FoundationStack builds up in rank and alternate color.
@@ -2447,10 +2484,9 @@ class SC_FoundationStack(SS_FoundationStack):
     def getHelp(self):
         if self.cap.dir > 0:
             return _('Foundation. Build up by color.')
-        elif self.cap.dir < 0:
+        if self.cap.dir < 0:
             return _('Foundation. Build down by color.')
-        else:
-            return _('Foundation. Build by same rank.')
+        return _('Foundation. Build by same rank.')
 
 
 # A ButOwn_FoundationStack builds up in rank and any suit but the same.
@@ -2472,10 +2508,9 @@ class BO_FoundationStack(SS_FoundationStack):
     def getHelp(self):
         if self.cap.dir > 0:
             return _('Foundation. Build up in any suit but the same.')
-        elif self.cap.dir < 0:
+        if self.cap.dir < 0:
             return _('Foundation. Build down in any suit but the same.')
-        else:
-            return _('Foundation. Build by same rank.')
+        return _('Foundation. Build by same rank.')
 
 
 # Spider-type foundations
@@ -2617,10 +2652,9 @@ class AC_RowStack(SequenceRowStack):
     def getHelp(self):
         if self.cap.dir > 0:
             return _('Tableau. Build up by alternate color.')
-        elif self.cap.dir < 0:
+        if self.cap.dir < 0:
             return _('Tableau. Build down by alternate color.')
-        else:
-            return _('Tableau. Build by same rank.')
+        return _('Tableau. Build by same rank.')
 
 
 # A SameColor_RowStack builds down by rank and same color.
@@ -2632,10 +2666,9 @@ class SC_RowStack(SequenceRowStack):
     def getHelp(self):
         if self.cap.dir > 0:
             return _('Tableau. Build up by color.')
-        elif self.cap.dir < 0:
+        if self.cap.dir < 0:
             return _('Tableau. Build down by color.')
-        else:
-            return _('Tableau. Build by same rank.')
+        return _('Tableau. Build by same rank.')
 
 
 # A SameSuit_RowStack builds down by rank and suit.
@@ -2646,10 +2679,9 @@ class SS_RowStack(SequenceRowStack):
     def getHelp(self):
         if self.cap.dir > 0:
             return _('Tableau. Build up by suit.')
-        elif self.cap.dir < 0:
+        if self.cap.dir < 0:
             return _('Tableau. Build down by suit.')
-        else:
-            return _('Tableau. Build by same rank.')
+        return _('Tableau. Build by same rank.')
 
 
 # A Rank_RowStack builds down by rank ignoring suit.
@@ -2660,10 +2692,9 @@ class RK_RowStack(SequenceRowStack):
     def getHelp(self):
         if self.cap.dir > 0:
             return _('Tableau. Build up regardless of suit.')
-        elif self.cap.dir < 0:
+        if self.cap.dir < 0:
             return _('Tableau. Build down regardless of suit.')
-        else:
-            return _('Tableau. Build by same rank.')
+        return _('Tableau. Build by same rank.')
 
 
 # ButOwn_RowStack
@@ -2674,10 +2705,9 @@ class BO_RowStack(SequenceRowStack):
     def getHelp(self):
         if self.cap.dir > 0:
             return _('Tableau. Build up in any suit but the same.')
-        elif self.cap.dir < 0:
+        if self.cap.dir < 0:
             return _('Tableau. Build down in any suit but the same.')
-        else:
-            return _('Tableau. Build by same rank.')
+        return _('Tableau. Build by same rank.')
 
 
 # A Freecell_AlternateColor_RowStack
@@ -2712,12 +2742,11 @@ class Spider_AC_RowStack(AC_RowStack):
             return _('Tableau. Build up regardless of suit. '
                      'Sequences of cards in alternate color '
                      'can be moved as a unit.')
-        elif self.cap.dir < 0:
+        if self.cap.dir < 0:
             return _('Tableau. Build down regardless of suit. '
                      'Sequences of cards in alternate color can be moved '
                      'as a unit.')
-        else:
-            return _('Tableau. Build by same rank.')
+        return _('Tableau. Build by same rank.')
 
 
 # A Spider_SameSuit_RowStack builds down by rank and suit,
@@ -2731,12 +2760,11 @@ class Spider_SS_RowStack(SS_RowStack):
             return _('Tableau. Build up regardless of suit. '
                      'Sequences of cards in the same suit can be moved '
                      'as a unit.')
-        elif self.cap.dir < 0:
+        if self.cap.dir < 0:
             return _('Tableau. Build down regardless of suit. '
                      'Sequences of cards in the same suit can be moved '
                      'as a unit.')
-        else:
-            return _('Tableau. Build by same rank.')
+        return _('Tableau. Build by same rank.')
 
 
 # A Spider_SameColor_RowStack builds down by rank and color,
@@ -2750,12 +2778,11 @@ class Spider_SC_RowStack(SC_RowStack):
             return _('Tableau. Build up regardless of suit. '
                      'Sequences of cards in the same color can be moved '
                      'as a unit.')
-        elif self.cap.dir < 0:
+        if self.cap.dir < 0:
             return _('Tableau. Build down regardless of suit. '
                      'Sequences of cards in the same color can be moved '
                      'as a unit.')
-        else:
-            return _('Tableau. Build by same rank.')
+        return _('Tableau. Build by same rank.')
 
 
 # A Spider_ButOwn_RowStack builds down by rank and any suit but own,
@@ -2769,12 +2796,11 @@ class Spider_BO_RowStack(BO_RowStack):
             return _('Tableau. Build up regardless of suit. '
                      'Sequences of cards in any suit but the same '
                      'can be moved as a unit.')
-        elif self.cap.dir < 0:
+        if self.cap.dir < 0:
             return _('Tableau. Build down regardless of suit. '
                      'Sequences of cards in any suit but the same '
                      'can be moved as a unit.')
-        else:
-            return _('Tableau. Build by same rank.')
+        return _('Tableau. Build by same rank.')
 
 
 # A Yukon_AlternateColor_RowStack builds down by rank and alternate color,
@@ -2802,12 +2828,11 @@ class Yukon_AC_RowStack(BasicRowStack):
         if self.cap.dir > 0:
             return _('Tableau. Build up by alternate color, '
                      'can move any face-up cards regardless of sequence.')
-        elif self.cap.dir < 0:
+        if self.cap.dir < 0:
             return _('Tableau. Build down by alternate color, '
                      'can move any face-up cards regardless of sequence.')
-        else:
-            return _('Tableau. Build by same rank, can move '
-                     'any face-up cards regardless of sequence.')
+        return _('Tableau. Build by same rank, can move '
+                 'any face-up cards regardless of sequence.')
 
     def getBaseCard(self):
         return self._getBaseCard()
@@ -2824,12 +2849,11 @@ class Yukon_SS_RowStack(Yukon_AC_RowStack):
         if self.cap.dir > 0:
             return _('Tableau. Build up by suit, can move any face-up cards '
                      'regardless of sequence.')
-        elif self.cap.dir < 0:
+        if self.cap.dir < 0:
             return _('Tableau. Build down by suit, can move any '
                      'face-up cards regardless of sequence.')
-        else:
-            return _('Tableau. Build by same rank, can move any '
-                     'face-up cards regardless of sequence.')
+        return _('Tableau. Build by same rank, can move any '
+                 'face-up cards regardless of sequence.')
 
 
 # A Yukon_SameColor_RowStack builds down by rank and color,
@@ -2843,12 +2867,11 @@ class Yukon_SC_RowStack(Yukon_AC_RowStack):
         if self.cap.dir > 0:
             return _('Tableau. Build up by color, can move any face-up cards '
                      'regardless of sequence.')
-        elif self.cap.dir < 0:
+        if self.cap.dir < 0:
             return _('Tableau. Build down by color, can move any '
                      'face-up cards regardless of sequence.')
-        else:
-            return _('Tableau. Build by same rank, can move any '
-                     'face-up cards regardless of sequence.')
+        return _('Tableau. Build by same rank, can move any '
+                 'face-up cards regardless of sequence.')
 
 
 # A Yukon_Rank_RowStack builds down by rank
@@ -2861,12 +2884,11 @@ class Yukon_RK_RowStack(Yukon_AC_RowStack):
         if self.cap.dir > 0:
             return _('Tableau. Build up regardless of suit, '
                      'can move any face-up cards regardless of sequence.')
-        elif self.cap.dir < 0:
+        if self.cap.dir < 0:
             return _('Tableau. Build up regardless of suit, can move any '
                      'face-up cards regardless of sequence.')
-        else:
-            return _('Tableau. Build by same rank, can move any '
-                     'face-up cards regardless of sequence.')
+        return _('Tableau. Build by same rank, can move any '
+                 'face-up cards regardless of sequence.')
 
 
 # A Yukon_ButOwn_RowStack builds down by rank and suit,
@@ -2880,12 +2902,11 @@ class Yukon_BO_RowStack(Yukon_AC_RowStack):
         if self.cap.dir > 0:
             return _('Tableau. Build up by any suit but the same, '
                      'can move any face-up cards regardless of sequence.')
-        elif self.cap.dir < 0:
+        if self.cap.dir < 0:
             return _('Tableau. Build down by any suit but the same, '
                      'can move any face-up cards regardless of sequence.')
-        else:
-            return _('Tableau. Build by same rank, can move any '
-                     'face-up cards regardless of sequence.')
+        return _('Tableau. Build by same rank, can move any '
+                 'face-up cards regardless of sequence.')
 
 #
 # King-versions of some of the above stacks: they accepts only Kings or
@@ -3093,7 +3114,7 @@ class WasteTalonStack(TalonStack):
         if self.cards:
             num_cards = min(len(self.cards), self.num_deal)
             return len(waste.cards) + num_cards <= waste.cap.max_cards
-        elif waste.cards and self.round != self.max_rounds:
+        if waste.cards and self.round != self.max_rounds:
             return True
         return False
 
@@ -3113,6 +3134,8 @@ class WasteTalonStack(TalonStack):
                     else:
                         self.game.flipMove(self)
                         self.game.moveMove(1, self, waste, frames=4, shadow=0)
+                    self.game.app.speech.speak(
+                        self.game.parseCard(waste.cards[-1]))
                 else:
                     self.game.moveMove(1, self, waste, frames=4, shadow=0)
                 self.fillStack()
@@ -3147,6 +3170,8 @@ class FaceUpWasteTalonStack(WasteTalonStack):
         retval = WasteTalonStack.dealCards(self, sound=sound)
         if self.canFlipCard():
             self.flipMove()
+        self.game.app.speech.speak(
+            self.game.parseCard(self.cards[-1]))
         return retval
 
 
@@ -3173,8 +3198,7 @@ class OpenTalonStack(TalonStack, OpenStack):
     def clickHandler(self, event):
         if self.canDealCards():
             return TalonStack.clickHandler(self, event)
-        else:
-            return OpenStack.clickHandler(self, event)
+        return OpenStack.clickHandler(self, event)
 
 
 # ************************************************************************
@@ -3238,7 +3262,8 @@ class ArbitraryStack(OpenStack):
 
     def startDrag(self, event, sound=True):
         OpenStack.startDrag(self, event, sound=sound)
-        if self.game.app.opt.mouse_type == 'point-n-click':
+        if (self.game.app.opt.mouse_type == 'point-n-click'
+                or self.keyboard_movement):
             self.cards[self.game.drag.index].tkraise()
             self.game.drag.shadows[0].tkraise()
         else:

@@ -41,6 +41,7 @@ from pysollib.stack import \
         RK_FoundationStack, \
         RK_RowStack, \
         ReserveStack, \
+        SC_FoundationStack, \
         SS_FoundationStack, \
         Stack, \
         StackWrapper, \
@@ -176,6 +177,7 @@ class Numerica2Decks(Numerica):
 # ************************************************************************
 # * Lady Betty
 # * Last Chance
+# * Colours
 # ************************************************************************
 
 class LadyBetty(Numerica):
@@ -215,6 +217,40 @@ class LastChance(LadyBetty):
         self.s.talon.dealCards()
 
 
+class Colours(LadyBetty):
+    Foundation_Class = StackWrapper(SC_FoundationStack, mod=13, suit=ANY_SUIT)
+
+    def startGame(self):
+        self.startDealSample()
+        self.s.talon.dealRow(rows=self.s.foundations)
+        self.s.talon.dealCards()          # deal first card to WasteStack
+
+    def _shuffleHook(self, cards):
+        # prepare first cards
+        topcards = [None] * 4
+        evencolor = -1
+        oddcolor = -1
+        for c in cards[:]:
+            if 0 < c.rank <= 4 and topcards[c.rank - 1] is None:
+                if c.rank % 2 == 0:
+                    if evencolor != -1 and c.color != evencolor:
+                        continue
+                    if oddcolor != -1 and c.color == oddcolor:
+                        continue
+                    evencolor = c.color
+                elif c.rank % 2 == 1:
+                    if oddcolor != -1 and c.color != oddcolor:
+                        continue
+                    if evencolor != -1 and c.color == evencolor:
+                        continue
+                    oddcolor = c.color
+
+                topcards[c.rank - 1] = c
+                cards.remove(c)
+        topcards.reverse()
+        return cards + topcards
+
+
 # ************************************************************************
 # * Puss in the Corner
 # ************************************************************************
@@ -231,8 +267,7 @@ class PussInTheCorner_Talon(OpenTalonStack):
     def clickHandler(self, event):
         if self.cards:
             return OpenStack.clickHandler(self, event)
-        else:
-            return TalonStack.clickHandler(self, event)
+        return TalonStack.clickHandler(self, event)
 
     def dealCards(self, sound=False):
         ncards = 0
@@ -1373,7 +1408,7 @@ class NinetyOne(Game):
     def updateText(self):
         if self.preview > 1 or not self.texts.score:
             return
-        self.texts.score.config(text=self.getTotal())
+        self.texts.score.config(text=str(self.getTotal()))
 
     def getTotal(self):
         total = 0
@@ -1460,3 +1495,5 @@ registerGame(GameInfo(931, TheBogey, "The Bogey",
                       GI.GT_1DECK_TYPE, 1, -1, GI.SL_BALANCED))
 registerGame(GameInfo(958, NinetyOne, "Ninety-One",
                       GI.GT_1DECK_TYPE, 1, 0, GI.SL_MOSTLY_SKILL))
+registerGame(GameInfo(972, Colours, "Colours",
+                      GI.GT_NUMERICA, 1, 0, GI.SL_BALANCED))

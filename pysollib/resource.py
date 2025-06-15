@@ -104,7 +104,7 @@ class ResourceManager:
         if self._objects_by_name is None:
             lst = [(obj.getSortKey(), obj) for obj in self._objects]
             lst.sort()
-            self._objects_by_name = tuple([item[1] for item in lst])
+            self._objects_by_name = tuple(item[1] for item in lst)
         return self._objects_by_name
 
     #
@@ -590,12 +590,12 @@ class CardsetManager(ResourceManager):
                 cs.si.size = CSI.SIZE_HIRES
         #
         keys = cs.styles[:]
-        cs.si.styles = tuple([s for s in keys if s in CSI.STYLE])
+        cs.si.styles = tuple(s for s in keys if s in CSI.STYLE)
         if len(cs.si.styles) == 0:
             self.uncategorized_styles = True
         for s in cs.si.styles:
             self.registered_styles[s] = self.registered_styles.get(s, 0) + 1
-        cs.si.nationalities = tuple([s for s in keys if s in CSI.NATIONALITY])
+        cs.si.nationalities = tuple(s for s in keys if s in CSI.NATIONALITY)
         if len(cs.si.nationalities) == 0:
             self.uncategorized_nationalities = True
         for s in cs.si.nationalities:
@@ -604,7 +604,7 @@ class CardsetManager(ResourceManager):
         if cs.year == 0:
             self.uncategorized_dates = True
         keys = (cs.year // 100,)
-        cs.si.dates = tuple([s for s in keys if s in CSI.DATE])
+        cs.si.dates = tuple(s for s in keys if s in CSI.DATE)
         for s in cs.si.dates:
             self.registered_dates[s] = self.registered_dates.get(s, 0) + 1
         #
@@ -652,12 +652,12 @@ class CardsetManager(ResourceManager):
         required_cards_needed = {
             CSI.TYPE_TRUMP_ONLY: 100
         }
-        for t in required_types.keys():
+        for t, t_v in required_types.items():
             if t not in self.registered_types:
                 missing.append(CSI.TYPE_NAME[t])
             else:
-                if len(required_types[t]) > 0:
-                    for tt in required_types[t]:
+                if len(t_v) > 0:
+                    for tt in t_v:
                         if tt not in self.registered_subtypes[t]:
                             missing.append(CSI.TYPE_NAME[t] + " (" +
                                            CSI.SUBTYPE_NAME[t][tt] + ")")

@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: PySolFC\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2021-12-10 10:19-0500\n"
-"PO-Revision-Date: 2024-12-28 19:11-0500\n"
+"PO-Revision-Date: 2025-04-19 16:29-0400\n"
 "Last-Translator: Jerzy Trzeciak <artusek@wp.pl>\n"
 "Language-Team: Polish <pl@li.org>\n"
 "Language: pl\n"
@@ -1262,6 +1262,9 @@ msgstr "Król"
 #: pysollib/games/ultra/hexadeck.py:275 pysollib/games/ultra/mughal.py:261
 msgid "Ace"
 msgstr "As"
+
+msgid "Face-down"
+msgstr ""
 
 #: pysollib/stack.py:1612
 msgid "No cards"
@@ -2707,7 +2710,7 @@ msgid "Automatic play"
 msgstr "Gra &automatyczna"
 
 #: pysollib/kivy/menubar.py:513
-msgid "Auto face up"
+msgid "Auto face-up"
 msgstr "Odkrywaj automatycznie"
 
 #: pysollib/kivy/menubar.py:523
@@ -3884,6 +3887,9 @@ msgstr ""
 msgid "No move"
 msgstr "Brak ruchu"
 
+msgid "Edge of Layout"
+msgstr ""
+
 #: pysollib/pysolgtk/soundoptionsdialog.py:66
 #: pysollib/tile/soundoptionsdialog.py:78 pysollib/tk/soundoptionsdialog.py:80
 msgid "Autopilot lost"
@@ -4227,6 +4233,9 @@ msgstr ""
 msgid "Auto scaling"
 msgstr "Automatycznie skalowanie"
 
+msgid "Preview scaling"
+msgstr ""
+
 #: pysollib/tile/selectcardset.py:281 pysollib/tk/selectcardset.py:278
 msgid "Preserve aspect ratio"
 msgstr "Zachowaj ratio"
@@ -4256,6 +4265,9 @@ msgstr "Narodowość:"
 #: pysollib/tile/selectcardset.py:457 pysollib/tk/selectcardset.py:448
 msgid "Year:"
 msgstr "Rok:"
+
+msgid "Num. cards:"
+msgstr ""
 
 msgid "Compatible with current game"
 msgstr ""
@@ -4437,6 +4449,9 @@ msgstr "Bieżąca sesja"
 #: pysollib/tile/tkstats.py:511
 msgid "Log"
 msgstr "Log"
+
+msgid "Demo Log"
+msgstr ""
 
 #: pysollib/tile/tkstats.py:523 data/pysolfc.glade:1404
 msgid "Full log"
@@ -5038,6 +5053,9 @@ msgstr "Strzałka podpowiedzi:"
 msgid "Highlight not matching:"
 msgstr "Podświetlenie niepasujących:"
 
+msgid "Keyboard selector:"
+msgstr ""
+
 #: pysollib/ui/tktile/findcarddialog.py:45
 msgid "Find card"
 msgstr "Znajdź kartę"
@@ -5242,6 +5260,9 @@ msgstr "Komentarze..."
 msgid "Log..."
 msgstr "Log..."
 
+msgid "Demo log..."
+msgstr ""
+
 #: pysollib/ui/tktile/menubar.py:427
 msgid "D&emo statistics..."
 msgstr "D&emo statystyk..."
@@ -5391,7 +5412,10 @@ msgstr "Resetuj rozmiar kart"
 msgid "&Auto scaling"
 msgstr "Automatyczne dopasowanie"
 
-msgid "&Preserve aspect ratio"
+msgid "&Preview scaling"
+msgstr ""
+
+msgid "Pr&eserve aspect ratio"
 msgstr "Zachowaj ratio"
 
 msgid "R&esampling"

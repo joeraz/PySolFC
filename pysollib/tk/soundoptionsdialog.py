@@ -79,6 +79,8 @@ class SoundOptionsDialog(MfxDialog):
             ('autopilotlost', _('Autopilot lost'), tkinter.BooleanVar()),
             ('autopilotwon',  _('Autopilot won'),  tkinter.BooleanVar()),
 
+            ('edge',          _('Edge of layout'), tkinter.BooleanVar()),
+
             ('gamefinished',  _('Game finished'),  tkinter.BooleanVar()),
             ('gamelost',      _('Game lost'),      tkinter.BooleanVar()),
             ('gamewon',       _('Game won'),       tkinter.BooleanVar()),
@@ -109,7 +111,7 @@ class SoundOptionsDialog(MfxDialog):
             w = tkinter.Label(frame, text=_('Sample volume:'))
             w.grid(row=row, column=0, sticky='w', padx=5)
             w = tkinter.Scale(frame, from_=0, to=128, resolution=1,
-                              orient='horizontal', takefocus=0,
+                              orient='horizontal',
                               length="3i",  # label=_('Sample volume'),
                               variable=self.sample_volume)
             w.grid(row=row, column=1, sticky='ew', padx=5)
@@ -117,7 +119,7 @@ class SoundOptionsDialog(MfxDialog):
             w = tkinter.Label(frame, text=_('Music volume:'))
             w.grid(row=row, column=0, sticky='w', padx=5)
             w = tkinter.Scale(frame, from_=0, to=128, resolution=1,
-                              orient='horizontal', takefocus=0,
+                              orient='horizontal',
                               length="3i",  # label=_('Music volume'),
                               variable=self.music_volume)
             w.grid(row=row, column=1, sticky='ew', padx=5)

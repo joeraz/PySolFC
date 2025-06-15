@@ -10,7 +10,7 @@ jobs:
     runs-on: macos-14
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Set up python
       env:
         PYVER: '3.9.7'
@@ -23,14 +23,17 @@ jobs:
       run: |
         python3 -m pip install --upgrade pip
         python3 -m pip install --no-binary=Pillow \
-          Pillow attrs configobj py2app pycotap pygame pysol-cards setuptools six ttkthemes
+          Pillow attrs configobj py2app pycotap pygame pysol-cards setuptools ttkthemes
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         brew install create-dmg
     - name: Get cardsets
       run: |
-        wget -O cardsets-pack.tar.xz "https://sourceforge.net/projects/pysolfc/files/PySolFC-Cardsets/PySolFC-Cardsets-3.0/PySolFC-Cardsets-3.0.tar.bz2/download"
+        wget -O cardsets-pack.tar.xz "https://sourceforge.net/projects/pysolfc/files/PySolFC-Cardsets/PySolFC-Cardsets-3.0/PySolFC-Cardsets-3.1.tar.bz2/download"
         tar -xJf cardsets-pack.tar.xz
-        mv PySolFC-Cardsets-3.0/cardset-* data
+        mv PySolFC-Cardsets-3.1/cardset-* data
+        wget -O cardsets-pack.tar.xz "https://sourceforge.net/projects/pysolfc/files/PySolFC-Cardsets/minimal/PySolFC-Cardsets--Minimal-3.1.0.tar.xz/download"
+        tar -xJf cardsets-pack.tar.xz
+        mv PySolFC-Cardsets--Minimal-3.1.0/cardset-* data
     - name: Prepare game rules (process the HTML) and translations
       run: |
         make rules mo

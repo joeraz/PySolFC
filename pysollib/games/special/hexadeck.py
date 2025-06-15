@@ -44,8 +44,8 @@ from pysollib.stack import \
         WasteStack, \
         WasteTalonStack, \
         Yukon_AC_RowStack
-from pysollib.util import ANY_RANK, ANY_SUIT, NO_RANK, UNLIMITED_ACCEPTS, \
-        UNLIMITED_MOVES
+from pysollib.util import ANY_RANK, ANY_SUIT, NO_RANK, SUITS_PL, \
+    UNLIMITED_ACCEPTS, UNLIMITED_MOVES
 
 # ************************************************************************
 # * Hex A Deck Foundation Stacks
@@ -62,7 +62,8 @@ class HexATrump_Foundation(HexADeck_FoundationStack):
     def acceptsCards(self, from_stack, cards):
         if not self.basicAcceptsCards(from_stack, cards):
             return 0
-        for s in self.game.s.foundations[:3]:
+        for s in self.game.s.foundations[:((self.game.gameinfo.decks
+                                            * 4) - 1)]:
             if len(s.cards) != 16:
                 return 0
         return 1
@@ -82,9 +83,8 @@ class Merlins_Foundation(AbstractFoundationStack):
         if stack_dir == 0:
             card_dir = (cards[0].rank - self.cards[-1].rank) % self.cap.mod
             return card_dir in (1, 15)
-        else:
-            return (self.cards[-1].rank + stack_dir) % self.cap.mod \
-                == cards[0].rank
+        return (self.cards[-1].rank + stack_dir) % self.cap.mod \
+            == cards[0].rank
 
 
 # ************************************************************************
@@ -93,11 +93,12 @@ class Merlins_Foundation(AbstractFoundationStack):
 
 class HexADeck_OpenStack(OpenStack):
 
-    def __init__(self, x, y, game, yoffset, **cap):
+    def __init__(self, x, y, game, yoffset=None, **cap):
         kwdefault(cap, max_move=UNLIMITED_MOVES, max_accept=UNLIMITED_ACCEPTS,
                   dir=-1)
         OpenStack.__init__(self, x, y, game, **cap)
-        self.CARD_YOFFSET = yoffset
+        if yoffset is not None:
+            self.CARD_YOFFSET = yoffset
 
     def isRankSequence(self, cards, dir=None):
         if not dir:
@@ -190,6 +191,11 @@ class Bits_RowStack(ReserveStack):
         return ((self.game.s.foundations[i].cards[-1].rank + 1 >>
                  (self.id % 4)) % 2 == (cards[0].rank + 1) % 2)
 
+    def getBit(self):
+        i = int(self.id // 4)
+        return (self.game.s.foundations[i].cards[-1].rank + 1 >>
+                (self.id % 4)) % 2
+
 
 class Bytes_RowStack(ReserveStack):
     def acceptsCards(self, from_stack, cards):
@@ -204,6 +210,11 @@ class Bytes_RowStack(ReserveStack):
             if not r.cards:
                 return 0
         return self.game.s.foundations[i].cards[-1].rank == cards[0].rank
+
+    def getByte(self):
+        id = self.id - 16
+        i = int(id // 2)
+        return (self.game.s.foundations[i].cards[-1].rank)
 
 
 class HexAKlon_RowStack(AC_RowStack):
@@ -277,6 +288,16 @@ class Merlins_ReserveStack(ReserveStack):
 class AbstractHexADeckGame(Game):
     RANKS = (_("Ace"), "2", "3", "4", "5", "6", "7", "8", "9",
              "A", "B", "C", "D", "E", "F", "10")
+    WIZARDS = ("4", "3", "2", "1")
+
+    def parseCard(self, card):
+        if not card.face_up:
+            return _("Face-down")
+        if card.suit > 3:
+            return _("Wizard") + " " + self.WIZARDS[card.rank]
+        suit = SUITS_PL[card.suit]
+        rank = self.RANKS[card.rank]
+        return rank + " - " + suit
 
 
 class Merlins_Hint(DefaultHint):
@@ -287,7 +308,7 @@ class Merlins_Hint(DefaultHint):
 # * Bits n Bytes
 # ************************************************************************
 
-class BitsNBytes(Game):
+class BitsNBytes(AbstractHexADeckGame):
 
     #
     # Game layout
@@ -358,7 +379,7 @@ class BitsNBytes(Game):
         if self.preview > 1:
             return
         for j in range(4):
-            if not len(self.s.foundations[j].cards):
+            if not self.s.foundations[j].cards:
                 break
             s = self.s.foundations[j].cards[-1].rank + 1
             for i in range(4):
@@ -395,6 +416,13 @@ class BitsNBytes(Game):
                 return 0
         return 1
 
+    def parseEmptyStack(self, stack):
+        if type(stack) is Bits_RowStack:
+            return _("Bit stack") + " - " + str(stack.getBit())
+        if type(stack) is Bytes_RowStack:
+            return _("Byte stack") + " - " + self.RANKS[stack.getByte()]
+        return Game.parseEmptyStack(self, stack)
+
     def shallHighlightMatch(self, stack1, card1, stack2, card2):
         return 0
 
@@ -403,7 +431,7 @@ class BitsNBytes(Game):
 # * Hex A Klon
 # ************************************************************************
 
-class HexAKlon(Game):
+class HexAKlon(AbstractHexADeckGame):
     Hint_Class = CautiousDefaultHint
     Layout_Method = staticmethod(Layout.klondikeLayout)
     Talon_Class = WasteTalonStack
@@ -469,7 +497,7 @@ class HexAKlon(Game):
 # * Hex A Klon by Threes
 # ************************************************************************
 
-class HexAKlonByThrees(Game):
+class HexAKlonByThrees(AbstractHexADeckGame):
     Hint_Class = CautiousDefaultHint
     Layout_Method = staticmethod(Layout.klondikeLayout)
     Talon_Class = WasteTalonStack
@@ -535,7 +563,7 @@ class HexAKlonByThrees(Game):
 # * King Only Hex A Klon
 # ************************************************************************
 
-class KingOnlyHexAKlon(Game):
+class KingOnlyHexAKlon(AbstractHexADeckGame):
     Hint_Class = CautiousDefaultHint
     Layout_Method = staticmethod(Layout.klondikeLayout)
     Talon_Class = WasteTalonStack
@@ -609,7 +637,7 @@ class KingOnlyHexAKlon(Game):
 # * Klondike Plus 16
 # ************************************************************************
 
-class KlondikePlus16(Game):
+class KlondikePlus16(AbstractHexADeckGame):
     Hint_Class = CautiousDefaultHint
     Layout_Method = staticmethod(Layout.klondikeLayout)
     Talon_Class = WasteTalonStack
@@ -667,7 +695,7 @@ class KlondikePlus16(Game):
 # * The Familiar
 # ************************************************************************
 
-class TheFamiliar(Game):
+class TheFamiliar(AbstractHexADeckGame):
     Hint_Class = CautiousDefaultHint
     Layout_Method = staticmethod(Layout.klondikeLayout)
     Talon_Class = WasteTalonStack
@@ -732,7 +760,7 @@ class TheFamiliar(Game):
 # * Two Familiars
 # ************************************************************************
 
-class TwoFamiliars(Game):
+class TwoFamiliars(AbstractHexADeckGame):
     Hint_Class = CautiousDefaultHint
     Layout_Method = staticmethod(Layout.klondikeLayout)
     Talon_Class = WasteTalonStack
@@ -797,7 +825,7 @@ class TwoFamiliars(Game):
 # * Ten by Eight
 # ************************************************************************
 
-class TenByEight(Game):
+class TenByEight(AbstractHexADeckGame):
     Hint_Class = CautiousDefaultHint
     Layout_Method = staticmethod(Layout.gypsyLayout)
     Talon_Class = WasteTalonStack
@@ -858,7 +886,7 @@ class TenByEight(Game):
 # * Drawbridge
 # ************************************************************************
 
-class Drawbridge(Game):
+class Drawbridge(AbstractHexADeckGame):
     Hint_Class = CautiousDefaultHint
     Layout_Method = staticmethod(Layout.harpLayout)
     Talon_Class = WasteTalonStack
@@ -917,7 +945,7 @@ class Drawbridge(Game):
 # * Double Drawbridge
 # ************************************************************************
 
-class DoubleDrawbridge(Game):
+class DoubleDrawbridge(AbstractHexADeckGame):
     Hint_Class = CautiousDefaultHint
     Layout_Method = staticmethod(Layout.harpLayout)
     Talon_Class = WasteTalonStack
@@ -977,7 +1005,7 @@ class DoubleDrawbridge(Game):
 # * Hidden Passages
 # ************************************************************************
 
-class HiddenPassages(Game):
+class HiddenPassages(AbstractHexADeckGame):
     Hint_Class = CautiousDefaultHint
     Layout_Method = staticmethod(Layout.klondikeLayout)
     Talon_Class = WasteTalonStack
@@ -1051,7 +1079,7 @@ class HiddenPassages(Game):
 # * Cluitjar's Lair
 # ************************************************************************
 
-class CluitjarsLair(Game):
+class CluitjarsLair(AbstractHexADeckGame):
     Hint_Class = CautiousDefaultHint
     Layout_Method = staticmethod(Layout.klondikeLayout)
     Talon_Class = WasteTalonStack
@@ -1260,7 +1288,7 @@ class MerlinsMeander(AbstractHexADeckGame):
         for s in self.s.rows:
             if s.cards and s.cards[0].suit != 4:
                 return 0
-        if not len(self.s.talon.cards) and len(self.s.waste.cards) == 1:
+        if not self.s.talon.cards and len(self.s.waste.cards) == 1:
             return self.s.waste.cards[0].suit == 4
         return len(self.s.talon.cards) + len(self.s.waste.cards) == 0
 
@@ -1269,7 +1297,7 @@ class MerlinsMeander(AbstractHexADeckGame):
 # * Mage's Game
 # ************************************************************************
 
-class MagesGame(Game):
+class MagesGame(AbstractHexADeckGame):
     Hint_Class = CautiousDefaultHint
     Layout_Method = staticmethod(Layout.gypsyLayout)
     Talon_Class = InitialDealTalonStack
@@ -1461,7 +1489,7 @@ class HexYukon_RowStack(Yukon_AC_RowStack):
         return Yukon_AC_RowStack.acceptsCards(self, from_stack, cards)
 
 
-class HexYukon(Game):
+class HexYukon(AbstractHexADeckGame):
     Layout_Method = staticmethod(Layout.yukonLayout)
     Talon_Class = InitialDealTalonStack
     Foundation_Class = HexADeck_FoundationStack
@@ -1497,7 +1525,6 @@ class HexYukon(Game):
         return ()
 
     shallHighlightMatch = Game._shallHighlightMatch_AC
-
 
 # ************************************************************************
 # *
@@ -1601,15 +1628,161 @@ class MagicMontana(Montana):
 
 
 # ************************************************************************
+# * Wizard's Storeroom
+# ************************************************************************
+
+class WizardsStoreroom(AbstractHexADeckGame):
+    MAX_ROUNDS = 2
+
+    #
+    # Game layout
+    #
+
+    def createGame(self):
+        l, s = Layout(self), self.s
+
+        # Set window size
+        decks = self.gameinfo.decks
+        self.setSize(2*l.XM + (2 + 5*decks)*l.XS, 3*l.YM + 5*l.YS)
+        yoffset = min(l.YOFFSET, max(10, l.YOFFSET // 2))
+
+        # Create talon
+        x = l.XM
+        y = l.YM
+        s.talon = WasteTalonStack(
+            x, y, self, num_deal=1, max_rounds=self.MAX_ROUNDS)
+        l.createText(s.talon, "s")
+        x = x + l.XS
+        s.waste = WasteStack(x, y, self)
+        l.createText(s.waste, "s")
+
+        # Create foundations
+        x = x + l.XM + l.XS
+        for j in range(4):
+            for i in range(decks):
+                s.foundations.append(
+                    SS_FoundationStack(x, y, self, j, max_cards=16))
+                x = x + l.XS
+        for i in range(decks):
+            s.foundations.append(
+                HexATrump_Foundation(x, y, self, 4, max_cards=4))
+            x = x + l.XS
+
+        # Create reserve
+        x = l.XM
+        y = l.YM + l.YS + l.TEXT_HEIGHT
+        s.reserves.append(OpenStack(x, y, self))
+        s.reserves[0].CARD_YOFFSET = (l.YOFFSET, yoffset)[decks == 2]
+
+        # Create rows
+        x = x + l.XM + l.XS
+        for i in range(4*decks+1):
+            s.rows.append(HexAKlon_RowStack(x, y, self))
+            x = x + l.XS
+        self.setRegion(s.rows, (-999, y - l.YS, 999999, 999999))
+
+        # Define stack groups
+        l.defaultStackGroups()
+
+    #
+    # Game over rides
+    #
+
+    def startGame(self):
+        decks = self.gameinfo.decks
+        self.startDealSample()
+        for i in range(14 * decks):
+            self.s.talon.dealRow(rows=self.s.reserves, flip=0, frames=4)
+        self.s.reserves[0].flipMove()
+        self.s.talon.dealRow(rows=self.s.rows)
+        self.s.talon.dealCards()          # deal first card to WasteStack
+
+    def fillStack(self, stack):
+        r = self.s.reserves[0]
+        if not stack.cards and stack in self.s.rows:
+            if r.cards and stack.acceptsCards(r, r.cards[-1:]):
+                r.moveMove(1, stack)
+        if r.canFlipCard():
+            r.flipMove()
+
+    def shallHighlightMatch(self, stack1, card1, stack2, card2):
+        return ((card1.rank + 1 == card2.rank or
+                card1.rank - 1 == card2.rank) and
+                card1.color != card2.color)
+
+
+# ************************************************************************
+# * Wizard's Castle
+# ************************************************************************
+
+class WizardsCastle(AbstractHexADeckGame):
+    Hint_Class = CautiousDefaultHint
+
+    #
+    # Game layout
+    #
+
+    def createGame(self):
+        l, s = Layout(self), self.s
+
+        # Set window size
+        h = max(5 * l.YS, 20 * l.YOFFSET)
+        self.setSize(l.XM + 9 * l.XS, l.YM + l.YS + h)
+
+        # Create foundations
+        x = self.width - l.XS
+        y = l.YM
+        s.foundations.append(SS_FoundationStack(x, y, self, 4, max_cards=22))
+        y = y + l.YS
+        for i in range(4):
+            s.foundations.append(
+                SS_FoundationStack(x, y, self, i, max_cards=14))
+            y = y + l.YS
+
+        # Create rows
+        x = l.XM
+        y = l.YM
+        for j in range(2):
+            for i in range(8):
+                s.rows.append(
+                    HexAKlon_RowStack(x, y, self, max_move=1, max_accept=1))
+                x = x + l.XS
+            x = l.XM
+            y = y + l.YS * 3
+        self.setRegion(s.rows, (-999, -999, l.XM + l.XS * 8, 999999))
+
+        # Create talon
+        s.talon = InitialDealTalonStack(l.XM, self.height-l.YS, self)
+
+        # Define stack groups
+        l.defaultStackGroups()
+
+    #
+    # Game over rides
+    #
+
+    def startGame(self):
+        for i in range(2):
+            self.s.talon.dealRow(flip=0, frames=0)
+        self.s.talon.dealRow(flip=0, frames=0)
+        self.s.talon.dealRow(rows=self.s.rows[:4], flip=0, frames=0)
+        self._startAndDealRow()
+
+    def shallHighlightMatch(self, stack1, card1, stack2, card2):
+        return (card1.suit == card2.suit and
+                (card1.rank + 1 == card2.rank or card2.rank + 1 == card1.rank))
+
+# ************************************************************************
 # *
 # ************************************************************************
 
 
-def r(id, gameclass, name, game_type, decks, redeals, skill_level):
+def r(id, gameclass, name, game_type, decks, redeals, skill_level,
+      altnames=()):
     game_type = game_type | GI.GT_HEXADECK
     gi = GameInfo(id, gameclass, name, game_type, decks, redeals, skill_level,
                   suits=list(range(4)), ranks=list(range(16)),
-                  trumps=list(range(4)))
+                  trumps=list(range(4)), altnames=altnames)
     registerGame(gi)
     return gi
 
@@ -1633,7 +1806,7 @@ r(16674, HiddenPassages, 'Hidden Passages', GI.GT_HEXADECK, 1, 1,
 r(16675, CluitjarsLair, 'Cluitjar\'s Lair', GI.GT_HEXADECK, 1, 0,
   GI.SL_BALANCED)
 r(16676, MerlinsMeander, 'Merlin\'s Meander', GI.GT_HEXADECK, 2, 2,
-  GI.SL_BALANCED)
+  GI.SL_BALANCED, altnames=('Merlin\'s Coil'))
 r(16677, MagesGame, 'Mage\'s Game', GI.GT_HEXADECK | GI.GT_OPEN, 1, 0,
   GI.SL_BALANCED)
 r(16678, Convolution, 'Convolution', GI.GT_HEXADECK | GI.GT_OPEN, 2, 0,
@@ -1645,4 +1818,10 @@ r(16680, Snakestone, 'Snakestone', GI.GT_HEXADECK | GI.GT_OPEN, 2, 0,
 r(16681, HexYukon, 'Hex Yukon', GI.GT_HEXADECK, 1, 0, GI.SL_BALANCED)
 r(16682, MagicMontana, 'Magic Montana', GI.GT_HEXADECK | GI.GT_OPEN, 1, 2,
   GI.SL_MOSTLY_SKILL)
+r(16683, WizardsStoreroom, "Wizard's Storeroom", GI.GT_HEXADECK, 1, 1,
+  GI.SL_MOSTLY_SKILL)
+r(16684, WizardsStoreroom, "Big Storeroom", GI.GT_HEXADECK, 2, 1,
+  GI.SL_MOSTLY_SKILL)
+r(16685, WizardsCastle, "Wizard's Castle", GI.GT_HEXADECK, 1, 0,
+  GI.SL_BALANCED)
 del r

@@ -30,7 +30,7 @@ from pysollib.mygettext import _
 from pysollib.ui.tktile.tkutil import bind
 
 from .tkwidget import MfxDialog
-from .tkwidget import PysolScale
+from .tkwidget import PysolButton, PysolCheckbutton, PysolScale
 
 
 # ************************************************************************
@@ -94,18 +94,19 @@ class FontChooserDialog(MfxDialog):
         sb.grid(row=1, column=1, sticky='ns')
         bind(self.list_box, '<<ListboxSelect>>', self.fontupdate)
         # self.list_box.focus()
-        cb1 = ttk.Checkbutton(frame, text=_('Bold'),
-                              command=self.fontupdate,
-                              variable=self.weight_var)
+        cb1 = PysolCheckbutton(frame, text=_('Bold'),
+                               command=self.fontupdate,
+                               variable=self.weight_var)
         cb1.grid(row=2, column=0, columnspan=2, sticky='we')
-        cb2 = ttk.Checkbutton(frame, text=_('Italic'),
-                              command=self.fontupdate,
-                              variable=self.slant_var)
+        cb2 = PysolCheckbutton(frame, text=_('Italic'),
+                               command=self.fontupdate,
+                               variable=self.slant_var)
         cb2.grid(row=3, column=0, columnspan=2, sticky='we')
 
         sc = PysolScale(frame, from_=6, to=40, resolution=1,
-                        label=_('Size:'), orient='horizontal',
-                        command=self.fontupdate, variable=self.size_var)
+                        label=_('Size:'), fieldname=_('Size:'),
+                        orient='horizontal', command=self.fontupdate,
+                        variable=self.size_var)
         sc.grid(row=4, column=0, columnspan=2, sticky='news')
         #
         font_families = list(tkinter.font.families())
@@ -131,8 +132,8 @@ class FontChooserDialog(MfxDialog):
     def fontupdate(self, *args):
         if self.list_box.curselection():
             self.font_family = self.list_box.get(self.list_box.curselection())
-        self.font_weight = self.weight_var.get() and 'bold' or 'normal'
-        self.font_slant = self.slant_var.get() and 'italic' or 'roman'
+        self.font_weight = 'bold' if self.weight_var.get() else 'normal'
+        self.font_slant = 'italic' if self.slant_var.get() else 'roman'
         self.font_size = self.size_var.get()
         self.entry.configure(font=(self.font_family, self.font_size,
                                    self.font_slant, self.font_weight))
@@ -175,6 +176,7 @@ class FontsDialog(MfxDialog):
             self.fonts[fn] = font
             ttk.Label(frame, text=title, anchor='w'
                       ).grid(row=row, column=0, sticky='we')
+            labeltitle = title
             if font:
                 title = ' '.join(
                     [str(i) for i in font if i not in ('roman', 'normal')])
@@ -182,9 +184,10 @@ class FontsDialog(MfxDialog):
                 title = 'Default'
             label = ttk.Label(frame, font=font, text=title)
             label.grid(row=row, column=1, padx=8)
-            b = ttk.Button(frame, text=_('Change...'), width=10,
-                           command=lambda label=label,
-                           fn=fn: self.selectFont(label, fn))
+            b = PysolButton(frame, text=_('Change...'),
+                            prefixtext=labeltitle + " " + title,
+                            width=10, command=lambda label=label,
+                            fn=fn: self.selectFont(label, fn))
             b.grid(row=row, column=2)
             row += 1
         #

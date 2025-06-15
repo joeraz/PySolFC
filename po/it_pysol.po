@@ -12,7 +12,7 @@ msgstr ""
 "Project-Id-Version: it_pysol\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2021-12-10 10:19-0500\n"
-"PO-Revision-Date: 2024-12-28 19:11-0500\n"
+"PO-Revision-Date: 2025-04-19 16:29-0400\n"
 "Last-Translator: Giuliano Colla <giuliano.colla@gmail.com>\n"
 "Language-Team: Italiano <it@li.org>\n"
 "Language: it\n"
@@ -1265,6 +1265,9 @@ msgstr "Re"
 #: pysollib/games/ultra/hexadeck.py:275 pysollib/games/ultra/mughal.py:261
 msgid "Ace"
 msgstr "Asso"
+
+msgid "Face-down"
+msgstr ""
 
 #: pysollib/stack.py:1612
 msgid "No cards"
@@ -2707,7 +2710,7 @@ msgstr "Gioco automatico"
 
 #: pysollib/kivy/menubar.py:513
 #, fuzzy
-msgid "Auto face up"
+msgid "Auto face-up"
 msgstr "Auto &scopri"
 
 #: pysollib/kivy/menubar.py:523
@@ -3929,6 +3932,9 @@ msgstr "Mossa"
 msgid "No move"
 msgstr "Nessuna mossa"
 
+msgid "Edge of Layout"
+msgstr ""
+
 #: pysollib/pysolgtk/soundoptionsdialog.py:66
 #: pysollib/tile/soundoptionsdialog.py:78 pysollib/tk/soundoptionsdialog.py:80
 msgid "Autopilot lost"
@@ -4273,6 +4279,9 @@ msgstr ""
 msgid "Auto scaling"
 msgstr "Gira automatico"
 
+msgid "Preview scaling"
+msgstr ""
+
 #: pysollib/tile/selectcardset.py:281 pysollib/tk/selectcardset.py:278
 msgid "Preserve aspect ratio"
 msgstr ""
@@ -4302,6 +4311,9 @@ msgstr "Nazionalità:"
 #: pysollib/tile/selectcardset.py:457 pysollib/tk/selectcardset.py:448
 msgid "Year:"
 msgstr "Anno:"
+
+msgid "Num. cards:"
+msgstr ""
 
 msgid "Compatible with current game"
 msgstr ""
@@ -4484,6 +4496,9 @@ msgstr "Questa sessione"
 #: pysollib/tile/tkstats.py:511
 msgid "Log"
 msgstr "Log"
+
+msgid "Demo Log"
+msgstr ""
 
 #: pysollib/tile/tkstats.py:523 data/pysolfc.glade:1404
 msgid "Full log"
@@ -5084,6 +5099,9 @@ msgstr "Freccia suggerimenti;"
 msgid "Highlight not matching:"
 msgstr "Evidenzia non corrispondenti:"
 
+msgid "Keyboard selector:"
+msgstr ""
+
 #: pysollib/ui/tktile/findcarddialog.py:45
 msgid "Find card"
 msgstr "Trova carta"
@@ -5288,6 +5306,9 @@ msgstr "&Commenti..."
 msgid "Log..."
 msgstr "Log..."
 
+msgid "Demo log..."
+msgstr ""
+
 #: pysollib/ui/tktile/menubar.py:427
 msgid "D&emo statistics..."
 msgstr "Statistiche d&emo..."
@@ -5440,7 +5461,10 @@ msgstr ""
 msgid "&Auto scaling"
 msgstr "Gira automatico"
 
-msgid "&Preserve aspect ratio"
+msgid "&Preview scaling"
+msgstr ""
+
+msgid "Pr&eserve aspect ratio"
 msgstr ""
 
 msgid "R&esampling"

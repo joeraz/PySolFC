@@ -25,6 +25,7 @@ from pysollib.game import Game
 from pysollib.gamedb import GI, GameInfo, registerGame
 from pysollib.hint import AbstractHint
 from pysollib.layout import Layout
+from pysollib.mygettext import _
 from pysollib.pysoltk import MfxCanvasText
 from pysollib.stack import \
         AbstractFoundationStack, \
@@ -217,8 +218,7 @@ class PushPin(Game):
 class RoyalMarriage(PushPin):
     def _shuffleHook(self, cards):
         qi, ki = -1, -1
-        for i in range(len(cards)):
-            c = cards[i]
+        for i, c in enumerate(cards):
             if c.suit == 2 and c.rank == 11:
                 qi = i
             if c.suit == 2 and c.rank == 12:
@@ -400,8 +400,11 @@ class AccordionsRevenge(Accordion2):
         if self.preview > 1:
             return
         if self.finalrank != -1 and self.finalsuit != -1:
-            self.texts.base_rank.config(text=RANKS[self.finalrank]
-                                        + ' - ' + SUITS_PL[self.finalsuit])
+            self.texts.base_rank.config(text=self.parseGameInfo())
+
+    def parseGameInfo(self):
+        return _("Goal card: ") + RANKS[self.finalrank] + \
+            ' - ' + SUITS_PL[self.finalsuit]
 
 # ************************************************************************
 # * Decade
@@ -414,7 +417,7 @@ class Decade_Hint(AbstractHint):
     def computeHints(self):
         game = self.game
         rows = game.s.rows
-        for i in range(len(rows)):
+        for i, row_i in enumerate(rows):
             for j in range(i + 1, len(rows)):
                 total = 0
                 count = 0
@@ -423,7 +426,7 @@ class Decade_Hint(AbstractHint):
                         total += min(self.game.s.rows[k].cards[0].rank + 1, 10)
                         count += 1
                 if total in [10, 20, 30] and count > 1:
-                    self.addHint(5000, 1, rows[i], rows[j - 1])
+                    self.addHint(5000, 1, row_i, rows[j - 1])
 
 
 class Decade_RowStack(PushPin_RowStack):

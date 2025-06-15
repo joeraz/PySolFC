@@ -223,6 +223,8 @@ class PysolMenubar(PysolMenubarTk):
         if USE_PIL:
             self.setMenuState(ms.autoscale,
                               "options.cardsize.preserveaspectratio")
+            self.setMenuState(ms.autoscale,
+                              "options.cardsize.previewscaling")
             self.setMenuState(not ms.autoscale,
                               "options.cardsize.increasethecardsize")
             self.setMenuState(not ms.autoscale,
@@ -357,12 +359,12 @@ class PysolMenubar(PysolMenubarTk):
         games = []
         for g in self.app.gdb.getGamesIdSortedById():
             gi = self.app.getGameInfo(g)
-            if 1 and gi.id == self.game.id:
+            if gi.id == self.game.id:
                 # force change of game
                 continue
             # Not sure why this check to not change game category existed,
             # but commented, as it doesn't make sense.
-            # if 1 and gi.category != self.game.gameinfo.category:
+            # if gi.category != self.game.gameinfo.category:
                 # don't change game category
                 # continue
             won, lost = self.app.stats.getStats(self.app.opt.player, gi.id)
@@ -780,7 +782,14 @@ class PysolMenubar(PysolMenubarTk):
     def mOptPlayerOptions(self, *args):
         if self._cancelDrag(break_pause=False):
             return
+        wasPaused = False
+        if not self.game.pause:
+            self.game.doPause()
+            wasPaused = True
         d = PlayerOptionsDialog(self.top, _("Set player options"), self.app)
+        if self.game.pause:
+            if wasPaused:
+                self.game.doPause()
         if d.status == 0 and d.button == 0:
             self.app.opt.confirm = bool(d.confirm)
             self.app.opt.update_player_stats = bool(d.update_stats)
@@ -797,7 +806,14 @@ class PysolMenubar(PysolMenubarTk):
     def mOptColors(self, *args):
         if self._cancelDrag(break_pause=False):
             return
+        wasPaused = False
+        if not self.game.pause:
+            self.game.doPause()
+            wasPaused = True
         d = ColorsDialog(self.top, _("Set colors"), self.app)
+        if self.game.pause:
+            if wasPaused:
+                self.game.doPause()
         text_color = self.app.opt.colors['text']
         if d.status == 0 and d.button == 0:
             self.app.opt.colors['text'] = d.text_color
@@ -808,6 +824,7 @@ class PysolMenubar(PysolMenubarTk):
             self.app.opt.colors['samerank_2'] = d.samerank_2_color
             self.app.opt.colors['hintarrow'] = d.hintarrow_color
             self.app.opt.colors['not_matching'] = d.not_matching_color
+            self.app.opt.colors['keyboard_sel'] = d.keyboard_sel_color
             #
             if text_color != self.app.opt.colors['text']:
                 self.app.setTile(self.app.tabletile_index, force=True)
@@ -815,7 +832,14 @@ class PysolMenubar(PysolMenubarTk):
     def mOptFonts(self, *args):
         if self._cancelDrag(break_pause=False):
             return
+        wasPaused = False
+        if not self.game.pause:
+            self.game.doPause()
+            wasPaused = True
         d = FontsDialog(self.top, _("Set fonts"), self.app)
+        if self.game.pause:
+            if wasPaused:
+                self.game.doPause()
         if d.status == 0 and d.button == 0:
             self.app.opt.fonts.update(d.fonts)
             self._cancelDrag()
@@ -825,7 +849,14 @@ class PysolMenubar(PysolMenubarTk):
     def mOptTimeouts(self, *args):
         if self._cancelDrag(break_pause=False):
             return
+        wasPaused = False
+        if not self.game.pause:
+            self.game.doPause()
+            wasPaused = True
         d = TimeoutsDialog(self.top, _("Set timeouts"), self.app)
+        if self.game.pause:
+            if wasPaused:
+                self.game.doPause()
         if d.status == 0 and d.button == 0:
             self.app.opt.timeouts['demo'] = d.demo_timeout
             self.app.opt.timeouts['hint'] = d.hint_timeout
@@ -916,7 +947,7 @@ class PysolMenubar(PysolMenubarTk):
         if (self.app.audio and self.app.opt.music and
                 self.app.opt.sound_music_volume > 0):
             self.app.audio.playNextMusic()
-            if 1 and DEBUG:
+            if DEBUG:
                 index = self.app.audio.getMusicInfo()
                 music = self.app.music_manager.get(index)
                 if music:
@@ -926,6 +957,47 @@ class PysolMenubar(PysolMenubarTk):
         if self._cancelDrag(break_pause=False):
             return
         self.top.wm_iconify()
+
+    #
+    # Keyboard play
+    #
+
+    def mKeyboardSelect(self, *args, **kw):
+        direction = kw.get("dir", 0)
+        self.game.keyboardSelect(direction)
+
+    def mKeyboardSelectLayer(self, *args, **kw):
+        direction = kw.get("dir", 0)
+        self.game.keyboardSelectLayer(direction)
+
+    def mKeyboardSelectMore(self, *args):
+        self.game.keyboardSelectMoreCards()
+
+    def mKeyboardSelectLess(self, *args):
+        self.game.keyboardSelectLessCards()
+
+    def mKeyboardSelectNextType(self, *args):
+        self.game.keyboardSelectNextType()
+        return "break"
+
+    def mKeyboardSelectPrevType(self, *args):
+        self.game.keyboardSelectNextType(dir=-1)
+        return "break"
+
+    def mKeyboardAction(self, *args):
+        self.game.keyboardAction()
+
+    def mKeyboardAction2(self, *args):
+        self.game.keyboardAction(type=2)
+
+    def mKeyboardGameInfo(self, *args):
+        self.game.speakGameInfo()
+
+    def mKeyboardStackInfo(self, *args):
+        self.game.speakStackInfo()
+
+    def mKeyboardCoordinates(self, *args):
+        self.game.speakCoordinates()
 
 
 # ************************************************************************

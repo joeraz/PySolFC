@@ -123,8 +123,7 @@ class FlowerClock(AbstractFlowerGame):
     def getAutoStacks(self, event=None):
         if event is None:
             return (self.sg.dropstacks, (), self.sg.dropstacks)
-        else:
-            return (self.sg.dropstacks, self.sg.dropstacks, self.sg.dropstacks)
+        return (self.sg.dropstacks, self.sg.dropstacks, self.sg.dropstacks)
 
 
 # ************************************************************************
@@ -206,10 +205,9 @@ class Gaji(AbstractFlowerGame):
             return (card1.rank == card2.rank and
                     ((((card1.suit + 1) % 12) == card2.suit) or
                      (((card1.suit - 1) % 12) == card2.suit)))
-        else:
-            return ((card1.suit == card2.suit) and
-                    ((card1.rank + 1 == card2.rank) or
-                     (card1.rank - 1 == card2.rank)))
+        return ((card1.suit == card2.suit) and
+                ((card1.rank + 1 == card2.rank) or
+                 (card1.rank - 1 == card2.rank)))
 
 
 # ************************************************************************
@@ -376,7 +374,7 @@ class Pagoda(AbstractFlowerGame):
             return
         for i in range(12):
             s = self.s.foundations[i]
-            if not len(s.cards) or len(s.cards) == 8:
+            if not s.cards or len(s.cards) == 8:
                 text = self.SUITS[i]
             elif len(s.cards) < 5:
                 text = _("Rising")
@@ -547,9 +545,8 @@ class GreatWall(AbstractFlowerGame):
             return (card1.rank == card2.rank and
                     ((((card1.suit + 1) % 12) == card2.suit) or
                      (((card1.suit - 1) % 12) == card2.suit)))
-        else:
-            return (card1.rank + 1 == card2.rank or
-                    card1.rank - 1 == card2.rank)
+        return (card1.rank + 1 == card2.rank or
+                card1.rank - 1 == card2.rank)
 
 
 # ************************************************************************

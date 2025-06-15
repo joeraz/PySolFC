@@ -46,6 +46,13 @@ class AbstractFlowerGame(Game):
                 ((card1.rank + 1 == card2.rank) or
                  (card1.rank - 1 == card2.rank)))
 
+    def parseCard(self, card):
+        if not card.face_up:
+            return _("Face-down")
+        suit = self.SUITS[card.suit]
+        rank = card.rank + 1
+        return str(rank) + " - " + suit
+
 
 class Queue_Hint(DefaultHint):
     pass
@@ -151,10 +158,9 @@ class Pagoda_Foundation(Flower_FoundationStack):
         a, b = stackcards[-1].rank, cards[0].rank
         if len(stackcards) < 4:
             return a - 1 == b
-        elif len(stackcards) > 4:
+        if len(stackcards) > 4:
             return a + 1 == b
-        else:
-            return a == b
+        return a == b
 
     def getBottomImage(self):
         return self.game.app.images.getSuitBottom(self.cap.suit)
@@ -195,8 +201,7 @@ class GreatWall_FoundationStack(Flower_FoundationStack):
         if stackcards:
             return ((stackcards[-1].suit + 1) % 12 == cards[0].suit and
                     cards[0].rank == self.cap.base_rank)
-        else:
-            return cards[0].suit == 0
+        return cards[0].suit == 0
 
     def getBottomImage(self):
         return self.game.app.images.getLetter(self.cap.base_rank)
@@ -212,8 +217,7 @@ class FourWinds_Foundation(Flower_FoundationStack):
             return 0
         if not stackcards:
             return (cards[0].suit == 0)
-        else:
-            return (cards[0].suit == stackcards[-1].suit + 1)
+        return (cards[0].suit == stackcards[-1].suit + 1)
 
     #      def getBottomImage(self):
     #          return self.game.app.images.getLetter(self.cap.base_rank)
@@ -233,8 +237,7 @@ class Queue_Foundation(AbstractFoundationStack):
         if stack_dir == 0:
             card_dir = (cards[0].suit - self.cards[-1].suit) % 12
             return card_dir in (1, 11)
-        else:
-            return (self.cards[-1].suit + stack_dir) % 12 == cards[0].suit
+        return (self.cards[-1].suit + stack_dir) % 12 == cards[0].suit
 
     def getBottomImage(self):
         return self.game.app.images.getLetter(self.cap.base_rank)
@@ -282,7 +285,7 @@ class Hanafuda_SequenceStack(Flower_OpenStack):
                or not self.isHanafudaSequence(cards):
             return 0
         stackcards = self.cards
-        if not len(stackcards):
+        if not stackcards:
             return cards[0].rank == 0 or self.cap.base_rank == ANY_RANK
         return self.isHanafudaSequence([stackcards[-1], cards[0]])
 
@@ -297,7 +300,7 @@ class Oonsoo_SequenceStack(Flower_OpenStack):
                 or not self.isHanafudaSequence(cards, 0):
             return 0
         stackcards = self.cards
-        if not len(stackcards):
+        if not stackcards:
             return cards[0].rank == 0 or self.cap.base_rank == ANY_RANK
         return self.isHanafudaSequence([stackcards[-1], cards[0]], 0)
 
@@ -312,7 +315,7 @@ class FlowerClock_RowStack(Flower_OpenStack):
         if not self.basicAcceptsCards(from_stack, cards):
             return 0
         stackcards = self.cards
-        if not len(stackcards):
+        if not stackcards:
             return 1
         return stackcards[-1].rank + 1 == cards[0].rank
 
@@ -323,11 +326,11 @@ class Gaji_RowStack(Flower_OpenStack):
         if not self.basicAcceptsCards(from_stack, cards):
             return 0
         stackcards = self.cards
-        if ((not len(stackcards)) or
+        if ((not stackcards) or
                 ((stackcards[-1].suit == 10) and (stackcards[-1].rank == 3)) or
                 ((cards[0].suit == 10) and (cards[0].rank == 3))):
             return 1
-        elif stackcards[-1].suit != cards[0].suit:
+        if stackcards[-1].suit != cards[0].suit:
             return 0
         a, b = self.swapTrashCards(stackcards[-1], cards[0])
         return a + 1 == b
@@ -450,7 +453,7 @@ class JapaneseGarden_RowStack(Flower_OpenStack):
                 from_stack not in self.game.s.rows):
             return 0
         stackcards = self.cards
-        if not len(stackcards):
+        if not stackcards:
             return 1
         return stackcards[-1].rank + 1 == cards[0].rank
 
@@ -462,6 +465,6 @@ class HanafudaRK_RowStack(Flower_OpenStack):
                 not isRankSequence(cards, dir=1)):
             return 0
         stackcards = self.cards
-        if not len(stackcards):
+        if not stackcards:
             return 1
         return stackcards[-1].rank + 1 == cards[0].rank

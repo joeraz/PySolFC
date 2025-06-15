@@ -450,13 +450,13 @@ class AShuffleStackMove(AtomicMove):
     def __init__(self, stack, game):
         self.stack_id = stack.id
         # save cards and state
-        self.card_ids = tuple([c.id for c in stack.cards])
+        self.card_ids = tuple(c.id for c in stack.cards)
         self.state = game.random.getstate()
 
     def redo(self, game):
         stack = game.allstacks[self.stack_id]
         # paranoia
-        assert stack is game.s.talon
+        assert stack is game.s.talon or stack in game.s.internals
         # shuffle (see random)
         game.random.setstate(self.state)
         seq = stack.cards

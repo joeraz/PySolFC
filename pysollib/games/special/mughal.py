@@ -81,9 +81,8 @@ class Triumph_Foundation(AbstractFoundationStack):
         if stack_dir == 0:
             card_dir = (cards[0].rank - self.cards[-1].rank) % self.cap.mod
             return card_dir in (1, 11)
-        else:
-            return (self.cards[-1].rank + stack_dir) % self.cap.mod \
-                == cards[0].rank
+        return (self.cards[-1].rank + stack_dir) % self.cap.mod \
+            == cards[0].rank
 
 
 # ************************************************************************
@@ -148,7 +147,7 @@ class Mughal_AC_RowStack(Mughal_OpenStack):
                 not self.isAlternateColorSequence(cards)):
             return 0
         stackcards = self.cards
-        if not len(stackcards):
+        if not stackcards:
             return cards[0].rank == 11 or self.cap.base_rank == ANY_RANK
         return self.isAlternateColorSequence([stackcards[-1], cards[0]])
 
@@ -160,7 +159,7 @@ class Mughal_AF_RowStack(Mughal_OpenStack):
                 not self.isAlternateForceSequence(cards)):
             return 0
         stackcards = self.cards
-        if not len(stackcards):
+        if not stackcards:
             return cards[0].rank == 11 or self.cap.base_rank == ANY_RANK
         return self.isAlternateForceSequence([stackcards[-1], cards[0]])
 
@@ -172,7 +171,7 @@ class Mughal_RK_RowStack(Mughal_OpenStack):
                 not self.isRankSequence(cards)):
             return 0
         stackcards = self.cards
-        if not len(stackcards):
+        if not stackcards:
             return cards[0].rank == 11 or self.cap.base_rank == ANY_RANK
         return self.isRankSequence([stackcards[-1], cards[0]])
 
@@ -184,7 +183,7 @@ class Mughal_SS_RowStack(Mughal_OpenStack):
                 not self.isSuitSequence(cards)):
             return 0
         stackcards = self.cards
-        if not len(stackcards):
+        if not stackcards:
             return cards[0].rank == 11 or self.cap.base_rank == ANY_RANK
         return self.isSuitSequence([stackcards[-1], cards[0]])
 
@@ -270,6 +269,13 @@ class AbstractMughalGame(Game):
     def shallHighlightMatch(self, stack1, card1, stack2, card2):
         return (card1.rank + 1 == card2.rank or card2.rank + 1 == card1.rank)
 
+    def parseCard(self, card):
+        if not card.face_up:
+            return _("Face-down")
+        suit = self.SUITS[card.suit]
+        rank = self.RANKS[card.rank]
+        return rank + " - " + suit
+
 
 class Triumph_Hint(DefaultHint):
     # FIXME: demo is not too clever in this game
@@ -305,10 +311,8 @@ class MughalCircles(AbstractMughalGame):
         for i in range(24):
             # FIXME:
             _x, _y = x+l.XS*x0[i]+l.XM*x0[i]*2, y+l.YS*y0[i]+l.YM*y0[i]*2
-            if _x < 0:
-                _x = 0
-            if _y < 0:
-                _y = 0
+            _x = max(_x, 0)
+            _y = max(_y, 0)
             s.rows.append(
                 Circles_RowStack(_x, _y, self, base_rank=ANY_RANK, yoffset=0))
 
@@ -1080,7 +1084,7 @@ class Dikapala_Hint(AbstractHint):
 # * Ashta Dikapala
 # ************************************************************************
 
-class AshtaDikapala(Game):
+class AshtaDikapala(AbstractMughalGame):
     Hint_Class = Dikapala_Hint
 
     #
@@ -1157,10 +1161,12 @@ class AshtaDikapala(Game):
 # *
 # ************************************************************************
 
-def r(id, gameclass, name, game_type, decks, redeals, skill_level):
+def r(id, gameclass, name, game_type, decks, redeals, skill_level,
+      altnames=()):
     game_type = game_type | GI.GT_MUGHAL_GANJIFA
     gi = GameInfo(id, gameclass, name, game_type, decks, redeals, skill_level,
-                  suits=list(range(8)), ranks=list(range(12)))
+                  suits=list(range(8)), ranks=list(range(12)),
+                  altnames=altnames)
     registerGame(gi)
     return gi
 
@@ -1187,6 +1193,6 @@ r(16001, Danda, 'Danda', GI.GT_MUGHAL_GANJIFA, 1, 0, GI.SL_MOSTLY_SKILL)
 r(16002, Khadga, 'Khadga', GI.GT_MUGHAL_GANJIFA, 1, 0, GI.SL_MOSTLY_SKILL)
 r(16003, Makara, 'Makara', GI.GT_MUGHAL_GANJIFA, 1, 0, GI.SL_MOSTLY_SKILL)
 r(16004, AshtaDikapala, 'Ashta Dikapala', GI.GT_MUGHAL_GANJIFA, 1, 0,
-  GI.SL_BALANCED)
+  GI.SL_BALANCED, altnames=('Eight Guardians'))
 
 del r

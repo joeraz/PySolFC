@@ -279,6 +279,9 @@ class PysolMenubarTkCommon:
         self._createMenubar()
         self.top = top
 
+        # Sometimes, this needs to be tracked between methods
+        self.wasPaused = False
+
         if self.progress:
             self.progress.update(step=1)
 
@@ -312,6 +315,7 @@ class PysolMenubarTkCommon:
             pegged_auto_remove=tkinter.BooleanVar(),
             sound=tkinter.BooleanVar(),
             auto_scale=tkinter.BooleanVar(),
+            preview_scale=tkinter.BooleanVar(),
             preserve_aspect_ratio=tkinter.BooleanVar(),
             resampling=tkinter.IntVar(),
             spread_stacks=tkinter.BooleanVar(),
@@ -388,6 +392,7 @@ class PysolMenubarTkCommon:
         tkopt.pegged_auto_remove.set(opt.pegged_auto_remove)
         tkopt.sound.set(opt.sound)
         tkopt.auto_scale.set(opt.auto_scale)
+        tkopt.preview_scale.set(opt.preview_scale)
         tkopt.preserve_aspect_ratio.set(opt.preserve_aspect_ratio)
         tkopt.resampling.set(opt.resampling)
         tkopt.spread_stacks.set(opt.spread_stacks)
@@ -615,11 +620,15 @@ class PysolMenubarTkCommon:
             label=n_("&Statistics..."),
             command=self.mPlayerStats, accelerator=m+"T")
         menu.add_command(
+            label=n_("Log..."),
+            command=lambda: self.mPlayerStats(mode=103))
+        menu.add_separator()
+        menu.add_command(
             label=n_("D&emo statistics..."),
             command=lambda: self.mPlayerStats(mode=1101))
         menu.add_command(
-            label=n_("Log..."),
-            command=lambda: self.mPlayerStats(mode=103))
+            label=n_("Demo log..."),
+            command=lambda: self.mPlayerStats(mode=1103))
         menu.add_separator()
         menu.add_command(
             label=n_("&Comments..."),
@@ -663,7 +672,7 @@ class PysolMenubarTkCommon:
             command=self.mOptPlayerOptions, accelerator=m+'P')
         submenu = MfxMenu(menu, label=n_("&Automatic play"))
         submenu.add_checkbutton(
-            label=n_("Auto &face up"), variable=self.tkopt.autofaceup,
+            label=n_("Auto &face-up"), variable=self.tkopt.autofaceup,
             command=self.mOptAutoFaceUp)
         submenu.add_checkbutton(
             label=n_("A&uto drop"), variable=self.tkopt.autodrop,
@@ -753,7 +762,11 @@ class PysolMenubarTkCommon:
                 label=n_("&Auto scaling"), variable=self.tkopt.auto_scale,
                 command=self.mOptAutoScale, accelerator=m+'0')
             submenu.add_checkbutton(
-                label=n_("&Preserve aspect ratio"),
+                label=n_("&Preview scaling"),
+                variable=self.tkopt.preview_scale,
+                command=self.mOptPreviewScale)
+            submenu.add_checkbutton(
+                label=n_("Pr&eserve aspect ratio"),
                 variable=self.tkopt.preserve_aspect_ratio,
                 command=self.mOptPreserveAspectRatio)
             submenu.add_separator()
@@ -1000,6 +1013,31 @@ class PysolMenubarTkCommon:
                 ctrl, str(i+1),
                 lambda e, i=i: self.mGotoBookmark(i, confirm=0))
 
+        # keyboard play
+        self._bindKey("", "Up", lambda e: self.mKeyboardSelect(dir=0))
+        self._bindKey("", "Down", lambda e: self.mKeyboardSelect(dir=1))
+        self._bindKey("", "Left", lambda e: self.mKeyboardSelect(dir=2))
+        self._bindKey("", "Right", lambda e: self.mKeyboardSelect(dir=3))
+
+        self._bindKey("Shift-", "Up",
+                      lambda e:self.mKeyboardSelectLayer(dir=1))
+        self._bindKey("Shift-", "Down",
+                      lambda e: self.mKeyboardSelectLayer(dir=-1))
+
+        self._bindKey("", "Tab", self.mKeyboardSelectNextType)
+        self._bindKey("Shift-", "Tab", self.mKeyboardSelectPrevType)
+
+        self._bindKey("", "plus", self.mKeyboardSelectMore)
+        self._bindKey("", "equal", self.mKeyboardSelectMore)
+        self._bindKey("", "minus", self.mKeyboardSelectLess)
+
+        self._bindKey("", "q", self.mKeyboardGameInfo)
+        self._bindKey("", "v", self.mKeyboardStackInfo)
+        self._bindKey("Shift-", "v", self.mKeyboardCoordinates)
+
+        self._bindKey("", "Return", self.mKeyboardAction)
+        self._bindKey("Shift-", "Return", self.mKeyboardAction2)
+
         # undocumented, devel
         self._bindKey(ctrl, "End", self.mPlayNextMusic)
         self._bindKey(ctrl, "Prior", self.mSelectPrevGameByName)
@@ -1204,8 +1242,7 @@ class PysolMenubarTkCommon:
         # cb = (25, self.cb_max) [ len(g) > 4 * 25 ]
         # cb = min(cb, self.cb_max)
         cb = self.cb_max
-        for i in range(len(games)):
-            gi = games[i]
+        for i, gi in enumerate(games):
             columnbreak = i > 0 and (i % cb) == 0
             if short_name:
                 label = gi.short_name
@@ -1247,6 +1284,19 @@ class PysolMenubarTkCommon:
         self.tkopt.gameid_popular.set(self.game.id)
 
     def _mSelectGameDialog(self, d):
+        if self.game.pause:
+            if self.wasPaused:
+                # Nasty hack here.  This is the only way I was able to
+                # make the flow work while reliably avoiding crashes and
+                # graphical glitches when both the preview auto-scaling
+                # and the pause are in effect.
+                try:
+                    self.game.doPause()
+                except Exception:
+                    self.game.resizeGame()
+                    self.game.doPause()
+                    if self.game.pause:
+                        self.game.doPause()
         if d.status == 0 and d.button == 0 and d.gameid != self.game.id:
             self.tkopt.gameid.set(d.gameid)
             self.tkopt.gameid_popular.set(d.gameid)
@@ -1283,6 +1333,10 @@ class PysolMenubarTkCommon:
                 bookmark = self.game.gsaveinfo.bookmarks[-2][0]
                 del self.game.gsaveinfo.bookmarks[-2]
         after_idle(self.top, self.__restoreCursor)
+        self.wasPaused = False
+        if not self.game.pause:
+            self.game.doPause()
+            self.wasPaused = True
         d = self._calcSelectGameDialogWithPreview()(
             self.top, title=_("Select game"),
             app=self.app, gameid=self.game.id,
@@ -1382,10 +1436,10 @@ class PysolMenubarTkCommon:
         # insert new cardbacks
         mbacks = self.app.images.getCardbacks()
         cb = int(math.ceil(math.sqrt(len(mbacks))))
-        for i in range(len(mbacks)):
+        for i, mback in enumerate(mbacks):
             columnbreak = i > 0 and (i % cb) == 0
             submenu.add_radiobutton(
-                label=mbacks[i].name, image=mbacks[i].menu_image,
+                label=mback.name, image=mback.menu_image,
                 variable=self.tkopt.cardback, value=i,
                 command=self.mOptCardback, columnbreak=columnbreak,
                 indicatoron=0, hidemargin=0)
@@ -1590,8 +1644,15 @@ Unsupported game for import.
     def mOptSoundDialog(self, *args):
         if self._cancelDrag(break_pause=False):
             return
+        wasPaused = False
+        if not self.game.pause:
+            self.game.doPause()
+            wasPaused = True
         self._calcSoundOptionsDialog()(
             self.top, _("Sound settings"), self.app)
+        if self.game.pause:
+            if wasPaused:
+                self.game.doPause()
         self.tkopt.sound.set(self.app.opt.sound)
 
     def mOptAutoFaceUp(self, *args):
@@ -1840,6 +1901,14 @@ Unsupported game for import.
         self.tkopt.auto_scale.set(auto_scale)
         self._updateCardSize()
 
+    def mOptPreviewScale(self, *event):
+        if self._cancelDrag(break_pause=True):
+            return
+        preview_scale = not self.app.opt.preview_scale
+
+        self.app.opt.preview_scale = preview_scale
+        self.tkopt.preview_scale.set(preview_scale)
+
     def mOptPreserveAspectRatio(self, *event):
         if self._cancelDrag(break_pause=True):
             return
@@ -1931,11 +2000,18 @@ Unsupported game for import.
         key = self.app.tabletile_index
         if key <= 0:
             key = self.app.opt.colors['table']  # .lower()
+        wasPaused = False
+        if not self.game.pause:
+            self.game.doPause()
+            wasPaused = True
         d = self._calcSelectTileDialogWithPreview()(
             self.top, app=self.app,
             title=_("Select table background"),
             manager=self.app.tabletile_manager,
             key=key)
+        if self.game.pause:
+            if wasPaused:
+                self.game.doPause()
         if d.status == 0 and d.button == 0:
             if isinstance(d.key, str):
                 tile = self.app.tabletile_manager.get(0)
@@ -2165,6 +2241,10 @@ Unsupported game for import.
         self.game.quitGame(bookmark=1)
 
     def wizardDialog(self, edit=False):
+        wasPaused = False
+        if not self.game.pause:
+            self.game.doPause()
+            wasPaused = True
         from pysollib.wizardutil import write_game, reset_wizard
         WizardDialog = self._calcWizardDialog()
 
@@ -2173,6 +2253,9 @@ Unsupported game for import.
         else:
             reset_wizard(None)
         d = WizardDialog(self.top, _('Solitaire Wizard'), self.app)
+        if self.game.pause:
+            if wasPaused:
+                self.game.doPause()
         if d.status == 0 and d.button == 0:
             try:
                 if edit:

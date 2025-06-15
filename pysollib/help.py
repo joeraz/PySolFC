@@ -70,7 +70,7 @@ For more information about this application visit''') %
                          separator=True)
     if d.status == 0 and d.button == 1:
         viewer = help_html(app, "credits.html", "html")
-        viewer.parent.after(2, lambda: viewer.parent.focus_force())
+        viewer.parent.after(2, viewer.parent.focus_force)
         # help_credits(app, sound=sound)
     return d.status
 
@@ -171,6 +171,13 @@ def raise_help_html(game):
             help_html_viewer.parent.attributes("-topmost", True)
         else:
             help_html_viewer.parent.attributes("-topmost", False)
+    except Exception:
+        pass
+
+
+def unraise_help_html():
+    try:
+        help_html_viewer.parent.attributes("-topmost", False)
     except Exception:
         pass
 

@@ -442,7 +442,7 @@ class BigBen(Game):
             x = int(x0 + xx*l.XS)
             y = int(y0 + yy*l.YS)
             suit = (3, 0, 2, 1)[rank % 4]
-            max_cards = rank <= 4 and 8 or 9
+            max_cards = 8 if rank <= 4 else 9
             s.foundations.append(SS_FoundationStack(x, y, self, suit=suit,
                                  max_cards=max_cards, base_rank=rank,
                                  mod=13, max_move=0))
@@ -721,6 +721,14 @@ class Clock(Game):
             return True
         return Game.getStuck(self)
 
+    def parseGameInfo(self):
+        numKings = 0
+        for c in self.s.rows[12].cards:
+            if c.face_up and c.rank == KING:
+                numKings += 1
+
+        return _("Kings: %d") % numKings
+
 
 class RelaxedClock(Clock):
     Draws = 1
@@ -776,11 +784,11 @@ registerGame(GameInfo(697, BigBen, "Big Ben",
                       GI.GT_2DECK_TYPE, 2, 0, GI.SL_BALANCED,
                       altnames=("Father Time")))
 registerGame(GameInfo(737, Clock, "Clock",
-                      GI.GT_1DECK_TYPE, 1, 0, GI.SL_LUCK,
+                      GI.GT_1DECK_TYPE | GI.GT_CHILDREN, 1, 0, GI.SL_LUCK,
                       altnames=("Travellers", "Sundial")))
 registerGame(GameInfo(827, GermanClock, "German Clock",
                       GI.GT_1DECK_TYPE, 1, 1, GI.SL_MOSTLY_LUCK,
                       altnames=("Die Uhr",)))
 registerGame(GameInfo(915, RelaxedClock, "Relaxed Clock",
-                      GI.GT_1DECK_TYPE | GI.GT_RELAXED, 1, 0, GI.SL_LUCK,
-                      altnames=("Watch")))
+                      GI.GT_1DECK_TYPE | GI.GT_RELAXED | GI.GT_CHILDREN, 1, 0,
+                      GI.SL_LUCK, altnames=("Watch")))

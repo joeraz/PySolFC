@@ -116,8 +116,8 @@ class tkHTMLWriter(pysollib.formatter.NullWriter):
         }
 
         self.text.config(cursor=self.viewer.defcursor, font=font)
-        for f in self.fontmap.keys():
-            self.text.tag_config(f, font=self.fontmap[f])
+        for f, font in self.fontmap.items():
+            self.text.tag_config(f, font=font)
 
         self.anchor = None
         self.anchor_mark = None
@@ -716,8 +716,7 @@ class HTMLViewer:
     def getImage(self, fn):
         if fn in self.images:
             return self.images[fn]
-        else:
-            return None
+        return None
 
     def showImage(self, src, alt, ismap, align, width, height):
         url = self.basejoin(src)

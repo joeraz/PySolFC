@@ -172,10 +172,9 @@ class MonteCarlo(Game):
         diff = stack1.id - stack2.id
         if column == 0:
             return diff in (-5, -4, 1, 5, 6)
-        elif column == 4:
+        if column == 4:
             return diff in (-6, -5, -1, 4, 5)
-        else:
-            return diff in (-6, -5, -4, -1, 1, 4, 5, 6)
+        return diff in (-6, -5, -4, -1, 1, 4, 5, 6)
 
     def fillEmptyStacks(self):
         n = 0
@@ -299,6 +298,9 @@ class Quatorze(MonteCarlo):
         return (stack1.id // 5 == stack2.id // 5 or
                 stack1.id % 5 == stack2.id % 5)
 
+    def shallHighlightMatch(self, stack1, card1, stack2, card2):
+        return card1.rank + card2.rank == 12
+
 
 # ************************************************************************
 # * Simple Pairs
@@ -364,6 +366,10 @@ class BlockTen(SimplePairs):
     def isGameWon(self):
         return len(self.s.foundations[0].cards) == 48
 
+    def shallHighlightMatch(self, stack1, card1, stack2, card2):
+        return (card1.rank + card2.rank == 8 or
+                (9 < card1.rank == card2.rank > 9))
+
 
 class SimpleTens(BlockTen):
     def isGameWon(self):
@@ -391,9 +397,9 @@ class Crispy_RowStack(MonteCarlo_RowStack):
         if len(self.cards) == 0:
             if cr == KING:
                 return self.id in (1, 2, 13, 14)
-            elif cr == QUEEN:
+            if cr == QUEEN:
                 return self.id in (4, 7, 8, 11)
-            elif cr == JACK:
+            if cr == JACK:
                 return self.id in (0, 3, 12, 15)
         if cr in (JACK, QUEEN, KING):
             return False
@@ -958,10 +964,9 @@ class DerLetzteMonarch(Game):
         diff = stack1.id - stack2.id
         if column == 0:
             return diff in (-13, 1, 13)
-        elif column == 12:
+        if column == 12:
             return diff in (-13, -1, 13)
-        else:
-            return diff in (-13, -1, 1, 13)
+        return diff in (-13, -1, 1, 13)
 
 
 class TheLastMonarchII(DerLetzteMonarch):
@@ -1108,6 +1113,10 @@ class AcesSquare(MonteCarlo):
         return (stack1.id // 4 == stack2.id // 4 or
                 stack1.id % 4 == stack2.id % 4)
 
+    def shallHighlightMatch(self, stack1, card1, stack2, card2):
+        return (card1.suit == card2.suit and
+                card1.rank != card2.rank != 0)
+
 
 # register the game
 registerGame(GameInfo(89, MonteCarlo, "Monte Carlo",
@@ -1118,15 +1127,16 @@ registerGame(GameInfo(216, MonteCarlo2Decks, "Monte Carlo (2 Decks)",
 registerGame(GameInfo(212, Weddings, "Weddings",
                       GI.GT_PAIRING_TYPE, 1, 0, GI.SL_MOSTLY_LUCK))
 registerGame(GameInfo(90, SimpleCarlo, "Simple Carlo",
-                      GI.GT_PAIRING_TYPE, 1, 0, GI.SL_MOSTLY_LUCK))
+                      GI.GT_PAIRING_TYPE | GI.GT_CHILDREN, 1, 0,
+                      GI.SL_MOSTLY_LUCK))
 registerGame(GameInfo(91, SimplePairs, "Simple Pairs",
-                      GI.GT_PAIRING_TYPE, 1, 0, GI.SL_LUCK,
-                      altnames=("Jamestown", "Pirate Gold", "Treasure Hunt",
-                                "Hunter")))
+                      GI.GT_PAIRING_TYPE | GI.GT_CHILDREN, 1, 0,
+                      GI.SL_LUCK, altnames=("Jamestown", "Pirate Gold",
+                                            "Treasure Hunt", "Hunter")))
 registerGame(GameInfo(92, Neighbour, "Neighbour",
                       GI.GT_PAIRING_TYPE, 1, 0, GI.SL_MOSTLY_LUCK))
 registerGame(GameInfo(96, Fourteen, "Fourteen",
-                      GI.GT_PAIRING_TYPE | GI.GT_OPEN, 1, 0,
+                      GI.GT_PAIRING_TYPE | GI.GT_OPEN | GI.GT_CHILDREN, 1, 0,
                       GI.SL_MOSTLY_LUCK, altnames=("Fourteen Out",
                                                    "Fourteen Puzzle",
                                                    "Take Fourteen")))
@@ -1137,12 +1147,13 @@ registerGame(GameInfo(152, DerLetzteMonarch, "The Last Monarch",
                       GI.GT_1DECK_TYPE | GI.GT_OPEN, 1, 0, GI.SL_MOSTLY_SKILL,
                       altnames=("Der letzte Monarch",)))
 registerGame(GameInfo(328, TheWish, "The Wish",
-                      GI.GT_PAIRING_TYPE | GI.GT_STRIPPED, 1, 0,
-                      GI.SL_MOSTLY_LUCK, ranks=(0, 6, 7, 8, 9, 10, 11, 12)))
+                      GI.GT_PAIRING_TYPE | GI.GT_STRIPPED | GI.GT_CHILDREN,
+                      1, 0, GI.SL_MOSTLY_LUCK,
+                      ranks=(0, 6, 7, 8, 9, 10, 11, 12)))
 registerGame(GameInfo(329, TheWishOpen, "The Wish (Open)",
                       GI.GT_PAIRING_TYPE | GI.GT_OPEN | GI.GT_ORIGINAL |
-                      GI.GT_STRIPPED, 1, 0, GI.SL_MOSTLY_SKILL,
-                      ranks=(0, 6, 7, 8, 9, 10, 11, 12),
+                      GI.GT_STRIPPED | GI.GT_CHILDREN, 1, 0,
+                      GI.SL_MOSTLY_SKILL, ranks=(0, 6, 7, 8, 9, 10, 11, 12),
                       rules_filename="thewish.html"))
 registerGame(GameInfo(368, Vertical, "Vertical",
                       GI.GT_PAIRING_TYPE | GI.GT_OPEN, 1, 0,
@@ -1162,8 +1173,8 @@ registerGame(GameInfo(810, Quatorze, "Quatorze",
 registerGame(GameInfo(829, BlockTen, "Block Ten",
                       GI.GT_PAIRING_TYPE, 1, 0, GI.SL_LUCK))
 registerGame(GameInfo(862, SimpleTens, "Simple Tens",
-                      GI.GT_PAIRING_TYPE | GI.GT_STRIPPED, 1, 0, GI.SL_LUCK,
-                      ranks=(0, 1, 2, 3, 4, 5, 6, 7, 8),
+                      GI.GT_PAIRING_TYPE | GI.GT_STRIPPED | GI.GT_CHILDREN,
+                      1, 0, GI.SL_LUCK, ranks=(0, 1, 2, 3, 4, 5, 6, 7, 8),
                       altnames=("Add Up Tens",)))
 registerGame(GameInfo(867, DoubleFourteen, "Double Fourteen",
                       GI.GT_PAIRING_TYPE | GI.GT_OPEN, 2, 0,

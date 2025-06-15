@@ -112,7 +112,7 @@ class GI:
 
     # extra flags
     GT_BETA = 1 << 12      # beta version of game driver
-    GT_CHILDREN = 1 << 13      # *not used*
+    GT_CHILDREN = 1 << 13
     GT_CONTRIB = 1 << 14      # contributed games under the GNU GPL
     GT_HIDDEN = 1 << 15      # not visible in menus, but games can be loaded
     GT_OPEN = 1 << 16
@@ -320,7 +320,7 @@ class GI:
          904: 68,               # Lexington Harp
          237: 22231,            # Three Peaks
          297: 631,              # Alternation/Alternations
-         526: 447,              # Australian/Outback Patience
+         452: 1,                # Double Easthaven/Gypsy
          640: 566,              # Hypotenuse/Brazilian Patience
 
          # Lost Mahjongg Layouts
@@ -346,6 +346,15 @@ class GI:
     # adding it should be a priority.
 
     GAMES_BY_COMPATIBILITY = (
+        # Ace of Penguins (We have 6 out of 6 card games)
+        # Non-card games missing:
+        # - Mastermind
+        # - Minesweeper (Needs a new cardset type)
+        # - Pegged layouts (Not all compatible with the PySol engine)
+        # - Mahjongg/Taipei layouts
+        ("Ace of Penguins", (2, 8, 11, 36, 105, 181, 210, 492,
+                             5401, 22399)),
+
         # Atari ST Patience game v2.13 (we have 10 out of 10 games)
         ("Atari ST Patience", (1, 3, 4, 7, 12, 14, 15, 16, 17, 39,)),
 
@@ -368,12 +377,12 @@ class GI:
         #       Hamilton, Labyrinth, Treize, Wall
         ("Gnome AisleRiot", (
             1, 2, 8, 9, 11, 12, 13, 19, 24, 27, 29, 31, 33, 34, 35, 36,
-            38, 40, 41, 42, 43, 45, 48, 58, 65, 67, 89, 91, 92, 93, 94,
-            95, 96, 97, 100, 104, 105, 111, 112, 113, 130, 135, 139, 144,
-            146, 147, 148, 200, 201, 206, 224, 225, 229, 230, 233, 257,
-            258, 277, 280, 281, 282, 283, 284, 334, 384, 479, 495, 551,
-            552, 553, 572, 593, 674, 700, 715, 716, 737, 772, 810, 819,
-            824, 829, 859, 874, 906, 934, 22231,
+            38, 40, 41, 42, 43, 44, 45, 48, 58, 65, 67, 89, 91, 92, 93,
+            94, 95, 96, 97, 100, 104, 105, 111, 112, 113, 130, 135, 139,
+            144, 146, 147, 148, 200, 201, 206, 224, 225, 229, 230, 233,
+            257, 258, 277, 280, 281, 282, 283, 284, 334, 384, 479, 495,
+            551, 552, 553, 572, 593, 674, 700, 715, 716, 737, 772, 810,
+            819, 824, 829, 859, 874, 906, 934, 22231,
         )),
 
         # Hoyle Card Games
@@ -575,7 +584,7 @@ class GI:
         ('fc-0.9.0', tuple(range(323, 421))),
         ('fc-0.9.1', tuple(range(421, 441))),
         ('fc-0.9.2', tuple(range(441, 466))),
-        ('fc-0.9.3', tuple(range(466, 661))),
+        ('fc-0.9.3', tuple(range(466, 526)) + tuple(range(527, 661))),
         ('fc-0.9.4', tuple(range(661, 671))),
         ('fc-1.0',   tuple(range(671, 711))),
         ('fc-1.1',   tuple(range(711, 759))),
@@ -595,19 +604,21 @@ class GI:
          tuple(range(19000, 19012)) + tuple(range(22303, 22311)) +
          tuple(range(22353, 22361))),
         ('fc-3.1', tuple(range(961, 971))),
+        ('fc-3.4', tuple(range(971, 981)) + tuple(range(5419, 5421)) +
+         tuple(range(16683, 16686)) + tuple(range(18005, 18007)) +
+         (44, 526, 5906, 22399,)),
     )
 
     # deprecated - the correct way is to or a GI.GT_XXX flag
     # in the registerGame() call
-    _CHILDREN_GAMES = [16, 33, 55, 90, 91, 96, 97, 176, 328, 329, 862, 865,
-                       886, 903, ]
+    _CHILDREN_GAMES = []
 
     _OPEN_GAMES = []
 
     _POPULAR_GAMES = [
         1,     # Gypsy
         2,     # Klondike
-        7,     # Picture Galary
+        7,     # Picture Gallery
         8,     # FreeCell
         9,     # Seahaven Towers
         11,    # Spider
@@ -860,9 +871,9 @@ class GameManager:
             l1.sort()
             l2.sort()
             l3.sort()
-            self.__games_by_name = tuple([i[1] for i in l1])
-            self.__games_by_short_name = tuple([i[1] for i in l2])
-            self.__games_by_altname = tuple([i[1:] for i in l3])
+            self.__games_by_name = tuple(i[1] for i in l1)
+            self.__games_by_short_name = tuple(i[1] for i in l2)
+            self.__games_by_altname = tuple(i[1:] for i in l3)
         return self.__games_by_name
 
     def getGamesIdSortedByShortName(self):

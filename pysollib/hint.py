@@ -819,9 +819,8 @@ class Base_Solver_Hint:
         if m:
             self._v = int(m.group(1))
             return True
-        else:
-            self._v = None
-            return False
+        self._v = None
+        return False
 
     def run_solver(self, command, board):
         if DEBUG:
@@ -877,11 +876,10 @@ class FreeCellSolver_Hint(Base_Solver_Hint):
         if re.search('^(?:Iterations count exceeded)', line):
             self.solver_state = 'intractable'
             return True
-        elif re.search('^(?:I could not solve this game)', line):
+        if re.search('^(?:I could not solve this game)', line):
             self.solver_state = 'unsolved'
             return True
-        else:
-            return False
+        return False
 
     def _isSimpleSimon(self):
         game_type = self.game_type
@@ -890,12 +888,10 @@ class FreeCellSolver_Hint(Base_Solver_Hint):
 
     def _addBoardLine(self, line):
         self.board += line + '\n'
-        return
 
     def _addPrefixLine(self, prefix, b):
         if b:
             self._addBoardLine(prefix + b)
-        return
 
     def importFileHelper(solver, fh, s_game):
         game = s_game.s

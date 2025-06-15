@@ -128,9 +128,8 @@ class RoyalCotillion(Game):
         if event is None:
             # disable auto drop - this would ruin the whole gameplay
             return (self.sg.dropstacks, (), self.sg.dropstacks)
-        else:
-            # rightclickHandler
-            return (self.sg.dropstacks, self.sg.dropstacks, self.sg.dropstacks)
+        # rightclickHandler
+        return (self.sg.dropstacks, self.sg.dropstacks, self.sg.dropstacks)
 
 
 # ************************************************************************
@@ -232,6 +231,58 @@ class Kingdom(RoyalCotillion):
 
 
 # ************************************************************************
+# * Noumea
+# ************************************************************************
+
+class Noumea(RoyalCotillion):
+    Foundation_Class = SS_FoundationStack
+
+    def createGame(self):
+        # create layout
+        l, s = Layout(self), self.s
+
+        # set window
+        self.setSize(l.XM + 5*l.XS, l.YM + 6*l.YS)
+
+        # create stacks
+        x, y, = l.XM + .5 * l.XS, l.YM
+        for i in range(4):
+            s.foundations.append(self.Foundation_Class(x, y, self, i))
+            x += l.XS
+        x, y, = l.XM, y + l.YS
+        for j in range(4):
+            for i in range(5):
+                s.reserves.append(ReserveStack(x, y, self, max_accept=0))
+                x += l.XS
+            x = l.XM
+            y += l.YS
+        x, y = l.XM + 1.5 * l.XS, l.YM + 5 * l.YS
+        s.talon = WasteTalonStack(x, y, self, max_rounds=3, num_deal=3)
+        l.createText(s.talon, "sw")
+        x += l.XS
+        s.waste = WasteStack(x, y, self)
+        l.createText(s.waste, "se")
+
+        # define stack-groups
+        l.defaultStackGroups()
+
+    #
+    # game overrides
+    #
+
+    def _shuffleHook(self, cards):
+        # move Aces to top of the Talon (i.e. first cards to be dealt)
+        return self._shuffleHookMoveToTop(
+            cards, lambda c: (c.rank == ACE, c.suit))
+
+    def startGame(self):
+        self.s.talon.dealRow(rows=self.s.foundations, frames=0)
+        self.startDealSample()
+        self.s.talon.dealRow(rows=self.s.reserves)
+        self.s.talon.dealCards()          # deal first card to WasteStack
+
+
+# ************************************************************************
 # * Alhambra
 # * Granada
 # * Reserves
@@ -252,10 +303,10 @@ class Alhambra_RowStack(UD_SS_RowStack):
 
 class Alhambra_Talon(DealRowTalonStack):
     def canDealCards(self):
-        r_cards = sum([len(r.cards) for r in self.game.s.rows])
+        r_cards = sum(len(r.cards) for r in self.game.s.rows)
         if self.cards:
             return True
-        elif r_cards and self.round != self.max_rounds:
+        if r_cards and self.round != self.max_rounds:
             return True
         return False
 
@@ -270,7 +321,7 @@ class Alhambra_Talon(DealRowTalonStack):
         old_state = self.game.enterState(self.game.S_DEAL)
         num_cards = 0
         rows = self.game.s.rows
-        r_cards = sum([len(r.cards) for r in self.game.s.rows])
+        r_cards = sum(len(r.cards) for r in self.game.s.rows)
         if self.cards:
             if sound and not self.game.demo:
                 self.game.playSample("dealwaste")
@@ -1181,10 +1232,7 @@ class Colonel_RowStack(SS_RowStack):
 
         # from_stack is waste
         if from_stack is self.game.s.waste:
-            if below_stack is None or not below_stack.cards:
-                return True
-            else:
-                return False
+            return below_stack is None or not below_stack.cards
 
         #  from_stack in rows
         from_index, from_row = self._getStackIndex(from_stack)
@@ -1573,13 +1621,14 @@ registerGame(GameInfo(54, RoyalCotillion, "Royal Cotillion",
                       GI.GT_2DECK_TYPE, 2, 0, GI.SL_LUCK,
                       altnames=("Lords and Ladies",)))
 registerGame(GameInfo(55, OddAndEven, "Odd and Even",
-                      GI.GT_2DECK_TYPE, 2, 1, GI.SL_LUCK))
+                      GI.GT_2DECK_TYPE | GI.GT_CHILDREN, 2, 1, GI.SL_LUCK))
 registerGame(GameInfo(143, Kingdom, "Kingdom",
                       GI.GT_2DECK_TYPE, 2, 0, GI.SL_MOSTLY_LUCK))
 registerGame(GameInfo(234, Alhambra, "Alhambra",
                       GI.GT_2DECK_TYPE, 2, 2, GI.SL_BALANCED))
 registerGame(GameInfo(97, Carpet, "Carpet",
-                      GI.GT_1DECK_TYPE, 1, 0, GI.SL_MOSTLY_LUCK))
+                      GI.GT_1DECK_TYPE | GI.GT_CHILDREN, 1, 0,
+                      GI.SL_MOSTLY_LUCK))
 registerGame(GameInfo(391, BritishConstitution, "British Constitution",
                       GI.GT_2DECK_TYPE | GI.GT_STRIPPED, 2, 0, GI.SL_BALANCED,
                       ranks=list(range(11)),  # without Queens and Kings
@@ -1623,3 +1672,5 @@ registerGame(GameInfo(943, RosamundsBower, "Rosamund's Bower",
                       altnames=("Rosamund",)))
 registerGame(GameInfo(952, BigAlhambra, "Big Alhambra",
                       GI.GT_3DECK_TYPE, 3, 2, GI.SL_BALANCED))
+registerGame(GameInfo(978, Noumea, "Noumea",
+                      GI.GT_1DECK_TYPE, 1, 2, GI.SL_MOSTLY_LUCK))

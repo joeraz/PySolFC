@@ -167,6 +167,7 @@ gamewon = boolean
 droppair = boolean
 redo = boolean
 dealwaste = boolean
+edge = boolean
 extra = boolean
 
 [fonts]
@@ -188,6 +189,7 @@ cards_2 = string
 samerank_1 = string
 samerank_2 = string
 not_matching = string
+keyboard_sel = string
 
 [timeouts]
 highlight_samerank = float(0.2, 9.9)
@@ -223,6 +225,7 @@ scale_cards = boolean
 scale_x = float
 scale_y = float
 auto_scale = boolean
+preview_scale = boolean
 spread_stacks = boolean
 preserve_aspect_ratio = boolean
 resampling = integer(0, 10)
@@ -443,6 +446,7 @@ class Options:
             'dealwaste': True,
             'droppair': True,
             'drop': True,
+            'edge': True,
             'extra': True,
             'flip': True,
             'move': True,
@@ -480,6 +484,7 @@ class Options:
             'samerank_2':   '#0000ff',
             'hintarrow':    '#303030',
             'not_matching': '#ff0000',
+            'keyboard_sel': '#bf40bf',
             }
         # delays
         self.timeouts = {
@@ -518,6 +523,7 @@ class Options:
         self.scale_x = 1.0
         self.scale_y = 1.0
         self.auto_scale = True
+        self.preview_scale = True
         self.spread_stacks = False
         self.center_layout = True
         self.preserve_aspect_ratio = True
@@ -713,7 +719,7 @@ class Options:
                 else:
                     config['cardsets'][str(key)] = val2
         for key in ('scale_cards', 'scale_x', 'scale_y',
-                    'auto_scale', 'spread_stacks',
+                    'auto_scale', 'preview_scale', 'spread_stacks',
                     'preserve_aspect_ratio', 'resampling'):
             config['cardsets'][key] = getattr(self, key)
 
@@ -898,6 +904,7 @@ class Options:
                        ('scale_x', 'float'),
                        ('scale_y', 'float'),
                        ('auto_scale', 'bool'),
+                       ('preview_scale', 'bool'),
                        ('spread_stacks', 'bool'),
                        ('preserve_aspect_ratio', 'bool'),
                        ('resampling', 'int')):

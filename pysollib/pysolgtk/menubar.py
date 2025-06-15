@@ -259,7 +259,7 @@ class PysolMenubarTk:
             ]
         for label, action, opt_name, update_game in (
             ('A&uto drop',   'optautodrop', 'autodrop',               False),
-            ('Auto &face up',           '', 'autofaceup',             False),
+            ('Auto &face-up',           '', 'autofaceup',             False),
             ('Auto &deal',              '', 'autodeal',               False),
             ('&Quick play',             '', 'quickplay',              False),
             ('Enable &undo',            '', 'undo',                   False),
@@ -487,10 +487,7 @@ class PysolMenubarTk:
             'options.automaticplay.autodrop':
                 '/menubar/options/automaticplay/optautodrop'
             }
-        if path in path_map:
-            path = path_map[path]
-        else:
-            path = '/menubar/'+path.replace('.', '/')
+        path = path_map.get(path, '/menubar/'+path.replace('.', '/'))
         menuitem = self.top.ui_manager.get_widget(path)
         if not menuitem:
             # print 'WARNING: setMenuState: not found:', path
