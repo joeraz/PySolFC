@@ -27,7 +27,8 @@ cardset_type = {
     '9': 'Trump only',
     '10': 'Matching',
     '11': 'Puzzle',
-    '12': 'Ishido'
+    '12': 'Ishido',
+    '13': 'Master Deck'
 }
 
 ALL_IMGS = False

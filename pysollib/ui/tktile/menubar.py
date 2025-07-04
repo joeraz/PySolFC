@@ -1105,6 +1105,8 @@ class PysolMenubarTkCommon:
                                            self.tkopt.gameid)
         self._addSelectOrientalGameSubMenu(games, menu, self.mSelectGame,
                                            self.tkopt.gameid)
+        self._addSelectAltDeckGameSubMenu(games, menu, self.mSelectGame,
+                                          self.tkopt.gameid)
         self._addSelectSpecialGameSubMenu(games, menu, self.mSelectGame,
                                           self.tkopt.gameid)
         self._addSelectCustomGameSubMenu(games, menu, self.mSelectGame,
@@ -1195,6 +1197,14 @@ class PysolMenubarTkCommon:
         submenu = MfxMenu(menu, label=n_("&Oriental games"))
         self._addSelectGameSubMenu(games, submenu,
                                    GI.SELECT_ORIENTAL_GAME_BY_TYPE,
+                                   self.mSelectGame, self.tkopt.gameid)
+
+    def _addSelectAltDeckGameSubMenu(self, games, menu, command, variable):
+        if self._getNumGames(games, GI.SELECT_ORIENTAL_GAME_BY_TYPE) == 0:
+            return
+        submenu = MfxMenu(menu, label=n_("&Alt Deck games"))
+        self._addSelectGameSubMenu(games, submenu,
+                                   GI.SELECT_ALT_DECK_GAME_BY_TYPE,
                                    self.mSelectGame, self.tkopt.gameid)
 
     def _addSelectSpecialGameSubMenu(self, games, menu, command, variable):

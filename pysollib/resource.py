@@ -181,6 +181,7 @@ class CSI:
     TYPE_MATCHING = 10
     TYPE_PUZZLE = 11
     TYPE_ISHIDO = 12
+    TYPE_MASTER = 13
 
     # cardset subtypes
     # (french)
@@ -208,7 +209,8 @@ class CSI:
         9:  _("Trumps only type (variable cards)"),
         10: _("Matching type (variable cards)"),
         11: _("Puzzle type (variable pieces)"),
-        12: _("Ishido type (36 tiles)")
+        12: _("Ishido type (36 tiles)"),
+        13: _("Master deck type (258 cards)")
     }
 
     TYPE_NAME = {
@@ -223,7 +225,8 @@ class CSI:
         9:  _("Trumps only"),
         10: _("Matching"),
         11: _("Puzzle"),
-        12: _("Ishido")
+        12: _("Ishido"),
+        13: _("Master Deck")
     }
 
     SUBTYPE_NAME = {
@@ -250,7 +253,8 @@ class CSI:
         9:  "trumps-only",
         10: "matching",
         11: "puzzle",
-        12: "ishido"
+        12: "ishido",
+        13: "master"
     }
 
     TYPE_SUITS = {
@@ -265,7 +269,8 @@ class CSI:
         9:  "",
         10: "",
         11: "",
-        12: "abcdef"
+        12: "abcdef",
+        13: "abcdefghijklmnop"
     }
 
     TYPE_RANKS = {
@@ -280,7 +285,8 @@ class CSI:
         9:  list(range(0)),
         10: list(range(0)),
         11: list(range(0)),
-        12: list(range(6))
+        12: list(range(6)),
+        13: list(range(16))
     }
 
     TYPE_TRUMPS = {
@@ -295,7 +301,8 @@ class CSI:
         9:  (),
         10: (),
         11: (),
-        12: ()
+        12: (),
+        13: list(range(2))
     }
 
     # cardset styles
@@ -320,6 +327,7 @@ class CSI:
         13:  _("Holiday"),              #
         34:  _("Ishido"),               #
         28:  _("Mahjongg"),             #
+        39:  _("Master Deck"),          #
         32:  _("Matching"),             #
         38:  _("Monochrome"),           #
         14:  _("Movies"),               #
@@ -565,6 +573,8 @@ class CardsetManager(ResourceManager):
             cs.nbottoms = 1
             cs.nletters = 0
             cs.nshadows = 0
+        elif s == CSI.TYPE_MASTER:
+            cs.nbottoms = 19
         else:
             return 0
         return 1

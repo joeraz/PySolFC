@@ -83,11 +83,12 @@ class SelectGameData(SelectDialogTreeData):
             map(app.gdb.get, app.gdb.getGamesIdSortedByName()))
         self.no_games = [SelectGameLeaf(None, None, _("(no games)"), None), ]
         #
-        s_by_type = s_oriental = s_special = None
+        s_by_type = s_oriental = s_special = s_altdeck = None
         s_original = s_contrib = s_mahjongg = None
         g = []
         for data in (GI.SELECT_GAME_BY_TYPE,
                      GI.SELECT_ORIENTAL_GAME_BY_TYPE,
+                     GI.SELECT_ALT_DECK_GAME_BY_TYPE,
                      GI.SELECT_SPECIAL_GAME_BY_TYPE,
                      GI.SELECT_ORIGINAL_GAME_BY_TYPE,
                      GI.SELECT_CONTRIB_GAME_BY_TYPE,
@@ -115,15 +116,18 @@ class SelectGameData(SelectDialogTreeData):
             s_oriental = SelectGameNode(None, _("Oriental Games"),
                                         tuple(g[1]))
         if g[2]:
-            s_special = SelectGameNode(None, _("Special Games"),
+            s_altdeck = SelectGameNode(None, _("Alt Deck Games"),
                                        tuple(g[2]))
         if g[3]:
+            s_special = SelectGameNode(None, _("Special Games"),
+                                       tuple(g[3]))
+        if g[4]:
             s_original = SelectGameNode(None, _("Original Games"),
-                                        tuple(g[3]))
+                                        tuple(g[4]))
 #         if g[4]:
 #           s_contrib = SelectGameNode(None, "Contributed Games", tuple(g[4]))
-        if g[5]:
-            s_mahjongg = g[5]
+        if g[6]:
+            s_mahjongg = g[6]
         #
         # all games sorted (in pieces).
         s_all_games, gg = None, []
@@ -196,6 +200,7 @@ class SelectGameData(SelectDialogTreeData):
                            lambda gi: gi.si.game_flags & GI.GT_POPULAR),
             s_mahjongg,
             s_oriental,
+            s_altdeck,
             s_special,
             # SelectGameNode(None, _("Custom Games"),
             #               lambda gi: gi.si.game_type == GI.GT_CUSTOM),

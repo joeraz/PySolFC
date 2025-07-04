@@ -235,7 +235,7 @@ class AbstractHint(HintInterface):
             return 1
         # now check for loops
         rr = self.ClonedStack(from_stack, stackcards=rpile)
-        if rr.acceptsCards(to_stack, pile):
+        if rr.acceptsCards(to_stack, pile) and self.game.demo:
             # the pile we are going to move could be moved back -
             # this is dangerous as we can create endless loops...
             return 0
@@ -252,7 +252,7 @@ class AbstractHint(HintInterface):
                 return 1
             # now check for loops
             rr = self.ClonedStack(from_stack, stackcards=rpile)
-            if rr.acceptsCards(to_stack, pile):
+            if rr.acceptsCards(to_stack, pile) and self.game.demo:
                 # the pile we are going to move could be moved back -
                 # this is dangerous as we can create endless loops...
                 return 0

@@ -49,8 +49,9 @@ class GI:
     GC_MATCHING = CSI.TYPE_MATCHING
     GC_PUZZLE = CSI.TYPE_PUZZLE
     GC_ISHIDO = CSI.TYPE_ISHIDO
+    GC_MASTER = CSI.TYPE_MASTER
 
-    NUM_CATEGORIES = CSI.TYPE_ISHIDO
+    NUM_CATEGORIES = CSI.TYPE_MASTER
 
     # game subcategory
     GS_NONE = CSI.SUBTYPE_NONE
@@ -86,6 +87,7 @@ class GI:
     GT_KLONDIKE = 15
     GT_LIGHTS_OUT = 38
     GT_MAHJONGG = 16
+    GT_MASTER_DECK = 43
     GT_MATRIX = 17
     GT_MEMORY = 18
     GT_MONTANA = 19
@@ -160,8 +162,11 @@ class GI:
         GT_MUGHAL_GANJIFA:      n_("Mughal Ganjifa"),
         GT_DASHAVATARA_GANJIFA: n_("Dashavatara Ganjifa"),
 
-        GT_CRIBBAGE_TYPE:       n_("Cribbage"),
         GT_HEXADECK:            n_("Hex A Deck"),
+        GT_MASTER_DECK:         n_("Master Deck"),
+        GT_TAROCK:              n_("Tarock"),
+
+        GT_CRIBBAGE_TYPE:       n_("Cribbage"),
         GT_ISHIDO:              n_("Ishido"),
         GT_LIGHTS_OUT:          n_("Lights Out"),
         GT_MATRIX:              n_("Matrix"),
@@ -171,7 +176,6 @@ class GI:
         GT_PUZZLE_TYPE:         n_("Puzzle"),
         GT_SAMEGAME:            n_("Samegame"),
         GT_SHISEN_SHO:          n_("Shisen-Sho"),
-        GT_TAROCK:              n_("Tarock"),
         GT_HANOI:               n_("Tower of Hanoi"),
 
         GT_CUSTOM:              n_("Custom"),
@@ -278,11 +282,17 @@ class GI:
             lambda gi, gt=GT_NAVAGRAHA_GANJIFA: gi.si.game_type == gt),
     )
 
+    SELECT_ALT_DECK_GAME_BY_TYPE = (
+        (n_("Hex A Deck type"),
+         lambda gi, gt=GT_HEXADECK: gi.si.game_type == gt),
+        (n_("Master Deck type"),
+         lambda gi, gt=GT_MASTER_DECK: gi.si.game_type == gt),
+        (n_("Tarock type"), lambda gi, gt=GT_TAROCK: gi.si.game_type == gt),
+    )
+
     SELECT_SPECIAL_GAME_BY_TYPE = (
         (n_("Cribbage type"),
             lambda gi, gt=GT_CRIBBAGE_TYPE: gi.si.game_type == gt),
-        (n_("Hex A Deck type"),
-            lambda gi, gt=GT_HEXADECK: gi.si.game_type == gt),
         (n_("Ishido type"), lambda gi, gt=GT_ISHIDO: gi.si.game_type == gt),
         (n_("Lights Out type"),
             lambda gi, gt=GT_LIGHTS_OUT: gi.si.game_type == gt),
@@ -296,7 +306,6 @@ class GI:
             lambda gi, gt=GT_SAMEGAME: gi.si.game_type == gt),
         (n_("Shisen-Sho type"),
             lambda gi, gt=GT_SHISEN_SHO: gi.si.game_type == gt),
-        (n_("Tarock type"), lambda gi, gt=GT_TAROCK: gi.si.game_type == gt),
         (n_("Tower of Hanoi type"),
             lambda gi, gt=GT_HANOI: gi.si.game_type == gt),
     )
@@ -705,6 +714,8 @@ class GameInfo(Struct):
                 category = GI.GC_NAVAGRAHA_GANJIFA
             elif game_type == GI.GT_DASHAVATARA_GANJIFA:
                 category = GI.GC_DASHAVATARA_GANJIFA
+            elif game_type == GI.GT_MASTER_DECK:
+                category = GI.GC_MASTER
             else:
                 category = GI.GC_FRENCH
         #

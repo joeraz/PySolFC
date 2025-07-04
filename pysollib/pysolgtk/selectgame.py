@@ -227,6 +227,8 @@ class SelectGameDialogWithPreview(MfxDialog):
         self._addGames(store, None, _("Mahjongg Games"), games)
         self._addGamesFromData(GI.SELECT_ORIENTAL_GAME_BY_TYPE, store,
                                None, _("Oriental Games"), all_games)
+        self._addGamesFromData(GI.SELECT_ALT_DECK_GAME_BY_TYPE, store,
+                               None, _("Alt Deck Games"), all_games)
         self._addGamesFromData(GI.SELECT_SPECIAL_GAME_BY_TYPE, store,
                                None, _("Special Games"), all_games)
         self._addGamesFromData(GI.SELECT_GAME_BY_TYPE, store,

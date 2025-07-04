@@ -910,6 +910,10 @@ class Application:
             t0 = "Ishido"
             if cs_type not in (CSI.TYPE_ISHIDO,):
                 t1 = t0
+        elif gc == GI.GC_MASTER:
+            t0 = "Master Deck"
+            if cs_type not in (CSI.TYPE_MASTER,):
+                t1 = t0
         else:
             # we should not come here
             t0 = t1 = "Unknown"

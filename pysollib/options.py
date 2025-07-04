@@ -221,6 +221,7 @@ highlight_piles = float(0.2, 9.9)
 11_9 = string_list(min=2, max=2)
 11_10 = string_list(min=2, max=2)
 12 = string_list(min=2, max=2)
+13 = string_list(min=2, max=2)
 scale_cards = boolean
 scale_x = float
 scale_y = float
@@ -626,6 +627,7 @@ class Options:
                                   9: ("The Card Players (9x9)", ""),
                                   10: ("Players Trumps (10x10)", "")},
                 CSI.TYPE_ISHIDO: {0: ("Simple Ishido XL", "")},
+                CSI.TYPE_MASTER: {0: ("Master Deck English XL", "")}
             }
         else:
             self.cardset = {
@@ -651,6 +653,7 @@ class Options:
                                   9: ("The Card Players (9x9)", ""),
                                   10: ("Players Trumps (10x10)", "")},
                 CSI.TYPE_ISHIDO: {0: ("Simple Ishido", "")},
+                CSI.TYPE_MASTER: {0: ("Master Deck English", "")}
             }
 
     # not changeable options
