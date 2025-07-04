@@ -21,8 +21,6 @@
 #
 # ---------------------------------------------------------------------------##
 
-import math
-
 from pysollib.game import Game
 from pysollib.gamedb import GI, GameInfo, registerGame
 from pysollib.layout import Layout

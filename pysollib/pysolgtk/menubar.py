@@ -468,7 +468,7 @@ class PysolMenubarTk:
         for label, d in (
             (ltk2gtk('&French games'),   GI.SELECT_GAME_BY_TYPE),
             (ltk2gtk('&Oriental games'), GI.SELECT_ORIENTAL_GAME_BY_TYPE),
-            (ltk2gtk('&Alt Deck games'), GI.SELECT_ALT_DECK_GAME_BY_TYPE,
+            (ltk2gtk('&Alt Deck games'), GI.SELECT_ALT_DECK_GAME_BY_TYPE),
             (ltk2gtk('&Special games'),  GI.SELECT_SPECIAL_GAME_BY_TYPE),
                 ):
             self._addGamesByType(games, menu, label, d)

@@ -86,8 +86,8 @@ class SelectGameData(SelectDialogTreeData):
             app.gdb.getGamesIdSortedByName()))
         self.no_games = [SelectGameLeaf(None, None, _("(no games)"), None), ]
         #
-        s_by_type = s_oriental = s_altdeck = s_special = s_original = s_contrib = \
-            s_mahjongg = None
+        s_by_type = s_oriental = s_altdeck = s_special = s_original \
+            = s_contrib = s_mahjongg = None
         g = []
         for data in (GI.SELECT_GAME_BY_TYPE,
                      GI.SELECT_ORIENTAL_GAME_BY_TYPE,
