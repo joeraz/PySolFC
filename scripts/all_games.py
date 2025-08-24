@@ -92,9 +92,8 @@ def by_category():
             games_by_cat[gt] += 1
         else:
             games_by_cat[gt] = 1
-    games_by_cat_list = [(i, j) for i, j in games_by_cat.items()]
-    games_by_cat_list.sort(key=lambda x: x[1])
-    games_by_cat_list = games_by_cat_list[::-1]
+    games_by_cat_list = sorted(
+        games_by_cat.items(), key=lambda x: x[1], reverse=True)
 #     print '<table border="2"><tr><th>Name</th><th>Number</th></tr>'
 #     for i in games_by_cat_list:
 #         print '<tr><td>%s</td><td>%s</td></tr>' % i
@@ -103,7 +102,6 @@ def by_category():
     for i in games_by_cat_list:
         print('<li>%s (%s games)</li>' % i)
     print('</ul>')
-    return
 
 
 def by_type():
@@ -119,8 +117,7 @@ def by_type():
             games_by_type[gt] += 1
         else:
             games_by_type[gt] = 1
-    games_by_type_list = list(games_by_type.items())
-    games_by_type_list.sort(key=lambda x: x[0])
+    games_by_type_list = sorted(games_by_type.items(), key=lambda x: x[0])
     #  print '<table border="2"><tr><th>Name</th><th>Number</th></tr>'
     #  for i in games_by_type_list:
     #      print '<tr><td>%s</td><td>%s</td></tr>' % i
@@ -129,7 +126,6 @@ def by_type():
     for i in games_by_type_list:
         print('<li>%s (%s games)</li>' % i)
     print('</ul>')
-    return
 
 
 def all_games(sort_by='id'):
@@ -216,8 +212,7 @@ def get_text():
             games_list[gi.short_name] = ''
         for n in gi.altnames:
             games_list[n] = ''
-    games_list = list(games_list.keys())
-    games_list.sort()
+    games_list = sorted(games_list.keys())
     print('''\
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR ORGANIZATION
@@ -251,8 +246,7 @@ def old_plain_text():
         #    games_list[gi.short_name] = ''
         for n in gi.altnames:
             games_list[n] = ''
-    games_list = games_list.keys()
-    games_list.sort()
+    games_list = sorted(games_list.keys())
     for g in games_list:
         print(g)
 

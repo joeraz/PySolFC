@@ -124,7 +124,7 @@ def subAnchorOffset(pos, anchor, size):
 # ************************************************************************
 
 
-class MfxCanvasGroup():
+class MfxCanvasGroup:
     def __init__(self, canvas, tag=None):
         # print(self, '__init__(', canvas, tag, ')')
 
@@ -249,7 +249,7 @@ def cardmagnif(canvas, size):
     return csl/sl
 
 
-class MfxCanvasImage(object):
+class MfxCanvasImage:
     def __init__(self, canvas, *args, **kwargs):
 
         # print ('MfxCanvasImage: %s | %s | %s' % (canvas, args, kwargs))
@@ -274,7 +274,7 @@ class MfxCanvasImage(object):
         # group (group wird über addtag gesetzt, sobald das image
         # in einem stack ist.)
 
-        super(MfxCanvasImage, self).__init__()
+        super().__init__()
         self.canvas = canvas
         self.redeal = False
 
@@ -333,7 +333,6 @@ class MfxCanvasImage(object):
                 image = self.image.children[0]
                 image.texture = kw["image"].texture
                 # print('redeal texture:',image.texture)
-        pass
 
     def makeDeferredRaise(self, pos):
         def animCallback():
@@ -371,7 +370,6 @@ class MfxCanvasImage(object):
         self.group = None
         if (self.image):
             self.image.group = None
-        pass
 
     def delete(self):
         # print('MfxCanvasImage: delete()')
@@ -489,7 +487,7 @@ class MfxCanvasImage(object):
         self.config(state='hidden')
 
 
-class MfxCanvasLine(object):
+class MfxCanvasLine:
     def __init__(self, canvas, *args, **kwargs):
         # print('MfxCanvasLine: %s %s' % (args, kwargs))
 
@@ -515,7 +513,7 @@ class MfxCanvasLine(object):
         self.canvas.clear_widgets([self.line])
 
 
-class MfxCanvasRectangle(object):
+class MfxCanvasRectangle:
     def __init__(self, canvas, *args, **kwargs):
 
         # logging.info('MfxCanvasRectangle: %s %s' % (args, kwargs))
@@ -546,8 +544,7 @@ class MfxCanvasRectangle(object):
             lambda dt: self.delete_deferred_step(seconds), 0.05)
 
     def addtag(self, tag):
-        logging.info('MfxCanvasRectangle: addtag(%s) - fake' % tag)
-        pass
+        logging.info('MfxCanvasRectangle: addtag(%s) - fake', tag)
 
     def tkraise(self, aboveThis=None):
         # logging.info('MfxCanvasRectangle: tkraise(%s) - fake' % item)
@@ -555,10 +552,9 @@ class MfxCanvasRectangle(object):
         if aboveThis:
             abitm = aboveThis.widget
         self.canvas.tag_raise(self.rect, abitm)
-        pass
 
 
-class MfxCanvasText(object):
+class MfxCanvasText:
     def __init__(self, canvas, x, y, preview=-1, **kwargs):
 
         if preview < 0:
@@ -570,7 +566,7 @@ class MfxCanvasText(object):
         if 'group' in kwargs:
             del kwargs['group']
 
-        super(MfxCanvasText, self).__init__()
+        super().__init__()
 
         label = LText(canvas, x, y, **kwargs)
         label.pos, label.size = canvas.CoreToKivy(
@@ -594,7 +590,6 @@ class MfxCanvasText(object):
         if aboveThis:
             abitm = aboveThis.widget
         self.canvas.tag_raise(self.label, abitm)
-        pass
 
     def bbox(self):
         # Dimensionen als 2x2 array zurückgeben.
@@ -622,7 +617,7 @@ class MfxCanvas(LImage):
         return f'<MfxCanvas @ {hex(id(self))}>'
 
     def __init__(self, wmain, *args, **kw):
-        super(MfxCanvas, self).__init__(background=True)
+        super().__init__(background=True)
 
         # print('MfxCanvas: __init__()')
         # self.tags = {}   # bei basisklasse widget (ev. nur vorläufig)
@@ -802,12 +797,10 @@ class MfxCanvas(LImage):
     def xview(self):
         print('MfxCanvas: xview')
         return [1, 1]
-        pass
 
     def yview(self):
         print('MfxCanvas: yview')
         return [1, 1]
-        pass
 
     #
     # top-image support
@@ -854,7 +847,6 @@ class MfxCanvas(LImage):
     def deleteAllItems(self):
         print('MfxCanvas: deleteAllItems')
         self.clear_widgets()
-        pass
 
     def findCard(self, stack, event):
         print('MfxCanvas: findCard(%s, %s)' % (stack, event))
@@ -932,13 +924,11 @@ class MfxCanvas(LImage):
         # TBD
         # Wir lassen das. Das TopImage deckt alles ab. Spielen ist
         # nicht möglich.
-        pass
 
     def showAllItems(self):
         print('MfxCanvas: showAllItems')
         # TBD
         # Brauchts darum auch nicht.
-        pass
 
     # Erweiterungen fuer Tk Canvas (prüfen was noch nötig!!).
 
@@ -962,10 +952,11 @@ class MfxCanvas(LImage):
         if 'text' in cnf:
             # tagOrId ist das Label.
             tagOrId.text = cnf['text']
-            pass
 
-    def config(self, cnf={}, **kw):
+    def config(self, cnf=None, **kw):
         # print('MfxCanvas: config %s %s' % (cnf, kw))
+        if cnf is None:
+            cnf = {}
         if ('cursor' in kw):
             pass
         if ('width' in kw):

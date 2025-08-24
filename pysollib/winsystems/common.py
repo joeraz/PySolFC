@@ -49,7 +49,6 @@ def init_tile(app, top):
                     # print 'load theme:', t
                 except Exception:
                     traceback.print_exc()
-                    pass
 
 
 def set_theme(app, top, theme):
@@ -97,8 +96,9 @@ def base_init_root_window(root, app):
     root.wm_iconname(TITLE + ' ' + VERSION)
 
     if TOOLKIT == 'tk':
-        icons = [loadImage(img) for img in app.dataloader.findAllIconSizes()]
-        icons.sort(reverse=True, key=lambda img: img.width())
+        icons = sorted(
+            (loadImage(img) for img in app.dataloader.findAllIconSizes()),
+            reverse=True, key=lambda img: img.width())
         if icons:
             try:
                 root.wm_iconphoto(True, *icons)

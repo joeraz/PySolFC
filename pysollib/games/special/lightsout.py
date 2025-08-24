@@ -83,6 +83,9 @@ class LightsOut_RowStack(OpenStack):
 
         return OpenStack.playFlipMove(self, sound, animation)
 
+    def highlightMatchingCards(self, event):
+        self.game.highlightNotMatching()
+
 
 # Talon that can deal randomly flipped cards.
 class LightsOut_Talon(InitialDealTalonStack):
@@ -93,8 +96,7 @@ class LightsOut_Talon(InitialDealTalonStack):
         assert len(self.cards) >= len(stacks)
         old_state = self.game.enterState(self.game.S_DEAL)
         if reverse:
-            stacks = list(stacks)
-            stacks.reverse()
+            stacks = list(reversed(stacks))
         for r in stacks:
             if self.getCard().face_up:
                 # TODO: This probably needs a refactor.

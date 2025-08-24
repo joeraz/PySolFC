@@ -233,7 +233,7 @@ class Struct:
         self.__dict__[key] = value
 
     def addattr(self, **kw):
-        for key in kw.keys():
+        for key in kw:
             if hasattr(self, key):
                 raise AttributeError(key)
         self.__dict__.update(kw)
@@ -245,7 +245,7 @@ class Struct:
         self.__dict__.update(dict)
 
     def clear(self):
-        for key in self.__dict__.keys():
+        for key in self.__dict__:
             if isinstance(key, list):
                 self.__dict__[key] = []
             elif isinstance(key, tuple):
@@ -273,7 +273,9 @@ def kwdefault(kw, **defaults):
 
 
 class KwStruct:
-    def __init__(self, kw={}, **defaults):
+    def __init__(self, kw=None, **defaults):
+        if kw is None:
+            kw = {}
         if isinstance(kw, KwStruct):
             kw = kw.__dict__
         if isinstance(defaults, KwStruct):

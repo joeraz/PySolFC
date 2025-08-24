@@ -117,7 +117,7 @@ def get_screen_ori():
     else:
         so = 'portrait'
 
-    logging.info("LApp: ori = %s" % so)
+    logging.info("LApp: ori = %s", so)
     return so
 
 # =============================================================================
@@ -125,7 +125,7 @@ def get_screen_ori():
 
 class LPopCommander(LBase):
     def __init__(self, **kw):
-        super(LPopCommander, self).__init__()
+        super().__init__()
         self.pop_command = kw['pop_command']
 
     def pop(self):
@@ -139,7 +139,7 @@ class LPopCommander(LBase):
 
 class LAnimationTask(LTask, LBase):
     def __init__(self, spos, widget, **kw):
-        super(LAnimationTask, self).__init__(widget.card)
+        super().__init__(widget.card)
         self.spos = spos
         self.widget = widget
 
@@ -155,7 +155,7 @@ class LAnimationTask(LTask, LBase):
         print(self.widget.card)
 
     def start(self):
-        super(LAnimationTask, self).start()
+        super().start()
 
         anim = Animation(
             x=self.xdest, y=self.ydest, duration=self.duration,
@@ -177,9 +177,9 @@ class LAnimationTask(LTask, LBase):
 # =============================================================================
 
 
-class LAnimationMgr(object):
+class LAnimationMgr:
     def __init__(self, **kw):
-        super(LAnimationMgr, self).__init__()
+        super().__init__()
         self.tasks = []
         self.callbacks = []
         self.taskQ = LTaskQ()
@@ -235,9 +235,6 @@ LSoundLoader = SoundLoader
 
 
 class LBoxLayout(BoxLayout, LBase):
-    def __init__(self, **kw):
-        super(LBoxLayout, self).__init__(**kw)
-
     def winfo_screenwidth(self):
         return self.size[0]
 
@@ -381,7 +378,7 @@ class LText(Widget, LBase):
     text = StringProperty('')
 
     def __init__(self, canvas, x, y, **kwargs):
-        super(LText, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         # super(LText, self).__init__()
 
         if 'text' not in kwargs:
@@ -447,20 +444,19 @@ class LText(Widget, LBase):
 # =============================================================================
 
 
-class LEvent(object):
+class LEvent:
     def __init__(self):
         self.x = 0
         self.y = 0
         self.cardid = -1
         self.char = False
-        pass
 
 # =============================================================================
 
 
 class LLine(Widget, LBase):
     def __init__(self, canvas, args, **kw):
-        super(LLine, self).__init__(**kw)
+        super().__init__(**kw)
 
         print('kw = %s%s' % (args, kw))
 
@@ -609,7 +605,7 @@ class LLine(Widget, LBase):
 
 class LRectangle(Widget, LBase):
     def __init__(self, prnt, args, **kw):
-        super(LRectangle, self).__init__(**kw)
+        super().__init__(**kw)
         self.prnt = prnt
 
         # print('width   %s' % kw['width'])
@@ -684,8 +680,8 @@ class LRectangle(Widget, LBase):
     def on_touch_down(self, touch):
         if self.collide_point(*touch.pos):
             if self.group is not None:
-                logging.info('LRectangle: self=%s group=%s' %
-                             (self, self.group))
+                logging.info('LRectangle: self=%s group=%s',
+                             self, self.group)
                 if '<1>' in self.group.bindings:
                     # logging.info('LRectangle: size=%s' % (self.size))
                     ppos, psize = self.group.canvas.KivyToCore(touch.pos)
@@ -702,8 +698,8 @@ class LRectangle(Widget, LBase):
     def on_touch_up(self, touch):
         if self.collide_point(*touch.pos):
             if self.group is not None:
-                logging.info('LRectangle: self=%s group=%s' %
-                             (self, self.group))
+                logging.info('LRectangle: self=%s group=%s',
+                             self, self.group)
                 if '<ButtonRelease-1>' in self.group.bindings:
                     ppos, psize = self.group.canvas.KivyToCore(touch.pos)
                     event = LEvent()
@@ -722,7 +718,7 @@ class LRectangle(Widget, LBase):
 
 class LImageItem(BoxLayout, LBase):
     def __init__(self, **kw):
-        super(LImageItem, self).__init__(**kw)
+        super().__init__(**kw)
         self.game = None
         self.card = None
         self.group = None
@@ -922,7 +918,7 @@ class LImageItem(BoxLayout, LBase):
 
 class LTreeRoot(TreeView, LBase):
     def __init__(self, **kw):
-        super(LTreeRoot, self).__init__(**kw)
+        super().__init__(**kw)
         self.kw = kw
 
     def closeLastNode(self):
@@ -953,7 +949,7 @@ class LTreeSliderNode(Slider, TreeViewNode, LBase):
             self.step = kw['setup'][2]
             del kw['setup']
 
-        super(LTreeSliderNode, self).__init__(markup=True, **kw)
+        super().__init__(markup=True, **kw)
         self.value = self.variable.value
         self.height = '24sp'
         self.background_width = '12sp'
@@ -981,7 +977,7 @@ class LTreeNode(ButtonBehavior, TreeViewLabel, LBase):
         if ('text' in kw):
             self.title = kw['text']
 
-        super(LTreeNode, self).__init__(markup=True, **kw)
+        super().__init__(markup=True, **kw)
 
         if self.variable:
             self.variable.bind(value=self.onVarChange)
@@ -1048,7 +1044,6 @@ class LTreeNode(ButtonBehavior, TreeViewLabel, LBase):
             print('select %s' % self.title)
         else:
             print('deselect %s' % self.title)
-        pass
 
     def collapseChildren(self, deep=False):
 
@@ -1123,7 +1118,7 @@ class LTreeNode(ButtonBehavior, TreeViewLabel, LBase):
 
 class LTopLevelContent(BoxLayout, LBase):
     def __init__(self, **kw):
-        super(LTopLevelContent, self).__init__(**kw)
+        super().__init__(**kw)
 
         # Macht die Hintergrundfarbe der TopLevel (Dialog-) Fenster.
         with self.canvas.before:
@@ -1145,7 +1140,7 @@ class LTopLevelContent(BoxLayout, LBase):
 class LTopLine(ButtonBehavior, Label, LBase):
 
     def __init__(self, **kw):
-        super(LTopLine, self).__init__(**kw)
+        super().__init__(**kw)
         with self.canvas.before:
             Color(0.45, 0.3, 0.3, 1.0)
             self.rect = Rectangle(pos=self.pos, size=self.size)
@@ -1173,7 +1168,7 @@ class LTopLine(ButtonBehavior, Label, LBase):
 
 class LTopLevelBase(BoxLayout, LBase):
     def __init__(self, title='', **kw):
-        super(LTopLevelBase, self).__init__(orientation="vertical", **kw)
+        super().__init__(orientation="vertical", **kw)
         self.title = title
         self.titleline = LTopLine(text=title, size_hint=[1.0, 0.15])
         self.content = LTopLevelContent(orientation="vertical", **kw)
@@ -1185,7 +1180,7 @@ class LTopLevelBase(BoxLayout, LBase):
 
 class LTopLevel0(LTopLevelBase, LBase):
     def __init__(self, top, title='', **kw):
-        super(LTopLevel0, self).__init__(title=title, **kw)
+        super().__init__(title=title, **kw)
 
         self.main = top
         self.titleline.bind(on_press=self.onClick)
@@ -1200,7 +1195,7 @@ class LTopLevel0(LTopLevelBase, LBase):
 
 class LTopLevel(LTopLevelBase, LBase):
     def __init__(self, parent, title='', **kw):
-        super(LTopLevel, self).__init__(title=title, **kw)
+        super().__init__(title=title, **kw)
         self.mainwindow = parent
 
     def processAndroidBack(self):
@@ -1220,7 +1215,6 @@ class LTopLevel(LTopLevelBase, LBase):
                     # print("  childitem: %s" % str(t))
                     if isinstance(t, LPopCommander):
                         ret = t.pop()
-                    pass
         return ret
 
 # =============================================================================
@@ -1228,7 +1222,7 @@ class LTopLevel(LTopLevelBase, LBase):
 
 class LMenuBar(BoxLayout, LBase):
     def __init__(self, **kw):
-        super(LMenuBar, self).__init__(**kw)
+        super().__init__(**kw)
         self.menu = None
         self.size_hint = (1.0, 0.08)
 
@@ -1255,7 +1249,7 @@ class LMenuBar(BoxLayout, LBase):
 
 class LMenu(ActionView, LBase):
     def __init__(self, prev, **kw):
-        super(LMenu, self).__init__(**kw)
+        super().__init__(**kw)
 
         class MyActionPrev(ActionPrevious, LBase):
             pass
@@ -1281,7 +1275,6 @@ class LMenu(ActionView, LBase):
         # print ('LMenu: prev = %s' % menu)
         self.uppermenu = menu
         self.ap.bind(on_release=self.upper)
-        pass
 
     def upper(self, event):
         print('upper')
@@ -1320,7 +1313,7 @@ class LMenu(ActionView, LBase):
 class LMenuItem(ActionButton, LBase):
 
     def __init__(self, menu, **kw):
-        super(LMenuItem, self).__init__(**kw)
+        super().__init__(**kw)
         # super(LMenuItem, self).__init__()
         self.bar = None
         self.submenu = None
@@ -1349,7 +1342,6 @@ class LMenuItem(ActionButton, LBase):
         self.submenu.prev(self.menu)
         self.submenu.setBar(self.bar)
         self.bind(on_release=self.onClick)
-        pass
 
     def setCommand(self, cmd):
         print('LMenuItem: setCommand')
@@ -1363,7 +1355,7 @@ class LMenuItem(ActionButton, LBase):
 
 class LScrollView(ScrollView, LBase):
     def __init__(self, **kw):
-        super(LScrollView, self).__init__(**kw)
+        super().__init__(**kw)
         self.delayDown = False
         self.touch = None
 
@@ -1395,7 +1387,7 @@ class LScrollView(ScrollView, LBase):
 
 class LWorkWindow(Widget):
     def __init__(self):
-        super(LWorkWindow, self).__init__()
+        super().__init__()
 
         # beispiel zu canvas (hintergrund)
         with self.canvas.before:
@@ -1435,14 +1427,14 @@ class LTkBase:
 
     def wm_title(self, strg):
         self.title = strg
-        logging.info("LTkBase: wm_title %s" % strg)
+        logging.info("LTkBase: wm_title %s", strg)
         if (self.app):
             # self.app.top.topLine.text = strg
             self.app.top.getMenu().ap.title = strg
 
     def wm_iconname(self, strg):
         self.icontitle = strg
-        logging.info("LTkBase: wm_iconname %s" % strg)
+        logging.info("LTkBase: wm_iconname %s", strg)
 
     def eval_screen_dim(self, size):
         self.screenSize = size
@@ -1461,11 +1453,11 @@ class LTkBase:
         self.screenSize = (d.getWidth(), d.getHeight())
 
     def winfo_screenwidth(self):
-        logging.info("LTkBase: winfo_screenwidth %s" % str(self.size[0]))
+        logging.info("LTkBase: winfo_screenwidth %s", str(self.size[0]))
         return self.size[0]
 
     def winfo_screenheight(self):
-        logging.info("LTkBase: winfo_screenheight %s" % str(self.size[1]))
+        logging.info("LTkBase: winfo_screenheight %s", str(self.size[1]))
         return self.size[1]
 
     def winfo_screendepth(self):
@@ -1482,11 +1474,9 @@ class LTkBase:
 
     def wm_withdraw(self):
         logging.info("LTkBase: wm_withdraw")
-        pass
 
     def busyUpdate(self):
         print('LTkBase: busyUpdate()')
-        pass
 
     def grid_columnconfigure(self, a, weight):
         pass
@@ -1495,13 +1485,11 @@ class LTkBase:
         pass
 
     def connectApp(self, app):
-        logging.info("LTkBase: connectApp %s" % str(app))
+        logging.info("LTkBase: connectApp %s", str(app))
         self.app = app
-        pass
 
     def wm_geometry(self, val):
-        logging.info("LTkBase: wm_geometry %s" % str(val))
-        pass
+        logging.info("LTkBase: wm_geometry %s", str(val))
 
     def update_idletasks(self):
         # logging.info("LTkBase: update_idletasks")
@@ -1524,7 +1512,6 @@ class LTkBase:
 
     def mainloop(self):
         logging.info("LTkBase: mainloop")
-        pass
 
     def quit(self):
         logging.info("LTkBase: quit")
@@ -1544,7 +1531,7 @@ class LTkBase:
         self.sleeping = False
 
     def sleep(self, seconds):
-        logging.info('LTkBase: sleep %s seconds' % seconds)
+        logging.info('LTkBase: sleep %s seconds', seconds)
         self.sleeping = True
         Clock.schedule_once(self.onWakeUp, seconds)
         while self.sleeping:
@@ -1619,7 +1606,7 @@ class LMainWindow(BoxLayout, LTkBase):
     longPress = NumericProperty(0)
 
     def __init__(self, **kw):
-        super(LMainWindow, self).__init__(orientation='vertical')
+        super().__init__(orientation='vertical')
         LTkBase.__init__(self)
         self.menuArea = LMenuBar()
         self.workContainer = LBoxLayout(orientation='horizontal')
@@ -1659,7 +1646,6 @@ class LMainWindow(BoxLayout, LTkBase):
 
     def on_motion(self, m):
         print('on_motion', m)
-        pass
 
     # Events.
 
@@ -1849,7 +1835,7 @@ class LApp(App):
         return False    # delegate
 
     def __init__(self, args):
-        super(LApp, self).__init__()
+        super().__init__()
         self.args = args
         self.title = "PySolFC"
         self.baseWindow = FloatLayout()
@@ -1857,7 +1843,7 @@ class LApp(App):
     def build(self):
         class MyLabel(Label, LBase):
             def __init__(self, **kw):
-                super(MyLabel, self).__init__(**kw)
+                super().__init__(**kw)
                 with self.canvas.before:
                     Color(0.05, 0.05, 0.05, 1)
                     self.rect = Rectangle(pos=self.pos, size=self.size)
@@ -1875,7 +1861,7 @@ class LApp(App):
 
     def app_start(self, *args):
         logging.info("LApp: app_start")
-        logging.info('top = %s' % str(self.baseWindow))
+        logging.info('top = %s', str(self.baseWindow))
 
         self.mainWindow = LMainWindow()
         Cache.register('LAppCache', limit=10)
@@ -2003,22 +1989,19 @@ class LApp(App):
             app.opt.last_gameid = app.game.id
         except Exception:
             traceback.print_exc()
-            pass
         # save options
         try:
             app.saveOptions()
         except Exception:
             traceback.print_exc()
-            pass
         # save statistics
         try:
             app.saveStatistics()
         except Exception:
             traceback.print_exc()
-            pass
         logging.info("LApp: on_pause - gamesaved")
 
-        logging.info("LApp: on_pause, Window.size=%s" % str(Window.size))
+        logging.info("LApp: on_pause, Window.size=%s", str(Window.size))
 
         return pauseSupport
 
@@ -2035,7 +2018,7 @@ class LApp(App):
         so = get_screen_ori()
         go = so  # flake8: F841 nonsense!
         so = go
-        logging.info("LApp: on_resume, Window.size=%s" % str(Window.size))
+        logging.info("LApp: on_resume, Window.size=%s", str(Window.size))
         # ANM:
         # kivy.core.window.Window hat hier u.U. eine falsche dimension
         # und unterscheidet sich vom display (-> in get_screen_ori).

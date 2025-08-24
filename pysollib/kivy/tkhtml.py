@@ -286,16 +286,13 @@ class tkHTMLParser(htmllib.HTMLParser):
 
 
 class HTMLButton(Button):
-    def __init__(self, **kw):
-        super(HTMLButton, self).__init__(**kw)
-
     def config(self, **kw):
         pass
 
 
 class HTMLLabel(Label):
     def __init__(self, **kw):
-        super(HTMLLabel, self).__init__(**kw)
+        super().__init__(**kw)
 
         self.bind(size=self.onUpdate)
         self.bind(pos=self.onUpdate)
@@ -310,7 +307,7 @@ class HTMLLabel(Label):
 
 class HTMLText(LScrollView, LPopCommander):
     def __init__(self, **kw):
-        super(HTMLText, self).__init__(**kw)
+        super().__init__(**kw)
 
         self.viewer = kw['viewer']
         # self.scroll_timeout = 250
@@ -380,7 +377,6 @@ class HTMLText(LScrollView, LPopCommander):
         # print('insert text: %s' % data)
         self.textbuffer = self.textbuffer + data
         # self.label.text = self.textbuffer
-        pass
 
     def index(self, cmd):
         # print('index: %s' % cmd)

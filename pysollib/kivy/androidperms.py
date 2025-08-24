@@ -17,7 +17,7 @@ except ImportError:
 # LB221121.
 
 
-class AndroidPerms(object):
+class AndroidPerms:
     def __init__(self):
         if jnius is None:
             return
@@ -50,7 +50,7 @@ class AndroidPerms(object):
     def requestPerms(self, permissions):
         if jnius is None:
             return True
-        logging.info("androidperms: API version %d" % (self.version.SDK_INT))
+        logging.info("androidperms: API version %d", self.version.SDK_INT)
         if self.version.SDK_INT > 29:
             return
         logging.info("androidperms: invoke permission dialog")

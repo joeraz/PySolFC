@@ -155,8 +155,7 @@ class AbstractHint(HintInterface):
     def _returnHints(self):
         hints = self.hints
         self.reset()
-        hints.sort()
-        hints.reverse()
+        hints.sort(reverse=True)
         return hints
 
     #
@@ -662,8 +661,8 @@ class DefaultHint(AbstractHint):
 # ************************************************************************
 
 class CautiousDefaultHint(DefaultHint):
-    shallMovePile = DefaultHint._cautiousShallMovePile
-    # shallMovePile = DefaultHint._cautiousDemoShallMovePile
+    # shallMovePile = DefaultHint._cautiousShallMovePile
+    shallMovePile = DefaultHint._cautiousDemoShallMovePile
 
     def _preferHighRankMoves(self):
         return 1

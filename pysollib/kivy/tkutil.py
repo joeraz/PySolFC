@@ -165,13 +165,11 @@ def bind(widget, sequence, func, add=None):
         return
     if (sequence == '<Configure>'):
         return
-    pass
 
 
 def unbind_destroy(widget):
     # logging.info('tkutil: unbind  %s' % (widget))
     widget.bindings = []
-    pass
 
 
 # ************************************************************************
@@ -213,7 +211,7 @@ def after_cancel(t):
 
 LCoreImage = CoreImage  # noqa
 
-class LImageInfo(object):   # noqa
+class LImageInfo:
     def __init__(self, arg):
         if isinstance(arg, Texture):
             self.filename = None
@@ -339,8 +337,8 @@ def fillTexture(texture, fill, outline=None, owidth=1):
 
 def createImage(width, height, fill, outline=None, outwidth=1):
 
-    logging.info("createImage: w=%s, h=%s, f=%s, o=%s, ow=%s" %
-                 (width, height, fill, outline, outwidth))
+    logging.info("createImage: w=%s, h=%s, f=%s, o=%s, ow=%s",
+                 width, height, fill, outline, outwidth)
 
     # test stellungen:
     # if (fill==None):
@@ -496,7 +494,7 @@ def createBottom(image, color='white', backfile=None):
     if backfile is not None:
         backfilebase = os.path.basename(backfile)
 
-    logging.info("createBottom: %s | %s" % (color, backfilebase))
+    logging.info("createBottom: %s | %s", color, backfilebase)
     # print('createBottom:',image)
 
     # th = 1                              # thickness
@@ -546,7 +544,7 @@ def createBottom(image, color='white', backfile=None):
 
 def get_text_width(text, font, root=None):
 
-    logging.info("get_text_width: %s  %s" % (text, font))
+    logging.info("get_text_width: %s  %s", text, font)
 
     label = CoreLabel()
     label.text = text

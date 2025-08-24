@@ -508,7 +508,6 @@ class PyGameAudioClient(AbstractAudioClient):
             # for py2exe
             import pygame.base
             import pygame.rwobject
-            import pygame.mixer_music
         self.mixer = pygame.mixer
         self.time = pygame.time
         self.mixer_music = pygame.mixer_music
@@ -551,7 +550,6 @@ class PyGameAudioClient(AbstractAudioClient):
         except Exception:
             if traceback:
                 traceback.print_exc()
-            pass
         self.sound_priority = priority
         return 1
 

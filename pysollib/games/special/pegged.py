@@ -103,6 +103,9 @@ class Pegged_RowStack(ReserveStack):
         ReserveStack.copyModel(self, clone)
         clone.pos = self.pos
 
+    def highlightMatchingCards(self, event):
+        self.game.highlightNotMatching()
+
 
 class Pegged_Foundation(AbstractFoundationStack):
 
@@ -178,9 +181,7 @@ class Pegged(Game):
     #
 
     def shuffle(self):
-        cards = list(self.cards)
-        cards.reverse()
-        for card in cards:
+        for card in reversed(self.cards):
             self.s.talon.addCard(card, update=0)
             card.showBack(unhide=0)
 

@@ -22,6 +22,7 @@
 #
 # ---------------------------------------------------------------------------#
 
+import collections
 import math
 import os
 import re
@@ -66,7 +67,7 @@ from pysollib.settings import TITLE
 # ************************************************************************
 
 
-class LMenuBase(object):
+class LMenuBase:
     def __init__(self, menubar, parent, title, app):
         self.menubar = menubar
         self.parent = parent
@@ -145,9 +146,6 @@ class LMenuBase(object):
 
 
 class LTreeGenerator(LMenuBase):
-    def __init__(self, menubar, parent, title, app):
-        super(LTreeGenerator, self).__init__(menubar, parent, title, app)
-
     def generate(self):
         tv = LTreeRoot(root_options={'text': 'EditTree'})
         tv.hide_root = True
@@ -162,7 +160,6 @@ class LTreeGenerator(LMenuBase):
                 Clock.schedule_once(process, 0.2)
             except StopIteration:
                 print('generator: all jobs done')
-                pass
 
         Clock.schedule_once(process, 0.2)
         return tv
@@ -184,7 +181,7 @@ class LMenuDialog(LMenuBase):
     dialogCache = {}
 
     def __init__(self, menubar, parent, title, app, **kw):
-        super(LMenuDialog, self).__init__(menubar, parent, title, app)
+        super().__init__(menubar, parent, title, app)
 
         self.window = None
         self.running = False
@@ -257,7 +254,7 @@ class MainMenuDialog(LMenuDialog):
 
     def __init__(self, menubar, parent, title, app, **kw):
         kw['persist'] = True
-        super(MainMenuDialog, self).__init__(
+        super().__init__(
             menubar, parent, title, app, **kw)
 
         # print('MainMenuDialog starting')
@@ -300,11 +297,6 @@ class MainMenuDialog(LMenuDialog):
 
 
 class FileMenuDialog(LMenuDialog):
-
-    def __init__(self, menubar, parent, title, app, **kw):
-        super(FileMenuDialog, self).__init__(
-            menubar, parent, title, app, **kw)
-
     def make_favid_list(self, tv, rg):
         favids = self.app.opt.favorite_gameid
         for fid in favids:
@@ -374,7 +366,7 @@ class EditMenuDialog(LMenuDialog):  # Tools
 
     def __init__(self, menubar, parent, title, app, **kw):
         kw['persist'] = True
-        super(EditMenuDialog, self).__init__(
+        super().__init__(
             menubar, parent, title, app, **kw)
 
     def buildTree(self, tv, node):
@@ -449,7 +441,7 @@ class GameMenuDialog(LMenuDialog):
 
     def __init__(self, menubar, parent, title, app, **kw):
         kw['persist'] = True
-        super(GameMenuDialog, self).__init__(
+        super().__init__(
             menubar, parent, title, app, **kw)
 
     def make_command(self, key, command):
@@ -519,7 +511,7 @@ class AssistMenuDialog(LMenuDialog):
 
     def __init__(self, menubar, parent, title, app, **kw):
         kw['persist'] = True
-        super(AssistMenuDialog, self).__init__(
+        super().__init__(
             menubar, parent, title, app, **kw)
 
     def buildTree(self, tv, node):
@@ -559,10 +551,6 @@ class AssistMenuDialog(LMenuDialog):
 
 
 class LOptionsMenuGenerator(LTreeGenerator):
-    def __init__(self, menubar, parent, title, app):
-        super(LOptionsMenuGenerator, self).__init__(
-            menubar, parent, title, app)
-
     def buildTree(self, tv, node):
         # -------------------------------------------
         # Automatic play settings
@@ -861,16 +849,9 @@ class LOptionsMenuGenerator(LTreeGenerator):
         if rg:
             self.menubar.tkopt.cardset.value = self.app.cardset.index
 
-            csm = self.app.cardset_manager
-            cdict = {}
-            i = 0
-            while 1:
-                cardset = csm.get(i)
-                if cardset is None: break  # noqa
-                t = cardset.type
-                if t not in cdict.keys(): cdict[t] = []  # noqa
-                cdict[t].append((i, cardset))
-                i += 1
+            cdict = collections.defaultdict(list)
+            for i, cardset in enumerate(self.app.cardset_manager.getAll()):
+                cdict[cardset.type].append((i, cardset))
 
             for k in sorted(cdict.keys()):
                 name = CSI.TYPE_NAME[k]
@@ -927,8 +908,8 @@ class LOptionsMenuGenerator(LTreeGenerator):
                     self.menubar.mOptTableColor)
                 self.addRadioNode(
                     tv, rg1,
-                    _('Bright Green'),
-                    self.menubar.tkopt.color_vars[key], '#00ff00',
+                    _('Bronze'),
+                    self.menubar.tkopt.color_vars[key], '#ce8946',
                     self.menubar.mOptTableColor)
                 self.addRadioNode(
                     tv, rg1,
@@ -942,6 +923,11 @@ class LOptionsMenuGenerator(LTreeGenerator):
                     self.menubar.mOptTableColor)
                 self.addRadioNode(
                     tv, rg1,
+                    _('Gold'),
+                    self.menubar.tkopt.color_vars[key], '#ffd700',
+                    self.menubar.mOptTableColor)
+                self.addRadioNode(
+                    tv, rg1,
                     _('Grey'),
                     self.menubar.tkopt.color_vars[key], '#888888',
                     self.menubar.mOptTableColor)
@@ -949,6 +935,11 @@ class LOptionsMenuGenerator(LTreeGenerator):
                     tv, rg1,
                     _('Green'),
                     self.menubar.tkopt.color_vars[key], '#008200',
+                    self.menubar.mOptTableColor)
+                self.addRadioNode(
+                    tv, rg1,
+                    _('Lime'),
+                    self.menubar.tkopt.color_vars[key], '#00ff00',
                     self.menubar.mOptTableColor)
                 self.addRadioNode(
                     tv, rg1,
@@ -978,7 +969,7 @@ class LOptionsMenuGenerator(LTreeGenerator):
                 self.addRadioNode(
                     tv, rg1,
                     _('Purple'),
-                    self.menubar.tkopt.color_vars[key], '#8300ff',
+                    self.menubar.tkopt.color_vars[key], '#800080',
                     self.menubar.mOptTableColor)
                 self.addRadioNode(
                     tv, rg1,
@@ -987,8 +978,18 @@ class LOptionsMenuGenerator(LTreeGenerator):
                     self.menubar.mOptTableColor)
                 self.addRadioNode(
                     tv, rg1,
+                    _('Silver'),
+                    self.menubar.tkopt.color_vars[key], '#c0c0c0',
+                    self.menubar.mOptTableColor)
+                self.addRadioNode(
+                    tv, rg1,
                     _('Teal'),
-                    self.menubar.tkopt.color_vars[key], '#008286',
+                    self.menubar.tkopt.color_vars[key], '#008080',
+                    self.menubar.mOptTableColor)
+                self.addRadioNode(
+                    tv, rg1,
+                    _('Violet'),
+                    self.menubar.tkopt.color_vars[key], '#8300ff',
                     self.menubar.mOptTableColor)
                 self.addRadioNode(
                     tv, rg1,
@@ -1239,9 +1240,7 @@ class LOptionsMenuGenerator(LTreeGenerator):
         data_dir = os.path.join(self.app.dataloader.dir, 'images', 'pause')
         dl = tv.add_node(
             LTreeNode(text=_('Pause text')), rg)
-        styledirs = os.listdir(data_dir)
-        styledirs.sort()
-        for f in styledirs:
+        for f in sorted(os.listdir(data_dir)):
             d = os.path.join(data_dir, f)
             if os.path.isdir(d) and os.path.exists(os.path.join(d)):
                 name = f.replace('_', ' ').capitalize()
@@ -1254,9 +1253,7 @@ class LOptionsMenuGenerator(LTreeGenerator):
                                 'redealicons')
         dl = tv.add_node(
             LTreeNode(text=_('Redeal icons')), rg)
-        styledirs = os.listdir(data_dir)
-        styledirs.sort()
-        for f in styledirs:
+        for f in sorted(os.listdir(data_dir)):
             d = os.path.join(data_dir, f)
             if os.path.isdir(d) and os.path.exists(os.path.join(d)):
                 name = f.replace('_', ' ').capitalize()
@@ -1327,7 +1324,7 @@ class OptionsMenuDialog(LMenuDialog):
 
     def __init__(self, menubar, parent, title, app, **kw):
         kw['persist'] = True
-        super(OptionsMenuDialog, self).__init__(
+        super().__init__(
             menubar, parent, title, app, **kw)
 
     def initTree(self):
@@ -1342,7 +1339,7 @@ class OptionsMenuDialog(LMenuDialog):
 class HelpMenuDialog(LMenuDialog):
     def __init__(self, menubar, parent, title, app, **kw):
         kw['persist'] = True
-        super(HelpMenuDialog, self).__init__(menubar, parent, title, app, **kw)
+        super().__init__(menubar, parent, title, app, **kw)
 
     def buildTree(self, tv, node):
         tv.add_node(
@@ -1381,7 +1378,7 @@ class HelpMenuDialog(LMenuDialog):
 # ************************************************************************
 
 
-class EmulTkMenu(object):
+class EmulTkMenu:
 
     def __init__(self, master, **kw):
 
@@ -1404,11 +1401,14 @@ class EmulTkMenu(object):
             label = label.replace('&', '')
         return name, label, underline
 
-    def add_cascade(self, cnf={}, **kw):
+    def add_cascade(self, cnf=None, **kw):
+        if cnf is None:
+            cnf = {}
         self.add('cascade', cnf or kw)
-        pass
 
-    def add(self, itemType, cnf={}):
+    def add(self, itemType, cnf=None):
+        if cnf is None:
+            cnf = {}
         label = cnf.get("label")
         if label:
             name = cnf.get('name')
@@ -1430,7 +1430,7 @@ class MfxMenubar(EmulTkMenu):
     addPath = None
 
     def __init__(self, master, **kw):
-        super(MfxMenubar, self).__init__(master, **kw)
+        super().__init__(master, **kw)
         topmenu = self.name == 'menubar'
 
         self.menu = LMenu(not topmenu, text=self.name)
@@ -1444,7 +1444,7 @@ class MfxMenubar(EmulTkMenu):
 # ************************************************************************
 
 
-class DictObjMap(object):
+class DictObjMap:
     def __init__(self, val):
         self.__dict__ = val
 

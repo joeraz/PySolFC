@@ -258,7 +258,6 @@ class Application:
                         self.opt.game_holded = self.game.id
                     except Exception:
                         traceback.print_exc()
-                        pass
                 self.wm_save_state()
                 # save game geometry
                 geom = (self.canvas.winfo_width(), self.canvas.winfo_height())
@@ -279,7 +278,6 @@ class Application:
 
         except Exception:
             traceback.print_exc()
-            pass
 
         finally:
             # hide main window
@@ -296,19 +294,16 @@ class Application:
                 self.saveOptions()
             except Exception:
                 traceback.print_exc()
-                pass
             # save statistics
             try:
                 self.saveStatistics()
             except Exception:
                 traceback.print_exc()
-                pass
             # shut down audio
             try:
                 self.audio.destroy()
             except Exception:
                 traceback.print_exc()
-                pass
             if TOOLKIT == 'kivy':
                 self.top.quit()
                 while True:
@@ -323,7 +318,6 @@ class Application:
             self.loadStatistics()
         except Exception:
             traceback.print_exc()
-            pass
 
         # Under normal circumstances, this won't trigger.
         # But if the config has been incorrectly edited or
@@ -1084,9 +1078,9 @@ class Application:
         def _key(a):
             wa, la, ta, ma = self.stats.getFullStats(player, a)
             return wa+la
-        games = list(self.gdb.getGamesIdSortedByName())
-        games.sort(key=_key)
-        return games[::-1]
+        return sorted(
+            self.gdb.getGamesIdSortedByName(), key=_key, reverse=True
+        )
 
     def getGamesIdSortedByWon(self, player=''):
         if player == '':
@@ -1095,9 +1089,9 @@ class Application:
         def _key(a):
             wa, la, ta, ma = self.stats.getFullStats(player, a)
             return wa
-        games = list(self.gdb.getGamesIdSortedByName())
-        games.sort(key=_key)
-        return games[::-1]
+        return sorted(
+            self.gdb.getGamesIdSortedByName(), key=_key, reverse=True
+        )
 
     def getGamesIdSortedByLost(self, player=''):
         if player == '':
@@ -1106,9 +1100,9 @@ class Application:
         def _key(a):
             wa, la, ta, ma = self.stats.getFullStats(player, a)
             return la
-        games = list(self.gdb.getGamesIdSortedByName())
-        games.sort(key=_key)
-        return games[::-1]
+        return sorted(
+            self.gdb.getGamesIdSortedByName(), key=_key, reverse=True
+        )
 
     def getGamesIdSortedByPercent(self, player=''):
         if player == '':
@@ -1117,9 +1111,9 @@ class Application:
         def _key(a):
             wa, la, ta, ma = self.stats.getFullStats(player, a)
             return float(wa)/(1 if wa+la == 0 else wa+la)
-        games = list(self.gdb.getGamesIdSortedByName())
-        games.sort(key=_key)
-        return games[::-1]
+        return sorted(
+            self.gdb.getGamesIdSortedByName(), key=_key, reverse=True
+        )
 
     def getGamesIdSortedByPlayingTime(self, player=''):
         if player == '':
@@ -1128,9 +1122,9 @@ class Application:
         def _key(a):
             wa, la, ta, ma = self.stats.getFullStats(player, a)
             return ta
-        games = list(self.gdb.getGamesIdSortedByName())
-        games.sort(key=_key)
-        return games[::-1]
+        return sorted(
+            self.gdb.getGamesIdSortedByName(), key=_key, reverse=True
+        )
 
     def getGamesIdSortedByMoves(self, player=''):
         if player == '':
@@ -1139,9 +1133,9 @@ class Application:
         def _key(a):
             wa, la, ta, ma = self.stats.getFullStats(player, a)
             return ma
-        games = list(self.gdb.getGamesIdSortedByName())
-        games.sort(key=_key)
-        return games[::-1]
+        return sorted(
+            self.gdb.getGamesIdSortedByName(), key=_key, reverse=True
+        )
 
     def getGameInfo(self, id):
         return self.gdb.get(id)
@@ -1196,7 +1190,7 @@ class Application:
 
     def getAllUserNames(self):
         names = []
-        for n in self.stats.games_stats.keys():
+        for n in self.stats.games_stats:
             if n is None:               # demo
                 continue
             if self.stats.games_stats[n]:
@@ -1348,9 +1342,7 @@ class Application:
         """docstring for _my_list_dir"""
         if dirname and os.path.isdir(dirname):
             names = os.listdir(dirname)
-            names = list(map(os.path.normcase, names))
-            names.sort()
-            return names
+            return sorted(map(os.path.normcase, names))
         return []
 
     #

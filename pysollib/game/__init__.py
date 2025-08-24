@@ -346,8 +346,7 @@ class StackRegions(NewStruct):
     def optimize(self, remaining):
         """docstring for optimize"""
         # sort data by priority
-        self.data.sort()
-        self.data.reverse()
+        self.data.sort(reverse=True)
         # copy (stacks, rect) to info
         self.info = []
         for d in self.data:
@@ -522,7 +521,7 @@ _Game_LOAD_CLASSES = [GameGlobalSaveInfo, GameGlobalStatsStruct, GameMoves,
                       GameSaveInfo, GameStatsStruct, ]
 
 
-class Game(object):
+class Game:
     # for self.gstats.updated
     U_PLAY = _GLOBAL_U_PLAY
     U_WON = -2
@@ -1059,7 +1058,13 @@ class Game(object):
                 xf = yf = min(xf, yf)
         else:
             xf, yf = self.app.opt.scale_x, self.app.opt.scale_y
-        self.center_offset = self.getCenterOffset(vw, vh, iw, ih, xf, yf)
+        if (not self.app.opt.center_layout or self.app.opt.spread_stacks or
+                (self.app.opt.auto_scale and not
+                 self.app.opt.preserve_aspect_ratio)):
+            self.center_offset = 0, 0
+        else:
+            self.center_offset = self.app.images.getCenterOffset(
+                vw, vh, iw, ih, xf, yf, self.app.opt.auto_scale)
         if (not self.app.opt.spread_stacks or manually):
             # images
             self.app.images.resize(xf, yf, resample=self.app.opt.resampling)
@@ -1067,19 +1072,6 @@ class Game(object):
         for card in self.cards:
             card.update(card.id, card.deck, card.suit, card.rank, self)
         return xf, yf, self.app.images._xfactor, self.app.images._yfactor
-
-    def getCenterOffset(self, vw, vh, iw, ih, xf, yf):
-        if (not self.app.opt.center_layout or self.app.opt.spread_stacks or
-                (self.app.opt.auto_scale and not
-                 self.app.opt.preserve_aspect_ratio)):
-            return 0, 0
-        if ((vw > iw and vh > ih) or self.app.opt.auto_scale):
-            return (vw / xf - iw) / 2, (vh / yf - ih) / 2
-        if (vw >= iw and vh < ih):
-            return (vw / xf - iw) / 2, 0
-        if (vw < iw and vh >= ih):
-            return 0, (vh / yf - ih) / 2
-        return 0, 0
 
     def resizeGame(self, card_size_manually=False):
         if self.preview and (not self.app.opt.auto_scale or
@@ -3774,7 +3766,7 @@ class Game(object):
     def showHelp(self, *args):
         if self.preview:
             return
-        kw = dict([(args[i], args[i+1]) for i in range(0, len(args), 2)])
+        kw = {args[i]: args[i+1] for i in range(0, len(args), 2)}
         if not kw:
             kw = {'info': '', 'help': ''}
         if 'info' in kw and self.app.opt.statusbar:
@@ -3853,12 +3845,12 @@ class Game(object):
         self.s.talon.dealCards()
 
 
-class StartDealRowAndCards(object):
+class StartDealRowAndCards:
     def startGame(self):
         self._startAndDealRowAndCards()
 
 
-class FauxEvent(object):
+class FauxEvent:
     def __init__(self, x, y):
         self.x = x
         self.y = y

@@ -359,7 +359,7 @@ class Giza(Pyramid):
 # * Pyramid Dozen
 # ************************************************************************
 
-class PyramidDozen_StackMethods():
+class PyramidDozen_StackMethods:
     def acceptsCards(self, from_stack, cards):
         if self.basicIsBlocked():
             return False
@@ -875,8 +875,7 @@ class Fifteens(Elevens):
                     self.s.talon.flipMove()
                     self.s.talon.moveMove(1, r)
         else:
-            reserve_ranks = [c.rank for c in reserve.cards]
-            reserve_ranks.sort()
+            reserve_ranks = sorted(c.rank for c in reserve.cards)
             if (9 in reserve_ranks or JACK in reserve_ranks or
                     QUEEN in reserve_ranks or KING in reserve_ranks):
                 if reserve_ranks == [9, JACK, QUEEN, KING]:
@@ -1410,7 +1409,7 @@ class Apophis(Pharaohs):
 # * Eleven Triangle
 # ************************************************************************
 
-class ElevenTriangle_StackMethods():
+class ElevenTriangle_StackMethods:
     def acceptsCards(self, from_stack, cards):
         if self.basicIsBlocked():
             return False

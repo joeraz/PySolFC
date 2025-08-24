@@ -11,7 +11,7 @@
 """
 
 
-class NewStruct(object):
+class NewStruct:
     """docstring for NewStruct"""
     def copy(self):
         ret = self.__class__()
@@ -19,7 +19,7 @@ class NewStruct(object):
         return ret
 
     def addattr(self, **kw):
-        for k in kw.keys():
+        for k in kw:
             if k in self.__dict__:
                 raise AttributeError(k)
         self.__dict__.update(kw)

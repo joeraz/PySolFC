@@ -24,7 +24,6 @@
 import tkinter.ttk as ttk
 
 from pysollib.mygettext import _, n_
-from pysollib.settings import TITLE
 from pysollib.ui.tktile.findcarddialog import connect_game_find_card_dialog
 from pysollib.ui.tktile.findcarddialog import destroy_find_card_dialog
 from pysollib.ui.tktile.fullpicturedialog import \
@@ -34,9 +33,6 @@ from pysollib.ui.tktile.menubar import MfxMenu, PysolMenubarTkCommon
 from pysollib.ui.tktile.solverdialog import connect_game_solver_dialog
 from pysollib.util import CARDSET
 
-from .selectgame import SelectGameDialog, SelectGameDialogWithPreview
-from .selecttile import SelectTileDialogWithPreview
-from .soundoptionsdialog import SoundOptionsDialog
 from .tkwidget import MfxMessageDialog
 
 # ************************************************************************
@@ -75,15 +71,19 @@ class PysolMenubarTk(PysolMenubarTkCommon):
         return WizardDialog
 
     def _calcSelectGameDialog(self):
+        from .selectgame import SelectGameDialog
         return SelectGameDialog
 
     def _calcSelectGameDialogWithPreview(self):
+        from .selectgame import SelectGameDialogWithPreview
         return SelectGameDialogWithPreview
 
     def _calcSoundOptionsDialog(self):
+        from .soundoptionsdialog import SoundOptionsDialog
         return SoundOptionsDialog
 
     def _calcSelectTileDialogWithPreview(self):
+        from .selecttile import SelectTileDialogWithPreview
         return SelectTileDialogWithPreview
 
     def _calc_MfxMessageDialog(self):
@@ -113,13 +113,12 @@ class PysolMenubarTk(PysolMenubarTkCommon):
     def mOptTheme(self, *event):
         theme = self.tkopt.theme.get()
         self.app.opt.tile_theme = theme
-        self._calc_MfxMessageDialog()(
-            self.top, title=_("Change theme"),
-            text=_("""\
-These settings will take effect
-the next time you restart %(app)s""") % {'app': TITLE},
-            bitmap="warning",
-            default=0, strings=(_("&OK"),))
+        try:
+            from ttkthemes import themed_style
+            style = themed_style.ThemedStyle(self.top)
+        except ImportError:
+            style = ttk.Style(self.top)
+        style.theme_use(theme)
 
     def createThemesMenu(self, menu):
         submenu = MfxMenu(menu, label=n_("Set t&heme"))
@@ -129,9 +128,8 @@ the next time you restart %(app)s""") % {'app': TITLE},
             style_path = themed_style.ThemedStyle(self.top)
         except ImportError:
             style_path = ttk.Style(self.top)
-        all_themes = list(style_path.theme_names())
+        all_themes = sorted(style_path.theme_names())
 
-        all_themes.sort()
         #
         tn = {
             'alt':         n_('Alt/Revitalized'),

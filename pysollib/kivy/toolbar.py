@@ -48,7 +48,7 @@ class MyButtonBase(ButtonBehavior, LImage, LBase):
     config = BooleanProperty(True)
 
     def __init__(self, **kwargs):
-        super(MyButtonBase, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.src = None
         if ('image' in kwargs):
             self.src = kwargs['image'].source
@@ -73,12 +73,8 @@ class MyButtonBase(ButtonBehavior, LImage, LBase):
 
 
 class MyButton(MyButtonBase):
-    def __init__(self, **kwargs):
-        super(MyButton, self).__init__(**kwargs)
-
     def on_press(self):
         self.fit_mode = "scale-down"
-        pass
 
     def on_release(self):
         self.fit_mode = "contain"
@@ -88,7 +84,7 @@ class MyButton(MyButtonBase):
 
 class MyCheckButton(MyButtonBase):
     def __init__(self, **kwargs):
-        super(MyCheckButton, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.variable = None
         if ('variable' in kwargs):
             self.variable = kwargs['variable']
@@ -144,7 +140,7 @@ class MyCheckButton(MyButtonBase):
 
 class MyToastButton(MyButtonBase):
     def __init__(self, **kwargs):
-        super(MyToastButton, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.timeout = 2.0
         if ('timeout' in kwargs):
             self.timeout = kwargs['timeout']
@@ -171,7 +167,7 @@ class MyToastButton(MyButtonBase):
 
 class MyWaitButton(MyButtonBase):
     def __init__(self, **kwargs):
-        super(MyWaitButton, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.timeout = 1.0
         if ('timeout' in kwargs):
             self.timeout = kwargs['timeout']
@@ -228,7 +224,7 @@ class PysolToolbarTk(BoxLayout):
             relief='flat',
             compound='none'):
 
-        super(PysolToolbarTk, self).__init__(orientation='vertical')
+        super().__init__(orientation='vertical')
         self.size_hint = (0.06, 1.0)
         # self.size_hint=(None, 1.0)
         # self.width = 50
@@ -281,7 +277,6 @@ class PysolToolbarTk(BoxLayout):
             if label is None:
                 button = None
                 # We dont have separators in kivy version.
-                pass
             elif label == 'Pause':
                 button = self._createButton(label, f, check=True, tooltip=t)
                 self.buttons.append(button)

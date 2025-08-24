@@ -17,8 +17,8 @@
 # swallows up remaining keywords. Thus the keywords do not reach 'object' any
 # more.
 
-class LBase(object):
+class LBase:
     def __init__(self, **kw):
-        super(LBase, self).__init__()
+        super().__init__()
 
 # =============================================================================

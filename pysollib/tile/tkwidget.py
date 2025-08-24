@@ -47,6 +47,8 @@ class MfxDialog:  # ex. _ToplevelDialog
     img = {}
     button_img = {}
 
+    num_open = 0
+
     def __init__(self, parent, title="", resizable=False, default=-1):
         self.parent = parent
         self.status = 0
@@ -54,6 +56,9 @@ class MfxDialog:  # ex. _ToplevelDialog
         self.timer = None
         self.buttons = []
         self.accel_keys = {}
+        MfxDialog.num_open += 1
+        if MfxDialog.num_open == 1 and self.parent.app is not None:
+            self.parent.app.unraiseAll()
         self.top = makeToplevel(parent, title=title)
         # self._frame = ttk.Frame(self.top)
         # self._frame.pack(expand=True, fill='both')
@@ -75,7 +80,6 @@ class MfxDialog:  # ex. _ToplevelDialog
             except tkinter.TclError:
                 if traceback:
                     traceback.print_exc()
-                pass
             if geometry != "":
                 self.top.geometry(geometry)
             if timeout > 0:
@@ -92,6 +96,9 @@ class MfxDialog:  # ex. _ToplevelDialog
         self.top.destroy()
         self.top.update_idletasks()
         self.top = None
+        MfxDialog.num_open -= 1
+        if MfxDialog.num_open == 0 and self.parent.app is not None:
+            self.parent.app.raiseAll()
         self.parent = None
 
     def wmDeleteWindow(self, *event):
@@ -268,7 +275,8 @@ class MfxMessageDialog(MfxDialog):
         msg.pack(fill='both', expand=True, padx=kw.padx, pady=kw.pady)
         #
         focus = self.createButtons(bottom_frame, kw)
-        parent.after(600, lambda: parent.app.speech.speak(kw.text))
+        speech = Speech()
+        parent.after(600, lambda: speech.speak(kw.text))
         self.mainloop(focus, kw.timeout)
 
 
@@ -1024,6 +1032,30 @@ class PysolEntry(ttk.Entry):
     def _focus(self, event):
         self.speech.speak(self.field_name + " " + _("Text box") + " " +
                           self.value.get())
+
+
+class PysolText(tkinter.Text):
+    def __init__(self, master=None, **kw):
+        self.speech = Speech()
+        if 'fieldname' in kw:
+            label = kw['fieldname']
+            del kw['fieldname']
+        else:
+            label = None
+
+        tkinter.Text.__init__(self, master, **kw)
+
+        if label is not None:
+            self.field_name = label
+        else:
+            self.field_name = ''
+        self.bind('<FocusIn>', self._focus)
+
+    def _focus(self, event):
+        # Get all text content
+        content = self.get("1.0", "end-1c")
+        self.speech.speak(self.field_name + " " + _("Text area") + " " +
+                          content)
 
 
 class PysolButton(ttk.Button):

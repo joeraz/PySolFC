@@ -84,7 +84,6 @@ CARDSET = _("cardset")
 IMAGE_EXTENSIONS = (".gif", ".ppm", ".png")
 if os.name == "nt":
     IMAGE_EXTENSIONS = (".png", ".gif", ".ppm", ".jpg", ".jpeg",)
-    pass
 
 if Image:
     IMAGE_EXTENSIONS = (".png", ".gif", ".jpg", ".jpeg", ".ppm", ".bmp")
@@ -99,7 +98,9 @@ if TOOLKIT == 'kivy':
 
 
 class DataLoader:
-    def __init__(self, argv0, filenames, path=[]):
+    def __init__(self, argv0, filenames, path=None):
+        if path is None:
+            path = []
         self.dir = None
         if isinstance(filenames, str):
             filenames = (filenames,)

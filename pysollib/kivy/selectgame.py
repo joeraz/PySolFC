@@ -160,7 +160,6 @@ class SelectGameData(SelectDialogTreeData):
         if gg:
             s_by_compatibility = SelectGameNode(None, _("by Compatibility"),
                                                 tuple(gg))
-            pass
         #
         s_by_pysol_version, gg = None, []
         for name, games in GI.GAMES_BY_PYSOL_VERSION:
@@ -194,13 +193,13 @@ class SelectGameData(SelectDialogTreeData):
             # SelectGameNode(None, _("All Games"), None),
             SelectGameNode(None, _("Popular Games"),
                            lambda gi: gi.si.game_flags & GI.GT_POPULAR),
+            s_by_type,
             s_mahjongg,
             s_oriental,
             s_special,
             # SelectGameNode(None, _("Custom Games"),
             #               lambda gi: gi.si.game_type == GI.GT_CUSTOM),
             SelectGameNode(None, _("Alternate Names"), ul_alternate_names),
-            s_by_type,
             s_all_games,
             SelectGameNode(None, _('by Skill Level'), (
                 SelectGameNode(None, _('Luck only'),
@@ -306,7 +305,7 @@ class SelectGameTree(SelectGameTreeWithPreview):
 
 class LGameRoot(LTreeRoot):
     def __init__(self, gametree, gameview, **kw):
-        super(LGameRoot, self).__init__(**kw)
+        super().__init__(**kw)
         self.gametree = gametree
         self.gameview = gameview
         self.kw = kw
@@ -318,7 +317,7 @@ class LGameNode(LTreeNode):
         self.lastpos = None
         self.gamenode = gamenode
         self.gameview = gameview
-        super(LGameNode, self).__init__(**kw)
+        super().__init__(**kw)
 
         self.coreFont = self.font_size
         # self.scaleFont(self.gameview.size[1])
@@ -381,7 +380,7 @@ class LGameNode(LTreeNode):
 # ************************************************************************
 
 
-class SelectGameDialog(object):
+class SelectGameDialog:
 
     # Dialog, einmal erzeugt, wird rezykliert.
     SingleInstance = None
@@ -394,7 +393,7 @@ class SelectGameDialog(object):
         self.app.menubar._mSelectGame(gameid)
 
     def __init__(self, parent, title, app, gameid, **kw):
-        super(SelectGameDialog, self).__init__()
+        super().__init__()
 
         self.parent = parent
         self.app = app

@@ -153,7 +153,7 @@ class Stack:
     MIN_VISIBLE_YOFFSET = 3
     SHRINK_FACTOR = 2.
 
-    def __init__(self, x, y, game, cap={}):
+    def __init__(self, x, y, game, cap=None):
         # Arguments are the stack's nominal x and y position (the top
         # left corner of the first card placed in the stack), and the
         # game object (which is used to get the canvas; subclasses use
@@ -162,6 +162,8 @@ class Stack:
         #
         # link back to game
         #
+        if cap is None:
+            cap = {}
         id = len(game.allstacks)
         game.allstacks.append(self)
         x = int(round(x))
@@ -1714,8 +1716,7 @@ class DealRow_StackMethods:
         assert len(self.cards) >= len(stacks)
         old_state = self.game.enterState(self.game.S_DEAL)
         if reverse:
-            stacks = list(stacks)
-            stacks.reverse()
+            stacks = list(reversed(stacks))
         for r in stacks:
             assert not self.getCard().face_up
             assert r is not self
@@ -1739,8 +1740,7 @@ class DealRow_StackMethods:
             return 0
         old_state = self.game.enterState(self.game.S_DEAL)
         if reverse:
-            stacks = list(stacks)
-            stacks.reverse()
+            stacks = list(reversed(stacks))
         n = 0
         for r in stacks:
             assert r is not self

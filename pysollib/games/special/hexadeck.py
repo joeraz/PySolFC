@@ -417,9 +417,9 @@ class BitsNBytes(AbstractHexADeckGame):
         return 1
 
     def parseEmptyStack(self, stack):
-        if type(stack) is Bits_RowStack:
+        if isinstance(stack, Bits_RowStack):
             return _("Bit stack") + " - " + str(stack.getBit())
-        if type(stack) is Bytes_RowStack:
+        if isinstance(stack, Bytes_RowStack):
             return _("Byte stack") + " - " + self.RANKS[stack.getByte()]
         return Game.parseEmptyStack(self, stack)
 
@@ -1632,6 +1632,8 @@ class MagicMontana(Montana):
 # ************************************************************************
 
 class WizardsStoreroom(AbstractHexADeckGame):
+    Hint_Class = CautiousDefaultHint
+
     MAX_ROUNDS = 2
 
     #

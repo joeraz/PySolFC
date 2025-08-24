@@ -55,13 +55,15 @@ class TabPageSet(tkinter.Frame):
     """
     a set of 'pages' with TabButtons for controlling their display
     """
-    def __init__(self, parent, pageNames=[], **kw):
+    def __init__(self, parent, pageNames=None, **kw):
         """
         pageNames - a list of strings, each string will be the dictionary key
         to a page's data, and the name displayed on the page's tab. Should be
         specified in desired page order. The first page will be the default
         and first active page.
         """
+        if pageNames is None:
+            pageNames = []
         tkinter.Frame.__init__(self, parent, kw)
         self.grid_location(0, 0)
         self.columnconfigure(0, weight=1)
@@ -76,7 +78,7 @@ class TabPageSet(tkinter.Frame):
 
     def ChangePage(self, pageName=None):
         if pageName:
-            if pageName in self.pages.keys():
+            if pageName in self.pages:
                 self.activePage.set(pageName)
             else:
                 raise InvalidTabPage('Invalid TabPage Name')
@@ -91,7 +93,7 @@ class TabPageSet(tkinter.Frame):
         return self.activePage.get()
 
     def AddPage(self, pageName):
-        if pageName in self.pages.keys():
+        if pageName in self.pages:
             raise AlreadyExists('TabPage Name Already Exists')
         self.pages[pageName] = {
             'tab': PageTab(self.tabBar),
@@ -111,7 +113,7 @@ class TabPageSet(tkinter.Frame):
             self.ChangePage()
 
     def RemovePage(self, pageName):
-        if pageName not in self.pages.keys():
+        if pageName not in self.pages:
             raise InvalidTabPage('Invalid TabPage Name')
         self.pages[pageName]['tab'].pack_forget()
         self.pages[pageName]['page'].grid_forget()
