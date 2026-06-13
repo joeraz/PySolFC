@@ -1053,11 +1053,19 @@ class Game:
             # calculate factor of resizing
             xf = float(vw)/iw
             yf = float(vh)/ih
-            if (self.app.opt.preserve_aspect_ratio
-                    and not self.app.opt.spread_stacks):
-                xf = yf = min(xf, yf)
+            if self.app.opt.preserve_aspect_ratio:
+                if self.app.opt.spread_stacks:
+                    # layout uses full xf, yf; images use uniform scale
+                    xf_img, yf_img = min(xf, yf), min(xf, yf)
+                else:
+                    xf = yf = min(xf, yf)
+                    xf_img, yf_img = xf, yf
+            else:
+                xf_img, yf_img = xf, yf
         else:
             xf, yf = self.app.opt.scale_x, self.app.opt.scale_y
+            xf_img, yf_img = xf, yf
+
         if (not self.app.opt.center_layout or self.app.opt.spread_stacks or
                 (self.app.opt.auto_scale and not
                  self.app.opt.preserve_aspect_ratio)):
@@ -1065,9 +1073,12 @@ class Game:
         else:
             self.center_offset = self.app.images.getCenterOffset(
                 vw, vh, iw, ih, xf, yf, self.app.opt.auto_scale)
-        if (not self.app.opt.spread_stacks or manually):
+
+        if (not self.app.opt.spread_stacks or self.app.opt.auto_scale
+                or manually):
             # images
-            self.app.images.resize(xf, yf, resample=self.app.opt.resampling)
+            self.app.images.resize(xf_img, yf_img,
+                                   resample=self.app.opt.resampling)
         # cards
         for card in self.cards:
             card.update(card.id, card.deck, card.suit, card.rank, self)
@@ -1433,39 +1444,49 @@ class Game:
         cw, ch = self.app.images.getSize()
         cw -= 1
         ch -= 1
+        kx = self.keyboard_selected_stack.x
+        ky = self.keyboard_selected_stack.y
         for stack in self.allstacks:
             if (stack in self.s.internals or
                     stack == self.keyboard_selected_stack or
                     not stack.canSelect()):
                 continue
             if direction == 0:  # up
-                if ((stack.y >= self.keyboard_selected_stack.y) or
-                        (stack.x < self.keyboard_selected_stack.x - cw or
-                         stack.x > self.keyboard_selected_stack.x + cw) or
+                if ((stack.y >= ky) or
+                        (stack.x < kx - cw or
+                         stack.x > kx + cw) or
                         (currentstack is not None and
                          stack.y < currentstack.y)):
                     continue
             elif direction == 1:  # down
-                if ((stack.y <= self.keyboard_selected_stack.y) or
-                        (stack.x < self.keyboard_selected_stack.x - cw or
-                         stack.x > self.keyboard_selected_stack.x + cw) or
+                if ((stack.y <= ky) or
+                        (stack.x < kx - cw or
+                         stack.x > kx + cw) or
                         (currentstack is not None and
                          stack.y > currentstack.y)):
                     continue
             elif direction == 2:  # left
-                if ((stack.x >= self.keyboard_selected_stack.x) or
-                        (stack.y < self.keyboard_selected_stack.y - ch or
-                         stack.y > self.keyboard_selected_stack.y + ch) or
-                        (currentstack is not None and
-                         stack.x < currentstack.x)):
+                if ((stack.x >= kx) or
+                        (stack.y < ky - ch or
+                         stack.y > ky + ch)):
                     continue
+                if currentstack is not None:
+                    if stack.x < currentstack.x:
+                        continue
+                    if (stack.x == currentstack.x and
+                            abs(stack.y - ky) >= abs(currentstack.y - ky)):
+                        continue
             elif direction == 3:  # right
-                if ((stack.x <= self.keyboard_selected_stack.x) or
-                        (stack.y < self.keyboard_selected_stack.y - ch or
-                         stack.y > self.keyboard_selected_stack.y + ch) or
-                        (currentstack is not None and
-                         stack.x > currentstack.x)):
+                if ((stack.x <= kx) or
+                        (stack.y < ky - ch or
+                         stack.y > ky + ch)):
                     continue
+                if currentstack is not None:
+                    if stack.x > currentstack.x:
+                        continue
+                    if (stack.x == currentstack.x and
+                            abs(stack.y - ky) >= abs(currentstack.y - ky)):
+                        continue
             currentstack = stack
         if currentstack is not None:
             self.keyboard_selected_stack = currentstack
@@ -1754,15 +1775,33 @@ class Game:
         if tkraise:
             for card in cards:
                 card.tkraise()
+
+        # Recalculate every frame so the animation adapts
         c0 = cards[0]
-        dx, dy = (x - c0.x) / float(frames), (y - c0.y) / float(frames)
-        tx, ty = 0, 0
+        if to_stack:
+
+            def _dest_func():
+                return to_stack.getPositionForNextCard()
+        else:
+            _static_dest = (x, y)
+
+            def _dest_func():
+                return _static_dest
+
         i = 1
         if clock:
             starttime = clock()
         while i < frames:
-            mx, my = int(round(dx * i)) - tx, int(round(dy * i)) - ty
-            tx, ty = tx + mx, ty + my
+            # Determine current destination for this frame
+            dest_x, dest_y = _dest_func()
+            dx_remain = dest_x - c0.x
+            dy_remain = dest_y - c0.y
+            remaining_frames = frames - i + 1
+            if remaining_frames <= 0:
+                remaining_frames = 1
+            # Move a fraction of the remaining distance
+            mx = int(round(dx_remain / remaining_frames))
+            my = int(round(dy_remain / remaining_frames))
             if i == 1 and shadow and from_stack:
                 # create shadows in the first frame
                 sx, sy = self.app.images.SHADOW_XOFFSET, \
@@ -1772,30 +1811,29 @@ class Game:
                 s.move(mx, my)
             for card in cards:
                 card.moveBy(mx, my)
-            self.canvas.update_idletasks()
+            # process events so resize handlers run
+            self.canvas.update()
             step = 1
             if clock:
-                endtime = starttime + i*SPF
+                endtime = starttime + i * SPF
                 sleep = endtime - clock()
                 if delay and sleep >= 0.005:
-                    # we're fast - delay
-                    # print "Delay frame", i, sleep
                     usleep(sleep)
-                elif skip and sleep <= -0.75*SPF:
-                    # we're slow - skip 1 or 2 frames
-                    # print "Skip frame", i, sleep
+                elif skip and sleep <= -0.75 * SPF:
                     step += 1
-                    if frames > 4 and sleep < -1.5*SPF:
+                    if frames > 4 and sleep < -1.5 * SPF:
                         step += 1
-                # print i, step, mx, my; time.sleep(0.5)
             i += step
-        # last frame: delete shadows, move card to final position
+
+        # last frame: delete shadows and move cards to final destination
         for s in shadows:
             s.delete()
-        dx, dy = x - c0.x, y - c0.y
+        dest_x, dest_y = _dest_func()
+        dx_final = dest_x - c0.x
+        dy_final = dest_y - c0.y
         for card in cards:
-            card.moveBy(dx, dy)
-        self.canvas.update_idletasks()
+            card.moveBy(dx_final, dy_final)
+        self.canvas.update()
 
     def doAnimatedFlipAndMove(self, from_stack, to_stack=None, frames=-1):
         if self.app.opt.animations == 0 or frames == 0:
@@ -2216,6 +2254,9 @@ class Game:
 
     # deal cards - return number of cards dealt
     def dealCards(self, sound=True):
+        # can't deal cards if the game is paused
+        if self.pause:
+            return 0
         # default: set state to deal and pass dealing to Talon
         if self.s.talon and self.canDealCards():
             self.finishMove()

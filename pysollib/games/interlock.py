@@ -44,6 +44,30 @@ from pysollib.util import ANY_RANK, KING, NO_RANK
 # * Interlock
 # ************************************************************************
 
+class Interlock_Hint(Yukon_Hint):
+
+    def _interlock_playable_empty_spot(self, stack):
+        # If stack is a row column that accepts cards when empty.
+        if stack not in self.game.s.rows:
+            return None
+        step = getattr(stack, 'STEP', None)
+        if step is None:
+            return None
+        return stack.id <= step[0][0] - 1
+
+    def _shouldSkipWholePileToEmptyRow(self, r, t, lp, lr):
+        if lp != lr or t.cards:
+            return False
+        rp = self._interlock_playable_empty_spot(r)
+        tp = self._interlock_playable_empty_spot(t)
+        if rp is not None and tp is not None:
+            # In Interlock, only block king shuffles between playable empties.
+            return rp and tp
+        if rp is None and tp is None:
+            return True
+        return False
+
+
 class Interlock_StackMethods:
     STEP = ((9, 10), (9, 10), (9, 10), (9, 10), (9, 10),
             (9, 10), (9, 10), (9, 10), (9, 10),
@@ -104,6 +128,7 @@ class Interlock_RowStack(Interlock_StackMethods, AC_RowStack):
 class Interlock(Game):
     RowStack_Class = StackWrapper(Interlock_RowStack, base_rank=KING)
     Talon_Class = StackWrapper(WasteTalonStack, num_deal=1, max_rounds=-1)
+    Hint_Class = Interlock_Hint
 
     MAX_ROWS = 11
     PLAYCARDS = 13
@@ -209,7 +234,6 @@ class LoveADuck(Interlock):
     RowStack_Class = StackWrapper(LoveADuck_RowStack, base_rank=KING)
     Talon_Class = InitialDealTalonStack
     Waste_Class = None
-    Hint_Class = Yukon_Hint
 
     PLAYCARDS = 25
 

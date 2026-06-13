@@ -21,6 +21,7 @@
 #
 # ---------------------------------------------------------------------------##
 
+import re
 from importlib import util
 
 import pysollib.settings
@@ -86,6 +87,7 @@ class GI:
     GT_KLONDIKE = 15
     GT_LIGHTS_OUT = 38
     GT_MAHJONGG = 16
+    GT_MATCH_THREE = 43
     GT_MATRIX = 17
     GT_MEMORY = 18
     GT_MONTANA = 19
@@ -164,6 +166,7 @@ class GI:
         GT_HEXADECK:            n_("Hex A Deck"),
         GT_ISHIDO:              n_("Ishido"),
         GT_LIGHTS_OUT:          n_("Lights Out"),
+        GT_MATCH_THREE:         n_("Match Three"),
         GT_MATRIX:              n_("Matrix"),
         GT_MEMORY:              n_("Memory"),
         GT_PEGGED:              n_("Pegged"),
@@ -286,6 +289,8 @@ class GI:
         (n_("Ishido type"), lambda gi, gt=GT_ISHIDO: gi.si.game_type == gt),
         (n_("Lights Out type"),
             lambda gi, gt=GT_LIGHTS_OUT: gi.si.game_type == gt),
+        (n_("Match Three type"),
+            lambda gi, gt=GT_MATCH_THREE: gi.si.game_type == gt),
         (n_("Matrix type"), lambda gi, gt=GT_MATRIX: gi.si.game_type == gt),
         (n_("Memory type"), lambda gi, gt=GT_MEMORY: gi.si.game_type == gt),
         (n_("Pegged type"), lambda gi, gt=GT_PEGGED: gi.si.game_type == gt),
@@ -395,6 +400,13 @@ class GI:
             901, 903,
         )),
 
+        # KMahjongg
+        ("KMahjongg", (5001, 5003, 5004, 5006, 5007, 5012, 5017, 5018,
+                       5019, 5026, 5033, 5034, 5038, 5039, 5041, 5044,
+                       5048, 5052, 5057, 5058, 5059, 5064, 5065, 5068,
+                       5073, 5077, 5078, 5079, 5080, 5084, 5086, 5091,
+                       5092, 5097, 5100, 5600)),
+
         #  KDE Patience 0.7.3 from KDE 1.1.2 (we have 6 out of 9 games)
         # ("KDE Patience 0.7.3", (2, 7, 8, 18, 256, 903,)),
         #  KDE Patience 2.0 from KDE 2.1.2 (we have 11 out of 13 games)
@@ -406,6 +418,26 @@ class GI:
         #                256, 261, 277, 278, 279, 903,)),
         # Now KPatience - Calculation and Napoleon's Tomb have been removed.
         ("KPatience", (1, 2, 7, 8, 11, 18, 19, 23, 36, 50, 261, 278, 903,)),
+
+        # Kyodai Mahjongg
+        ("Kyodai Mahjongg", (5002, 5008, 5009, 5010, 5011, 5014, 5015, 5016,
+                             5020, 5021, 5022, 5024, 5028, 5029, 5030, 5031,
+                             5034, 5036, 5037, 5040, 5042, 5045, 5047, 5049,
+                             5050, 5053, 5054, 5055, 5056, 5060, 5063, 5069,
+                             5070, 5071, 5072, 5074, 5076, 5081, 5082, 5083,
+                             5087, 5088, 5089, 5090, 5094, 5095, 5096, 5098,
+                             5099, 5102, 5200, 5201, 5202, 5203, 5204, 5205,
+                             5206, 5207, 5208, 5209, 5210, 5211, 5212, 5215,
+                             5216, 5217, 5219, 5220, 5221, 5222, 5223, 5224,
+                             5225, 5226, 5227, 5228, 5229, 5230, 5231, 5232,
+                             5233, 5234, 5235, 5236, 5237, 5239, 5240, 5241,
+                             5242, 5243, 5245, 5246, 5247, 5248, 5249, 5250,
+                             5251, 5252, 5253, 5254, 5255, 5256, 5257, 5258,
+                             5259, 5260, 5261, 5262, 5263, 5264, 5265, 5266,
+                             5267, 5268, 5269, 5270, 5271, 5272, 5273, 5274,
+                             5275, 5276, 5277, 5278, 5279, 5601, 5602, 5603,
+                             5604, 5605, 5606, 5607, 5608, 5609, 5611, 5612,
+                             5613)),
 
         # Microsoft Solitaire (we have all 5 games)
         ("Microsoft Solitaire Collection", (2, 8, 11, 38, 22231,)),
@@ -437,23 +469,22 @@ class GI:
         # from XM Solitaire should be researched before being added to PySol.
         #
         # still missing:
-        #       Agnes Three, Antares, Avenue, Baker's Fan, Baker's Spider,
-        #       Bedeviled, Binding, Black Spider, California, Color Cell,
-        #       Cornelius, Desert Fox, Double Antares, Double Antarctica,
-        #       Double Arctica, Double Baker's Spider, Double Cascade,
-        #       Double Majesty, Double Spidercells, Doublet Cell 5, Doubt,
-        #       Dream Fan, Dumfries Cell, Falcon Wing, Fan Nine, Four By Ten,
-        #       FreeCell AK, Gaps Alter, Gaps Diff, George V,
-        #       Grandmother's Clock, In a Frame, Inverted FreeCell, Kings,
-        #       Klondike FreeCell, La Cabane, La Double Entente,
-        #       Little Gazette, Magic FreeCell, Mini Gaps, Montreal,
-        #       Napoleon at Iena, Napoleon at Waterloo, Napoleon's Guards,
-        #       Oasis, Opera, Ordered Suits, Osmotic FreeCell, Pair FreeCell,
-        #       Pairs 2, Reserved Thirteens, Sept Piles 0, Short Solitaire,
-        #       Simple Alternations, Smart Osmosis, Step By Step,
-        #       Stripped FreeCell, Tarantula, Triple Dispute, Trusty Twenty,
-        #       Two Ways 3, Up Or Down, Versailles, Vertical FreeCell,
-        #       Wasp Baby, Yukon FreeCell
+        #       Agnes Three, Avenue, Baker's Fan, Baker's Spider, Bedeviled,
+        #       Binding, Black Spider, California, Color Cell, Cornelius,
+        #       Desert Fox, Double Antares, Double Antarctica, Double Arctica,
+        #       Double Baker's Spider, Double Cascade, Double Majesty,
+        #       Double Spidercells, Doublet Cell 5, Doubt, Dream Fan,
+        #       Dumfries Cell, Falcon Wing, Fan Nine, Four By Ten, FreeCell AK,
+        #       Gaps Alter, Gaps Diff, George V, Grandmother's Clock,
+        #       In a Frame, Inverted FreeCell, Kings, Klondike FreeCell,
+        #       La Cabane, La Double Entente, Little Gazette, Magic FreeCell,
+        #       Mini Gaps, Montreal, Napoleon at Iena, Napoleon at Waterloo,
+        #       Napoleon's Guards, Oasis, Ordered Suits, Osmotic FreeCell,
+        #       Pair FreeCell, Pairs 2, Presidium, Reserved Thirteens,
+        #       Sept Piles 0, Short Solitaire, Simple Alternations,
+        #       Smart Osmosis, Step By Step, Stripped FreeCell, Tarantula,
+        #       Triple Dispute, Trusty Twenty, Two Ways 3, Up Or Down,
+        #       Versailles, Vertical FreeCell, Wasp Baby, Yukon FreeCell
         ("XM Solitaire", (
             2, 8, 9, 13, 15, 18, 19, 20, 29, 30, 31, 34, 36, 38, 41, 42,
             45, 46, 50, 53, 54, 56, 57, 64, 77, 78, 86, 96, 97, 98, 105,
@@ -465,8 +496,13 @@ class GI:
             476, 480, 484, 511, 512, 513, 516, 561, 610, 613, 625, 629,
             631, 638, 641, 647, 650, 655, 678, 684, 702, 734, 751, 784,
             825, 829, 834, 837, 844, 862, 867, 880, 889, 901, 911, 933,
-            941, 947, 953, 966
+            941, 947, 953, 966, 983, 988
         )),
+
+        # XMahjongg
+        ("XMahjongg", (5002, 5016, 5022, 5029, 5034, 5088, 5098, 5203,
+                       5209, 5249, 5401, 5402, 5403, 5404, 5405, 5406,
+                       5407, 5408, 5409, 5410, 5411, 5412, 5413, 5603)),
 
         # xpat2 1.06 (we have 14 out of 16 games)
         #   still missing: Michael's Fantasy, modCanfield
@@ -495,7 +531,7 @@ class GI:
         ("Mark Masten", (811,)),
         ("Albert Morehead and Geoffrey Mott-Smith", (25, 42, 48, 173, 282,
                                                      303, 362, 547, 738,
-                                                     845, 967, 968)),
+                                                     845, 967, 968, 987)),
         ("Toby Ord", (788,)),
         ("David Parlett", (64, 98, 294, 338, 654, 796, 812, 844)),
         ("Joe R.", (938, 960,)),
@@ -513,7 +549,7 @@ class GI:
         ("Thomas Warfield", (189, 264, 300, 320, 336, 337, 359,
                              415, 427, 458, 495, 496, 497, 508,
                              800, 814, 820, 825, 889, 911, 926,
-                             941, 966)),
+                             941, 966, 983, 986)),
         ("Mary Whitmore Jones", (421, 624,)),
         ("Jan Wolter", (917, 939, 946, 963,)),
         )
@@ -607,6 +643,8 @@ class GI:
         ('fc-3.4', tuple(range(971, 981)) + tuple(range(5419, 5421)) +
          tuple(range(16683, 16686)) + tuple(range(18005, 18007)) +
          (44, 526, 5906, 22399,)),
+        ('fc-3.6', tuple(range(981, 991)) + tuple(range(19501, 19510)) +
+         (16686,)),
     )
 
     # deprecated - the correct way is to or a GI.GT_XXX flag
@@ -848,6 +886,13 @@ class GameManager:
             self.callback()
         self._num_games += 1
 
+    def getNaturalSortKey(self, text):
+        # Sort numbers numerically, and strings alphabetically
+        def convert(text):
+            return int(text) if text.isdigit() else text.lower()
+
+        return [convert(c) for c in re.split(r'(\d+)', text)]
+
     #
     # access games database - we do not expose hidden games
     #
@@ -865,17 +910,17 @@ class GameManager:
         if self.__games_by_name is None:
             l1, l2, l3 = [], [], []
             for id, gi in self.__games.items():
-                name = gi.name .lower()
-                l1.append((name, id))
+                name = gi.name.lower()
+                l1.append((self.getNaturalSortKey(name), id))
                 if gi.name != gi.short_name:
                     name = gi.short_name.lower()
-                l2.append((name, id))
+                l2.append((self.getNaturalSortKey(name), id))
                 for n in gi.altnames:
                     name = n.lower()
-                    l3.append((name, id, n))
-            l1.sort()
-            l2.sort()
-            l3.sort()
+                    l3.append((self.getNaturalSortKey(name), id, n))
+            l1.sort(key=lambda x: x[0])
+            l2.sort(key=lambda x: x[0])
+            l3.sort(key=lambda x: x[0])
             self.__games_by_name = tuple(i[1] for i in l1)
             self.__games_by_short_name = tuple(i[1] for i in l2)
             self.__games_by_altname = tuple(i[1:] for i in l3)

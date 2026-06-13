@@ -755,6 +755,7 @@ class Rittenhouse(Game):
 # ************************************************************************
 # * Lightweight
 # * Castle Mount
+# * Palace
 # ************************************************************************
 
 class Lightweight(StreetsAndAlleys):
@@ -803,6 +804,17 @@ class CastleMount(Lightweight):
 
     shallHighlightMatch = Game._shallHighlightMatch_RK
     getQuickPlayScore = Game._getSpiderQuickPlayScore
+
+
+class Palace(CastleMount):
+
+    def createGame(self):
+        Lightweight.createGame(self, rows=18, playcards=28)
+
+    def startGame(self):
+        self.s.talon.dealRow(rows=self.s.foundations, frames=0)
+        self._startDealNumRows(10)
+        self.s.talon.dealRowAvail()
 
 
 # ************************************************************************
@@ -961,3 +973,6 @@ registerGame(GameInfo(881, Lasker, "Lasker",
 registerGame(GameInfo(951, Morphy, "Morphy",
                       GI.GT_BELEAGUERED_CASTLE | GI.GT_OPEN, 1, 0,
                       GI.SL_SKILL))
+registerGame(GameInfo(986, Palace, "Palace",
+                      GI.GT_BELEAGUERED_CASTLE | GI.GT_OPEN, 4, 0,
+                      GI.SL_MOSTLY_SKILL))

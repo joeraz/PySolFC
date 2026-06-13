@@ -865,7 +865,7 @@ r(5050, "K for Kyodai", layout="0caaccaceacmacoa" +
     "coceockobmocooca" +
     "qccqceqcmqcoqcqq")
 
-r(5052, "Km", layout="0baabcabiaakaboa" +
+r(5052, "KM", layout="0baabcabiaakaboa" +
     "cqacyabAabacaccb" +
     "gcaicbocaqcdscdw" +
     "caycbAcdudbaeace" +

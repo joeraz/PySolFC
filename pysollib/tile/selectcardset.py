@@ -280,7 +280,7 @@ class SelectCardsetDialogWithPreview(MfxDialog):
 
         self.list_searchtext.pack(side="top", fill='both',
                                   padx=padx, pady=pady, ipadx=1)
-        searchText.trace('w', self.basicSearch)
+        searchText.trace_add('write', self.basicSearch)
 
         searchbox.pack(side="top", fill="both")
 
@@ -464,19 +464,16 @@ class SelectCardsetDialogWithPreview(MfxDialog):
                         bool(self.preserve_aspect.get()))
 
                     if auto_scale:
-                        self.app.menubar.tkopt.spread_stacks.set(False)
                         self.scale_values = (self.app.opt.scale_x,
                                              self.app.opt.scale_y,
                                              auto_scale,
                                              bool(self.preview_scale.get()),
-                                             False,
                                              bool(self.preserve_aspect.get()))
                     else:
                         self.scale_values = (self.scale_x.get(),
                                              self.scale_y.get(),
                                              auto_scale,
                                              self.app.opt.preview_scale,
-                                             self.app.opt.spread_stacks,
                                              self.app.opt.
                                              preserve_aspect_ratio)
         if button == 10:                # Info

@@ -506,14 +506,20 @@ class Zebra(RedAndBlack):
 
 
 # ************************************************************************
+# * Napoleon's Folly
 # * Indian
 # * Midshipman
 # * Mumbai
 # *   rows build down by any suit but own
 # ************************************************************************
 
-class Indian(FortyThieves):
+class NapoleonsFolly(FortyThieves):
     RowStack_Class = BO_RowStack
+
+    shallHighlightMatch = Game._shallHighlightMatch_BO
+
+
+class Indian(NapoleonsFolly):
     DEAL = (1, 2)
 
     def createGame(self):
@@ -1507,7 +1513,7 @@ registerGame(GameInfo(440, Squadron, "Squadron",
                       GI.GT_FORTY_THIEVES, 2, 0, GI.SL_MOSTLY_SKILL))
 registerGame(GameInfo(462, Josephine, "Josephine",
                       GI.GT_FORTY_THIEVES, 2, 0, GI.SL_MOSTLY_SKILL,
-                      altnames=("Forty Bandits")))
+                      altnames=("Forty Bandits", "Pack of Thieves")))
 registerGame(GameInfo(493, MarieRose, "Marie Rose",
                       GI.GT_FORTY_THIEVES, 3, 0, GI.SL_MOSTLY_SKILL))
 registerGame(GameInfo(503, BigStreets, "Big Streets",
@@ -1594,4 +1600,6 @@ registerGame(GameInfo(910, NapoleonsShoulder, "Napoleon's Shoulder",
 registerGame(GameInfo(933, Cascade, "Cascade",
                       GI.GT_FORTY_THIEVES, 1, 0, GI.SL_BALANCED))
 registerGame(GameInfo(940, ThirtyNineSteps, "Thirty-Nine Steps",
+                      GI.GT_FORTY_THIEVES, 2, 0, GI.SL_MOSTLY_SKILL))
+registerGame(GameInfo(981, NapoleonsFolly, "Napoleon's Folly",
                       GI.GT_FORTY_THIEVES, 2, 0, GI.SL_MOSTLY_SKILL))

@@ -425,7 +425,7 @@ class SelectGameDialogWithPreview(SelectGameDialog):
 
         self.list_searchtext.pack(side="top", fill='both',
                                   padx=padx, pady=pady, ipadx=1)
-        searchText.trace('w', self.basicSearch)
+        searchText.trace_add('write', self.basicSearch)
 
         searchbox.pack(side="top", fill="both")
 
@@ -608,13 +608,17 @@ class SelectGameDialogWithPreview(SelectGameDialog):
                 for name, games in GI.GAMES_BY_PYSOL_VERSION:
                     if self.criteria.version == name:
                         version_found = True
-                        if game.id in games:
+                        if (game.id in games and
+                                self.criteria.versioncompare != "New since"):
                             version_okay = True
                             break
                     elif ((not version_found and
                            self.criteria.versioncompare == "Present in")
                           or (version_found and
-                              self.criteria.versioncompare == "New since")):
+                              (self.criteria.versioncompare
+                               == "New since (inclusive)"
+                               or self.criteria.versioncompare
+                               == "New since"))):
                         if game.id in games:
                             version_okay = True
                             break
@@ -672,7 +676,7 @@ class SelectGameDialogWithPreview(SelectGameDialog):
                 for altname in game.altnames:
                     if self.app.checkSearchString(self.criteria.name, altname):
                         results.append(altname)
-        results.sort(key=lambda x: x.lower())
+        results.sort(key=self.app.gdb.getNaturalSortKey)
         pos = 0
         for result in results:
             self.list.insert(pos, result)
@@ -1001,7 +1005,8 @@ class SearchCriteria:
                               "Variable redeals": -2,
                               "Other number of redeals": 4}
 
-        self.versionCompareOptions = ("New in", "Present in", "New since")
+        self.versionCompareOptions = ("New in", "Present in", "New since",
+                                      "New since (inclusive)")
 
         self.statisticsOptions = {"": "all",
                                   "Games played": "played",

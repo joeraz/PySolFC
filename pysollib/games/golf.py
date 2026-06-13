@@ -45,7 +45,6 @@ from pysollib.stack import \
         SS_RowStack, \
         Stack, \
         StackWrapper, \
-        TalonStack, \
         UD_RK_RowStack, \
         WasteStack, \
         WasteTalonStack, \
@@ -1129,7 +1128,6 @@ class Vague(Game):
     def startGame(self):
         self.startDealSample()
         self.s.talon.dealRow()
-        self.s.talon.flipMove()
 
     def fillStack(self, stack):
         if stack in self.s.rows and not stack.cards:
@@ -1593,7 +1591,7 @@ class Beacon(Game):
             x += layout.XS
 
         x, y = layout.XM, self.height-layout.YS
-        s.talon = TalonStack(x, y, self)
+        s.talon = AutoDealTalonStack(x, y, self)
         layout.createText(s.talon, 'se')
 
         # define stack-groups

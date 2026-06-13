@@ -153,9 +153,8 @@ class AbstractHint(HintInterface):
 
     # clean up and return hints sorted by score
     def _returnHints(self):
-        hints = self.hints
+        hints = sorted(self.hints, reverse=True)
         self.reset()
-        hints.sort(reverse=True)
         return hints
 
     #
@@ -507,6 +506,11 @@ class DefaultHint(AbstractHint):
         # return all moveable piles for this stack, longest one first
         return (stack.getPile(), )
 
+    def _shouldSkipWholePileToEmptyRow(self, r, t, lp, lr):
+        # Some games may need to allow moving piles between empty rows.
+        # Called only when t is an empty row.
+        return lp == lr
+
     def step010_movePile(self, r, pile, rows):
         lp = len(pile)
         lr = len(r.cards)
@@ -527,7 +531,7 @@ class DefaultHint(AbstractHint):
             else:
                 if not t.cards:
                     # the target stack is empty
-                    if lp == lr:
+                    if self._shouldSkipWholePileToEmptyRow(r, t, lp, lr):
                         # do not move a whole stack from row to row
                         continue
                     if empty_row_seen:

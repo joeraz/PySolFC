@@ -123,6 +123,19 @@ class ForeCell(FreeCell):
 
 
 # ************************************************************************
+# * Opera
+# ************************************************************************
+
+class Opera(FreeCell):
+    def startGame(self):
+        for i in range(5):
+            self.s.talon.dealRow(rows=self.s.rows, flip=0, frames=0)
+        self.s.talon.dealRow(rows=self.s.rows[:4], flip=0, frames=0)
+        self.startDealSample()
+        self.s.talon.dealRow()
+
+
+# ************************************************************************
 # * Obstruction
 # ************************************************************************
 
@@ -805,3 +818,5 @@ registerGame(GameInfo(960, Obstruction, "Obstruction",
                       GI.GT_FREECELL | GI.GT_OPEN | GI.GT_ORIGINAL, 1, 0,
                       GI.SL_MOSTLY_SKILL,
                       subcategory=GI.GS_JOKER_DECK, trumps=list(range(2))))
+registerGame(GameInfo(988, Opera, "Opera",
+                      GI.GT_FREECELL, 1, 0, GI.SL_MOSTLY_SKILL))

@@ -1,5 +1,8 @@
 name: CI tests at GitHub
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [ master ]
@@ -29,16 +32,26 @@ jobs:
             python-version: 3.7
 
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{matrix.python-version}}
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install flake8 flake8-import-order==0.18.2 \
-          attrs configobj pycotap pysol-cards setuptools
+        # flake8-import-order 0.18.x uses pkg_resources; setuptools 82+ removed it.
+        # 0.19.x uses importlib.metadata instead (needs Python 3.8+).
+        PY_MINOR=$(python -c 'import sys; print(sys.version_info[1])')
+        if [ "$PY_MINOR" -lt 8 ]; then
+          python -m pip install 'setuptools>=65,<82'
+          FIO='flake8-import-order==0.18.2'
+        else
+          python -m pip install setuptools
+          FIO='flake8-import-order==0.19.2'
+        fi
+        python -m pip install flake8 "$FIO" \
+          attrs configobj pycotap pysol-cards
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Lint with flake8
       run: |

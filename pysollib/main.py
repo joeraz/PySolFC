@@ -138,6 +138,7 @@ def parse_option(argv):
         --sound-mod=MOD        use a certain sound module
         --nosound              disable sound support
         --noplugins            disable loading plugins
+        --version              display PySol version and exit
   -h    --help                 display this help and exit
 
   FILE - file name of a saved game

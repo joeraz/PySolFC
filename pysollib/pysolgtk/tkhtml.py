@@ -20,6 +20,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # ---------------------------------------------------------------------------
+# Import order gives different errors depending on environment.
+# Currently, ignoring it for this file is the only way to make it work
+# consistently.
+# flake8: noqa: I100,I202
 
 import htmllib
 import os

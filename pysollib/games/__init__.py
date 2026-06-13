@@ -46,6 +46,7 @@ from . import diplomat  # noqa: F401
 from . import doublets  # noqa: F401
 from . import eiffeltower  # noqa: F401
 from . import fan  # noqa: F401
+from . import fission  # noqa: F401
 from . import fortythieves  # noqa: F401
 from . import freecell  # noqa: F401
 from . import glenwood  # noqa: F401

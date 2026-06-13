@@ -61,6 +61,9 @@ class Samegame_Foundation(AbstractFoundationStack):
     def acceptsCards(self, from_stack, cards):
         return 1
 
+    def canSelect(self):
+        return False  # Invisible, off-screen, unselectable
+
 
 class Samegame_RowStack(OpenStack):
     def clickHandler(self, event):
@@ -199,7 +202,7 @@ class AbstractSamegameGame(Game):
         self.texts.info = MfxCanvasText(self.canvas,
                                         self.width - l.XM, y,
                                         anchor="nw", font=font)
-        # the Talon is invisble
+        # the Talon is invisible
         s.talon = InitialDealTalonStack(-l.XS-self.canvas.xmargin,
                                         self.height-dyy, self)
         # Define stack groups

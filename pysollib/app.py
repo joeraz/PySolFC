@@ -202,7 +202,7 @@ class Application:
         while True:
             logging.info('App: gameproc waiting for game to start')
             (id_, random) = yield
-            logging.info('App: game started {},{}'.format(id_, random))
+            logging.info('App: game started %s,%s', id_, random)
             self.runGame(id_, random)
 
     def _load_held_or_saved_game(self, tmpgame):
@@ -955,6 +955,15 @@ class Application:
         return 1
 
     def requestCompatibleCardsetTypeDialog(self, cardset, gi, t):
+
+        subcategoryLabel = ''
+        if self.isSubcategoryRelevant(gi):
+            subcategoryLabel = ("(%s) ") % self.getSubcategoryName(gi)
+
+        cardCountLabel = ''
+        if self.isCardCountRelevant(gi):
+            cardCountLabel = _("(with %d or more cards)") % gi.ncards
+
         MfxMessageDialog(
             self.top, title=_("Incompatible cardset"),
             bitmap="warning",
@@ -962,9 +971,29 @@ class Application:
         is not compatible with the game
         %(game)s
 
-        Please select a %(correct_type)s type cardset.
+        Please select a %(correct_type)s %(subcategory)stype cardset.
+        %(cardcount)s
         ''') % {'cardset': cardset.name, 'game': gi.name,
-                'correct_type': t[0]}, strings=(_("&OK"),), default=0)
+                'correct_type': t[0], 'subcategory': subcategoryLabel,
+                'cardcount': cardCountLabel},
+            strings=(_("&OK"),), default=0)
+
+    def isSubcategoryRelevant(self, gi):
+        if (gi.category == GI.GC_FRENCH):
+            return gi.subcategory == GI.GS_JOKER_DECK
+        if (gi.category == GI.GC_PUZZLE):
+            return True
+        return False
+
+    def getSubcategoryName(self, gi):
+        by_type = CSI.SUBTYPE_NAME.get(gi.category)
+        if not by_type:
+            return ""
+        return by_type.get(gi.subcategory, "")
+
+    def isCardCountRelevant(self, gi):
+        return (gi.category == GI.GC_TRUMP_ONLY or
+                gi.category == GI.GC_MATCHING)
 
     def selectCardset(self, title, key):
         wasPaused = False
@@ -984,7 +1013,6 @@ class Application:
         if USE_PIL:
             if (self.opt.scale_x, self.opt.scale_y,
                 self.opt.auto_scale, self.opt.preview_scale,
-                self.opt.spread_stacks,
                 self.opt.preserve_aspect_ratio) != \
                 d.scale_values or \
                     (cs.CARD_XOFFSET, cs.CARD_YOFFSET) != d.cardset_values:
@@ -996,7 +1024,6 @@ class Application:
              self.opt.scale_y,
              self.opt.auto_scale,
              self.opt.preview_scale,
-             self.opt.spread_stacks,
              self.opt.preserve_aspect_ratio) = d.scale_values
             if not self.opt.auto_scale:
                 self.images.resize(self.opt.scale_x, self.opt.scale_y,
@@ -1197,8 +1224,7 @@ class Application:
                 names.append(n)
         if self.opt.player not in names:
             names.append(self.opt.player)
-        names.sort()
-        return names
+        return sorted(names)
 
     def getGamesForSolver(self):
         return self.gdb.getGamesForSolver()
@@ -1245,13 +1271,12 @@ class Application:
         found_names = []  # (to check for duplicates)
         for dirname in dirs:
             try:
-                subdirs = [os.path.join(dirname, subdir)
-                           for subdir in os.listdir(dirname)
-                           if subdir.startswith('cardset-')]
+                subdirs = sorted(os.path.join(dirname, subdir)
+                                 for subdir in os.listdir(dirname)
+                                 if subdir.startswith('cardset-'))
             except EnvironmentError:
                 traceback.print_exc()
                 continue
-            subdirs.sort()
             for d in subdirs:
                 config_txt_path = os.path.join(d, "config.txt")
                 if not os.path.isfile(config_txt_path):
@@ -1332,8 +1357,7 @@ class Application:
             except EnvironmentError:
                 pass
         # register tiles
-        found.sort()
-        for f in found:
+        for f in sorted(found):
             obj = f[1]
             if not manager.getByName(obj.name):
                 manager.register(obj)
