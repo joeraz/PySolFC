@@ -27,7 +27,7 @@ import tkinter.ttk as ttk
 
 from pysollib.mfxutil import KwStruct, USE_PIL
 from pysollib.mygettext import _
-from pysollib.resource import CSI
+from pysollib.resource import CSI, getNaturalSortKey
 from pysollib.speech import Speech
 from pysollib.ui.tktile.selecttree import SelectDialogTreeData
 from pysollib.ui.tktile.tkcanvas import MfxCanvasImage
@@ -209,7 +209,8 @@ class SelectCardsetDialogWithPreview(MfxDialog):
     TreeDataHolder_Class = SelectCardsetTree
     TreeData_Class = SelectCardsetData
 
-    def __init__(self, parent, title, app, manager, key=None, **kw):
+    def __init__(self, parent, title, app, manager, key=None,
+                 initial_tab=None, **kw):
         kw = self.initKw(kw)
         MfxDialog.__init__(self, parent, title, kw.resizable, kw.default)
         top_frame, bottom_frame = self.createFrames(kw)
@@ -300,6 +301,10 @@ class SelectCardsetDialogWithPreview(MfxDialog):
 
         self.list.config(yscrollcommand=self.list_scrollbar.set)
         self.list_scrollbar.config(command=self.list.yview)
+
+        self.notebook = notebook
+        search_focus = notebook.apply_initial_tab(
+            initial_tab, search_frame, self.list_searchtext)
 
         if USE_PIL:
             size_frame = ttk.Frame(notebook)
@@ -406,7 +411,7 @@ class SelectCardsetDialogWithPreview(MfxDialog):
         self.updatePreview(key, overrideScale=True)
         #
         focus = self.createButtons(bottom_frame, kw)
-        focus = self.tree.frame
+        focus = search_focus or self.tree.frame
         self.mainloop(focus, kw.timeout, geometry=geometry)
 
     def destroy(self):
@@ -562,7 +567,7 @@ class SelectCardsetDialogWithPreview(MfxDialog):
             if self.app.checkSearchString(self.criteria.name,
                                           cardset.name):
                 results.append(cardset.name)
-        results.sort(key=lambda x: x.lower())
+        results.sort(key=getNaturalSortKey)
         pos = 0
         for result in results:
             self.list.insert(pos, result)
@@ -751,7 +756,8 @@ class CardsetInfoDialog(MfxDialog):
             (_('Nationality:'),   nationalities),
             (_('Year:'),          year),
             (_('Num. cards:'),    str(cardset.ncards)),
-            (_('Size:'), '%d x %d' % (cardset.CARDW, cardset.CARDH)),
+            (_('Size:'), '%d x %d (%s)' % (cardset.CARDW, cardset.CARDH,
+                                           CSI.SIZE_NAME.get(cardset.si.size)))
                 ):
             if t is not None:
                 label = ttk.Label(info_frame, text=n,
@@ -785,7 +791,7 @@ class CardsetInfoDialog(MfxDialog):
         # bg = top_frame["bg"]
         bg = 'white'
         text_w = PysolText(frame, bd=1, relief="sunken", wrap="word",
-                           padx=4, width=64, height=8, bg=bg)
+                           padx=4, width=66, height=8, bg=bg)
         text_w.grid(row=row, column=0, sticky='nsew')
         sb = ttk.Scrollbar(frame)
         sb.grid(row=row, column=1, sticky='ns')

@@ -23,15 +23,24 @@
 
 import glob
 import os
+import re
 import traceback
 
 from pysollib.mfxutil import Image, KwStruct, Struct, USE_PIL
-from pysollib.mygettext import _
+from pysollib.mygettext import _, pgettext
 from pysollib.settings import DEBUG
 
 # ************************************************************************
 # * Abstract
 # ************************************************************************
+
+
+def getNaturalSortKey(text):
+    # Sort numbers numerically, and strings alphabetically
+    def convert(part):
+        return int(part) if part.isdigit() else part.lower()
+
+    return [convert(c) for c in re.split(r'(\d+)', text)]
 
 
 class Resource(Struct):
@@ -49,7 +58,7 @@ class Resource(Struct):
         Struct.__init__(self, **kw.getKw())
 
     def getSortKey(self):
-        return self.name.lower()
+        return getNaturalSortKey(self.name)
 
 
 class ResourceManager:
@@ -298,15 +307,15 @@ class CSI:
     # cardset styles
     STYLE = {
         35: _("Abstract"),              #
-        1:  _("Adult"),                #
-        2:  _("Animals"),              #
-        3:  _("Anime"),                #
-        4:  _("Art"),                  #
-        5:  _("Cartoons"),             #
-        6:  _("Children"),             #
-        7:  _("Classic Look"),         #
-        8:  _("Collectors"),           # scanned collectors cardsets
-        9:  _("Computers"),            #
+        1:  _("Adult"),                 #
+        2:  _("Animals"),               #
+        3:  _("Anime"),                 #
+        4:  _("Art"),                   #
+        5:  _("Cartoons"),              #
+        6:  _("Children"),              #
+        7:  _("Classic Look"),          #
+        8:  _("Collectors"),            # scanned collectors cardsets
+        9:  _("Computers"),             #
         36: _("Divination"),            # e.g. fortunetelling decks
         10:  _("Engines"),              #
         11:  _("Fantasy"),              #
@@ -378,6 +387,15 @@ class CSI:
         20:  "2000 - 2099",
         21:  "2100 - 2199",
         22:  "2200 - 2299",
+    }
+
+    SIZE_NAME = {
+        1:  _("Tiny"),
+        2:  _("Small"),
+        3:  pgettext("size", "Medium"),
+        4:  _("Large"),
+        5:  _("Extra Large"),
+        6:  _("Hi-Res"),
     }
 
 
@@ -524,36 +542,20 @@ class CardsetManager(ResourceManager):
         elif s == CSI.TYPE_MUGHAL_GANJIFA:
             cs.nbottoms = 11
         elif s == CSI.TYPE_NAVAGRAHA_GANJIFA:
-            # ???return 0                            ## FIXME
             cs.nbottoms = 12
         elif s == CSI.TYPE_DASHAVATARA_GANJIFA:
             cs.nbottoms = 13
         elif s == CSI.TYPE_TRUMP_ONLY:
-            # ???return 0                            ## FIXME
-            # cs.nbottoms = 7
-            # cs.ranks = ()
-            # cs.suits = ""
-            # cs.trumps = range(cs.ncards)
             cs.nbottoms = 1
             cs.nletters = 0
             cs.nshadows = 0
             cs.trumps = list(range(cs.ncards))
         elif s == CSI.TYPE_MATCHING:
-            # ???return 0                            ## FIXME
-            # cs.nbottoms = 7
-            # cs.ranks = ()
-            # cs.suits = ""
-            # cs.trumps = range(cs.ncards)
             cs.nbottoms = 1
             cs.nletters = 0
             cs.nshadows = 0
             cs.trumps = list(range(cs.ncards))
         elif s == CSI.TYPE_PUZZLE:
-            # ???return 0                            ## FIXME
-            # cs.nbottoms = 7
-            # cs.ranks = ()
-            # cs.suits = ""
-            # cs.trumps = range(cs.ncards)
             cs.nbottoms = 1
             cs.nletters = 0
             cs.nshadows = 0

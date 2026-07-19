@@ -37,7 +37,7 @@ from pysol_cards.random import random__int2str
 from pysollib.game.dump import pysolDumpGame
 from pysollib.gamedb import GI
 from pysollib.help import help_about
-from pysollib.hint import DefaultHint
+from pysollib.hint import DefaultHint, HINT_LEVEL_SOLVER, HINT_LEVEL_STUCK
 from pysollib.mfxutil import Image, ImageTk, USE_PIL
 from pysollib.mfxutil import Struct, SubclassResponsibility, destruct
 from pysollib.mfxutil import format_time, print_err
@@ -666,7 +666,7 @@ class Game:
         self.showHelp()                 # just in case
         hint_class = self.getHintClass()
         if hint_class is not None:
-            self.Stuck_Class = hint_class(self, 0)
+            self.Stuck_Class = hint_class(self, HINT_LEVEL_STUCK)
         self.busy = old_busy
 
     def _checkGame(self):
@@ -1733,17 +1733,6 @@ class Game:
         if self.app.opt.animations == 0 or frames == 0:
             return
 
-        if TOOLKIT == 'kivy':
-            c0 = cards[0]
-            dx, dy = (x - c0.x), (y - c0.y)
-            base = float(self.app.opt.animations)
-            duration = base*base/30.0 + 0.05
-            for card in cards:
-                card.animatedMove(dx, dy, duration)
-            # self.top.waitAnimation(swallow=True, pickup=True)
-            # synchronise: ev. per option ?
-            return
-
         # init timer - need a high resolution for this to work
         clock, delay, skip = None, 1, 1
         if self.app.opt.animations >= 2:
@@ -1767,73 +1756,89 @@ class Game:
             # if self.moves.state == self.S_INIT and frames > 4:
             #     frames //= 2
             return
-        if shadow < 0:
-            shadow = self.app.opt.shadow
-        shadows = ()
-
-        # start animation
-        if tkraise:
+        if TOOLKIT == 'kivy':
+            c0 = cards[0]
+            dx, dy = (x - c0.x), (y - c0.y)
             for card in cards:
-                card.tkraise()
+                card.animatedMove(dx, dy, SPF * frames)
+            # self.top.waitAnimation(swallow=True, pickup=True)
+            # synchronise: ev. per option ?
+            return
 
-        # Recalculate every frame so the animation adapts
-        c0 = cards[0]
-        if to_stack:
+        # Block input while animating: canvas.update() in the loop below
+        # can re-enter mouse handlers and corrupt game state (#576).
+        old_busy = self.busy
+        self.busy = 1
+        try:
+            if shadow < 0:
+                shadow = self.app.opt.shadow
+            shadows = ()
 
-            def _dest_func():
-                return to_stack.getPositionForNextCard()
-        else:
-            _static_dest = (x, y)
+            # start animation
+            if tkraise:
+                for card in cards:
+                    card.tkraise()
 
-            def _dest_func():
-                return _static_dest
+            # Recalculate every frame so the animation adapts
+            c0 = cards[0]
+            if to_stack:
 
-        i = 1
-        if clock:
-            starttime = clock()
-        while i < frames:
-            # Determine current destination for this frame
-            dest_x, dest_y = _dest_func()
-            dx_remain = dest_x - c0.x
-            dy_remain = dest_y - c0.y
-            remaining_frames = frames - i + 1
-            if remaining_frames <= 0:
-                remaining_frames = 1
-            # Move a fraction of the remaining distance
-            mx = int(round(dx_remain / remaining_frames))
-            my = int(round(dy_remain / remaining_frames))
-            if i == 1 and shadow and from_stack:
-                # create shadows in the first frame
-                sx, sy = self.app.images.SHADOW_XOFFSET, \
-                    self.app.images.SHADOW_YOFFSET
-                shadows = from_stack.createShadows(cards, sx, sy)
-            for s in shadows:
-                s.move(mx, my)
-            for card in cards:
-                card.moveBy(mx, my)
-            # process events so resize handlers run
-            self.canvas.update()
-            step = 1
+                def _dest_func():
+                    return to_stack.getPositionForNextCard()
+            else:
+                _static_dest = (x, y)
+
+                def _dest_func():
+                    return _static_dest
+
+            i = 1
             if clock:
-                endtime = starttime + i * SPF
-                sleep = endtime - clock()
-                if delay and sleep >= 0.005:
-                    usleep(sleep)
-                elif skip and sleep <= -0.75 * SPF:
-                    step += 1
-                    if frames > 4 and sleep < -1.5 * SPF:
+                starttime = clock()
+            while i < frames:
+                # Determine current destination for this frame
+                dest_x, dest_y = _dest_func()
+                dx_remain = dest_x - c0.x
+                dy_remain = dest_y - c0.y
+                remaining_frames = frames - i + 1
+                if remaining_frames <= 0:
+                    remaining_frames = 1
+                # Move a fraction of the remaining distance
+                mx = int(round(dx_remain / remaining_frames))
+                my = int(round(dy_remain / remaining_frames))
+                if i == 1 and shadow and from_stack:
+                    # create shadows in the first frame
+                    sx, sy = self.app.images.SHADOW_XOFFSET, \
+                        self.app.images.SHADOW_YOFFSET
+                    shadows = from_stack.createShadows(cards, sx, sy)
+                for s in shadows:
+                    s.move(mx, my)
+                for card in cards:
+                    card.moveBy(mx, my)
+                # process events so resize handlers run
+                self.canvas.update()
+                step = 1
+                if clock:
+                    endtime = starttime + i * SPF
+                    sleep = endtime - clock()
+                    if delay and sleep >= 0.005:
+                        usleep(sleep)
+                    elif skip and sleep <= -0.75 * SPF:
                         step += 1
-            i += step
+                        if frames > 4 and sleep < -1.5 * SPF:
+                            step += 1
+                i += step
 
-        # last frame: delete shadows and move cards to final destination
-        for s in shadows:
-            s.delete()
-        dest_x, dest_y = _dest_func()
-        dx_final = dest_x - c0.x
-        dy_final = dest_y - c0.y
-        for card in cards:
-            card.moveBy(dx_final, dy_final)
-        self.canvas.update()
+            # last frame: delete shadows and move cards to final destination
+            for s in shadows:
+                s.delete()
+            dest_x, dest_y = _dest_func()
+            dx_final = dest_x - c0.x
+            dy_final = dest_y - c0.y
+            for card in cards:
+                card.moveBy(dx_final, dy_final)
+            self.canvas.update()
+        finally:
+            self.busy = old_busy
 
     def doAnimatedFlipAndMove(self, from_stack, to_stack=None, frames=-1):
         if self.app.opt.animations == 0 or frames == 0:
@@ -2821,7 +2826,7 @@ class Game:
     # compute all hints for the current position
     # this is the only method that actually uses class Hint
     def getHints(self, level, taken_hint=None):
-        if level == 3:
+        if level == HINT_LEVEL_SOLVER:
             # if self.solver is None:
             # return None
             return self.solver.getHints(taken_hint)
@@ -3215,14 +3220,34 @@ class Game:
         self.demo_logo = self.app.gimages.demo[int(n)]
         self.canvas.setTopImage(self.demo_logo)
 
+    def _iterMovablePiles(self, stack):
+        # Yield every face-up suffix pile the stack may move (longest first).
+        cards = stack.cards
+        if not cards:
+            return
+        start = 0
+        for i, c in enumerate(cards):
+            if c.face_up:
+                start = i
+                break
+        piles = []
+        for i in range(start, len(cards)):
+            pile = cards[i:]
+            if stack.canMoveCards(pile):
+                piles.append(pile)
+        for pile in reversed(piles):
+            yield pile
+
     def getStuck(self):
-        h = self.Stuck_Class.getHints(None)
+        h = self.Stuck_Class.getHints(None) or []
         if h:
             self.failed_snapshots = []
             return True
         if not self.canDealCards():
             return False
-        # can deal cards: do we have any hints in previous deals ?
+        # No table/waste moves, but dealing (or a waste redeal) is still
+        # possible. Remember this layout; if we return here after dealing
+        # through the talon/waste with no progress, treat as stuck.
         sn = self.getSnapshot()
         if sn in self.failed_snapshots:
             return False
